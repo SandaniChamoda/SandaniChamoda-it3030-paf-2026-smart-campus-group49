@@ -12,4 +12,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             LocalDateTime endTime,
             LocalDateTime startTime
     );
+    List<Booking> findByResourceName(String resourceName);
+
+List<Booking> findByStartTimeBetween(
+        LocalDateTime start,
+        LocalDateTime end
+);
+
+List<Booking> findByResourceNameAndStartTimeBetween(
+        String resourceName,
+        LocalDateTime start,
+        LocalDateTime end
+);
 }
