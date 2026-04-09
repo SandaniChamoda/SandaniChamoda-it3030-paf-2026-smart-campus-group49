@@ -1,6 +1,6 @@
 import { Routes, Route, Link } from "react-router-dom";
 
-import Home from "./pages/Home";
+import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
@@ -21,7 +21,7 @@ function App() {
 
         <div>
 
-          <Link to="/" className="btn btn-light me-2">
+          <Link to="/home" className="btn btn-light me-2">
             Home
           </Link>
 
@@ -45,7 +45,7 @@ function App() {
 
       <Routes>
 
-        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
 
         <Route path="/bookings" element={<BookingList />} />
 
