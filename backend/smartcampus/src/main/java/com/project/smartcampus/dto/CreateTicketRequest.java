@@ -2,13 +2,24 @@ package com.project.smartcampus.dto;
 
 import com.project.smartcampus.enums.TicketCategory;
 import com.project.smartcampus.enums.TicketPriority;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class CreateTicketRequest {
 
+    @NotBlank(message = "Title is required")
     private String title;
+
+    @NotBlank(message = "Description is required")
     private String description;
+
+    @NotNull(message = "Category is required")
     private TicketCategory category;
+
+    @NotNull(message = "Priority is required")
     private TicketPriority priority;
+
+    @NotNull(message = "CreatedBy is required")
     private Long createdBy;
 
     public CreateTicketRequest() {

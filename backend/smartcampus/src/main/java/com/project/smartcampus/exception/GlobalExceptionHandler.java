@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -63,5 +65,26 @@ public ResponseEntity<Map<String, Object>> handleTicketNotFound(
             response,
             HttpStatus.NOT_FOUND
     );
+}
+
+//sandani
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<Map<String, Object>> handleValidationException(
+        MethodArgumentNotValidException ex
+) {
+    Map<String, Object> response = new HashMap<>();
+
+    response.put("timestamp", LocalDateTime.now());
+    response.put("status", 400);
+    response.put("error", "Validation Error");
+
+    String errorMessage = ex.getBindingResult()
+            .getFieldErrors()
+            .get(0)
+            .getDefaultMessage();
+
+    response.put("message", errorMessage);
+
+    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 }
 }
