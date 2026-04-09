@@ -8,6 +8,7 @@ import com.project.smartcampus.entity.Ticket;
 import com.project.smartcampus.enums.TicketStatus;
 import com.project.smartcampus.repository.TicketRepository;
 import org.springframework.stereotype.Service;
+import com.project.smartcampus.exception.TicketNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,7 +45,7 @@ public class TicketService {
 
     public TicketResponse getTicketById(Long id) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + id));
+                .orElseThrow(() -> new TicketNotFoundException("Ticket not found with id: " + id));
         return mapToResponse(ticket);
     }
 
