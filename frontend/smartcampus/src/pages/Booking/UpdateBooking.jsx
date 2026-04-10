@@ -8,6 +8,21 @@ const toDatetimeLocal = (value) => {
   return value;
 };
 
+const toDatetimeLocalMin = (date = new Date()) => {
+  const pad = (value) => String(value).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+const resolveEndMin = (startTime, minNow) => {
+  if (!startTime) return minNow;
+  return startTime > minNow ? startTime : minNow;
+};
+
 function UpdateBooking() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -19,10 +34,30 @@ function UpdateBooking() {
     startTime: "",
     endTime: "",
   });
+  const [touched, setTouched] = useState({
+    startTime: false,
+    endTime: false,
+  });
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [minNow, setMinNow] = useState(() => toDatetimeLocalMin());
+  const minEnd = resolveEndMin(booking.startTime, minNow);
+  const startTimeError =
+    !submitting &&
+    touched.startTime &&
+    booking.startTime &&
+    booking.startTime < minNow
+      ? "Please select a future start time."
+      : "";
+  const endTimeError =
+    !submitting &&
+    touched.endTime &&
+    booking.endTime &&
+    booking.endTime < minEnd
+      ? "Please select a future end time."
+      : "";
 
   const isValid = useMemo(() => {
     return (
@@ -62,9 +97,39 @@ function UpdateBooking() {
   }, [id]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    const minNowValue = toDatetimeLocalMin();
+
+    if (name === "startTime") {
+      const safeStart = value && value < minNowValue ? minNowValue : value;
+      const resolvedMinEnd = resolveEndMin(safeStart, minNowValue);
+
+      setMinNow(minNowValue);
+      setTouched((prev) => ({ ...prev, startTime: true }));
+      setBooking((prev) => ({
+        ...prev,
+        startTime: safeStart,
+        endTime: prev.endTime && prev.endTime < resolvedMinEnd ? "" : prev.endTime,
+      }));
+      return;
+    }
+
+    if (name === "endTime") {
+      const resolvedMinEnd = resolveEndMin(booking.startTime, minNowValue);
+      const safeEnd = value && value < resolvedMinEnd ? resolvedMinEnd : value;
+
+      setMinNow(minNowValue);
+      setTouched((prev) => ({ ...prev, endTime: true }));
+      setBooking((prev) => ({
+        ...prev,
+        endTime: safeEnd,
+      }));
+      return;
+    }
+
     setBooking({
       ...booking,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -152,9 +217,14 @@ function UpdateBooking() {
                 name="startTime"
                 value={booking.startTime}
                 onChange={handleChange}
+                onFocus={() => setMinNow(toDatetimeLocalMin())}
+                min={minNow}
                 required
                 disabled={loading}
               />
+              {startTimeError ? (
+                <div className="form-text text-danger">{startTimeError}</div>
+              ) : null}
             </div>
 
             <div className="col-md-6">
@@ -165,9 +235,14 @@ function UpdateBooking() {
                 name="endTime"
                 value={booking.endTime}
                 onChange={handleChange}
+                onFocus={() => setMinNow(toDatetimeLocalMin())}
+                min={minEnd}
                 required
                 disabled={loading}
               />
+              {endTimeError ? (
+                <div className="form-text text-danger">{endTimeError}</div>
+              ) : null}
             </div>
 
             <div className="col-12 d-flex justify-content-between align-items-center pt-2">
