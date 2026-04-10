@@ -8,6 +8,7 @@ import com.project.smartcampus.services.TicketService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class TicketController {
     }
 
     @PostMapping
-    public ResponseEntity<TicketResponse> createTicket(@RequestBody CreateTicketRequest request) {
+    public ResponseEntity<TicketResponse> createTicket(@RequestBody @Valid CreateTicketRequest request) {
         TicketResponse response = ticketService.createTicket(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
