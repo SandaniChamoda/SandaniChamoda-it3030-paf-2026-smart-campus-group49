@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,6 +20,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -32,10 +32,9 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-        @MockitoBean
+    @MockitoBean
     private UserService userService;
 
     private UserDTO sampleUser(Long id, Role role) {
@@ -49,14 +48,13 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "1", roles = "ADMIN")
     void getAllUsers_withAdminRole_shouldReturn200() throws Exception {
         when(userService.getAllUsers()).thenReturn(List.of(
                 sampleUser(1L, Role.ADMIN),
                 sampleUser(2L, Role.USER)
         ));
 
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(get("/api/users").with(user("1").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].role").value("ADMIN"))
@@ -64,16 +62,14 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "2", roles = "USER")
     void getAllUsers_withUserRole_shouldReturn403() throws Exception {
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(get("/api/users").with(user("2").roles("USER")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "2", roles = "TECHNICIAN")
     void getAllUsers_withTechnicianRole_shouldReturn403() throws Exception {
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(get("/api/users").with(user("2").roles("TECHNICIAN")))
                 .andExpect(status().isForbidden());
     }
 
@@ -84,18 +80,16 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "1", roles = "ADMIN")
     void getUserById_withAdminRole_shouldReturn200() throws Exception {
         when(userService.getUserById(2L)).thenReturn(sampleUser(2L, Role.USER));
 
-        mockMvc.perform(get("/api/users/2"))
+        mockMvc.perform(get("/api/users/2").with(user("1").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(2))
                 .andExpect(jsonPath("$.role").value("USER"));
     }
 
     @Test
-    @WithMockUser(username = "1", roles = "ADMIN")
     void updateUserRole_withAdminRole_shouldReturn200() throws Exception {
         RoleUpdateRequest request = new RoleUpdateRequest(Role.TECHNICIAN);
         UserDTO updated = sampleUser(2L, Role.TECHNICIAN);
@@ -104,7 +98,7 @@ class UserControllerTest {
                 .thenReturn(updated);
 
         mockMvc.perform(put("/api/users/2/role")
-                        .with(csrf())
+                        .with(user("1").roles("ADMIN")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -112,26 +106,24 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "1", roles = "ADMIN")
     void deleteUser_withAdminRole_shouldReturn204() throws Exception {
-        mockMvc.perform(delete("/api/users/2").with(csrf()))
+        mockMvc.perform(delete("/api/users/2").with(user("1").roles("ADMIN")).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser(username = "2", roles = "USER")
     void deleteUser_withUserRole_shouldReturn403() throws Exception {
-        mockMvc.perform(delete("/api/users/2").with(csrf()))
+        // CSRF is disabled in security config, so no csrf() needed
+        mockMvc.perform(delete("/api/users/2").with(user("2").roles("USER")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "1", roles = "ADMIN")
     void getUsersByRole_withAdminRole_shouldReturn200() throws Exception {
         when(userService.getUsersByRole(Role.TECHNICIAN))
                 .thenReturn(List.of(sampleUser(3L, Role.TECHNICIAN)));
 
-        mockMvc.perform(get("/api/users/role/TECHNICIAN"))
+        mockMvc.perform(get("/api/users/role/TECHNICIAN").with(user("1").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].role").value("TECHNICIAN"));
     }
