@@ -41,6 +41,32 @@ function BookingList() {
     }
   };
 
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm("Delete this booking?");
+    if (!confirmed) return;
+
+    try {
+      await API.delete(`/bookings/${id}`);
+      setBookings((prev) => prev.filter((b) => b.id !== id));
+    } catch (e) {
+      console.error("Error deleting booking", e);
+      setError("Couldn't delete booking. Please try again.");
+    }
+  };
+
+  const handleCancel = async (id) => {
+    const confirmed = window.confirm("Cancel this booking?");
+    if (!confirmed) return;
+
+    try {
+      await API.put(`/bookings/${id}/cancel`);
+      fetchBookings();
+    } catch (e) {
+      console.error("Error cancelling booking", e);
+      setError("Couldn't cancel booking. Please try again.");
+    }
+  };
+
   return (
     <div className="sc-container py-4">
       <div className="sc-card">
@@ -74,19 +100,20 @@ function BookingList() {
                   <th style={{ width: 200 }}>Start</th>
                   <th style={{ width: 200 }}>End</th>
                   <th style={{ width: 140 }}>Status</th>
+                  <th style={{ width: 160 }}>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-5">
+                    <td colSpan={8} className="text-center text-muted py-5">
                       Loading…
                     </td>
                   </tr>
                 ) : bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-5">
+                    <td colSpan={8} className="text-center text-muted py-5">
                       No bookings yet.
                     </td>
                   </tr>
@@ -107,6 +134,35 @@ function BookingList() {
                         >
                           {b.status}
                         </span>
+                      </td>
+                      <td>
+                        {b.status === "PENDING" ? (
+                          <div className="d-flex gap-2">
+                            <Link
+                              to={`/bookings/${b.id}/edit`}
+                              className="btn btn-sm btn-outline-primary"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDelete(b.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ) : b.status === "APPROVED" ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleCancel(b.id)}
+                          >
+                            Cancel
+                          </button>
+                        ) : (
+                          <span className="text-muted small">No actions</span>
+                        )}
                       </td>
                     </tr>
                   ))

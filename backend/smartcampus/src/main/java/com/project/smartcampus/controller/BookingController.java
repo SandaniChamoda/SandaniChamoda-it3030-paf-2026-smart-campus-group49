@@ -33,6 +33,19 @@ public class BookingController {
         return service.getAllBookings();
     }
 
+    @GetMapping("/{id}")
+    public Booking getBookingById(@PathVariable Long id) {
+        return service.getBookingById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Booking updateBooking(
+            @PathVariable Long id,
+            @RequestBody Booking updatedBooking) {
+
+        return service.updateBooking(id, updatedBooking);
+    }
+
     @PutMapping("/{id}/approve")
     public Booking approveBooking(@PathVariable Long id) {
         return service.approveBooking(id);

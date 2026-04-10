@@ -5,6 +5,7 @@ import Header from "./components/Header/Header";
 import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
+import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/bookings" element={<BookingList />} />
 
           <Route path="/create" element={<CreateBooking />} />
+          <Route path="/bookings/:id/edit" element={<UpdateBooking />} />
 
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />

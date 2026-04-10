@@ -60,6 +60,59 @@ public class BookingService {
         return repository.findAll();
     }
 
+        public Booking getBookingById(Long id) {
+                return repository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Booking not found"));
+        }
+
+    public Booking updateBooking(Long id, Booking updatedBooking) {
+
+    Booking existing = repository.findById(id)
+            .orElseThrow(() ->
+                    new RuntimeException("Booking not found"));
+
+    if (existing.getStatus() != BookingStatus.PENDING) {
+        throw new BookingConflictException(
+                "Only PENDING bookings can be updated"
+        );
+    }
+
+    if (updatedBooking.getStartTime().isBefore(LocalDateTime.now())) {
+        throw new BookingConflictException(
+                "Start time must be in the future"
+        );
+    }
+
+    if (updatedBooking.getEndTime().isBefore(updatedBooking.getStartTime())) {
+        throw new BookingConflictException(
+                "End time must be after start time"
+        );
+    }
+
+    List<Booking> conflicts =
+            repository.findByResourceNameAndStatusInAndStartTimeLessThanAndEndTimeGreaterThanAndIdNot(
+                    updatedBooking.getResourceName(),
+                    ACTIVE_CONFLICT_STATUSES,
+                    updatedBooking.getEndTime(),
+                    updatedBooking.getStartTime(),
+                    id
+            );
+
+    if (!conflicts.isEmpty()) {
+        throw new BookingConflictException(
+                "Booking conflict detected for this time slot"
+        );
+    }
+
+    existing.setResourceName(updatedBooking.getResourceName());
+    existing.setStartTime(updatedBooking.getStartTime());
+    existing.setEndTime(updatedBooking.getEndTime());
+    existing.setPurpose(updatedBooking.getPurpose());
+    existing.setAttendees(updatedBooking.getAttendees());
+
+    return repository.save(existing);
+}
+
     public Booking approveBooking(Long id) {
 
         Booking booking = repository.findById(id)
@@ -112,8 +165,19 @@ public class BookingService {
 }
 
     public void deleteBooking(Long id) {
-        repository.deleteById(id);
-    }
+
+    Booking booking = repository.findById(id)
+            .orElseThrow(() ->
+                    new RuntimeException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+                throw new BookingConflictException(
+                                "Only PENDING bookings can be deleted"
+                );
+        }
+
+    repository.delete(booking);
+}
 
     public List<Booking> searchByResource(String resourceName) {
     return repository.findByResourceName(resourceName);
