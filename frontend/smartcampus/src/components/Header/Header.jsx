@@ -54,7 +54,7 @@ function Header() {
             className={navLinkClass}
             onClick={closeMenu}
           >
-            Admin
+            Admin Dashboard
           </NavLink>
         </nav>
       </div>
