@@ -27,6 +27,7 @@ public class TicketService {
         Ticket ticket = new Ticket();
         ticket.setTitle(request.getTitle());
         ticket.setDescription(request.getDescription());
+        ticket.setImage(request.getImage());
         ticket.setCategory(request.getCategory());
         ticket.setPriority(request.getPriority());
         ticket.setCreatedBy(request.getCreatedBy());
