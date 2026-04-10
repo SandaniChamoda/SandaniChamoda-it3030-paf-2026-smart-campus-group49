@@ -30,7 +30,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = () => {
-    window.location.href = authService.getGoogleLoginUrl();
+    // Full window navigation to bypass iframe security restrictions
+    window.location.href = 'http://localhost:8086/oauth2/authorization/google';
   };
 
   const logout = async () => {
