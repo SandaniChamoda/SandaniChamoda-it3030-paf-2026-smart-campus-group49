@@ -2,6 +2,7 @@ package com.project.smartcampus.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.project.smartcampus.enums.BookingStatus;
 
 @Entity
 @Table(name = "bookings")
@@ -10,6 +11,8 @@ public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    //private Long userId;
 
     private String resourceName;
 
@@ -21,7 +24,10 @@ public class Booking {
 
     private LocalDateTime endTime;
 
-    private String status;
+    private String rejectionReason;
+
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 
     public Booking() {}
 
@@ -30,7 +36,7 @@ public class Booking {
                    int attendees,
                    LocalDateTime startTime,
                    LocalDateTime endTime,
-                   String status) {
+                   BookingStatus status) {
         this.resourceName = resourceName;
         this.purpose = purpose;
         this.attendees = attendees;
@@ -39,6 +45,14 @@ public class Booking {
         this.status = status;
     }
 
+
+//     public Long getUserId() {
+//     return userId;
+// }
+
+// public void setUserId(Long userId) {
+//     this.userId = userId;
+// }
     public Long getId() {
         return id;
     }
@@ -83,11 +97,19 @@ public class Booking {
         this.endTime = endTime;
     }
 
-    public String getStatus() {
+    public BookingStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BookingStatus status) {
         this.status = status;
     }
+
+    public String getRejectionReason() {
+    return rejectionReason;
+}
+
+public void setRejectionReason(String rejectionReason) {
+    this.rejectionReason = rejectionReason;
+}
 }

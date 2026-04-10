@@ -1,3 +1,4 @@
+//backend\smartcampus\src\main\java\com\project\smartcampus\exception\GlobalExceptionHandler.java
 package com.project.smartcampus.exception;
 
 import org.springframework.http.HttpStatus;
