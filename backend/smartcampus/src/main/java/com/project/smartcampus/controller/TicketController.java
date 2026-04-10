@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import com.project.smartcampus.dto.CreateCommentRequest;
+import com.project.smartcampus.dto.TicketCommentResponse;
 
 import java.util.List;
 
@@ -62,4 +64,17 @@ public class TicketController {
             @RequestBody UpdateTicketStatusRequest request) {
         return ResponseEntity.ok(ticketService.updateTicketStatus(ticketId, request));
     }
+    
+    @PostMapping("/{ticketId}/comments")
+public ResponseEntity<TicketCommentResponse> addComment(
+        @PathVariable Long ticketId,
+        @Valid @RequestBody CreateCommentRequest request) {
+    TicketCommentResponse response = ticketService.addComment(ticketId, request);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
+
+@GetMapping("/{ticketId}/comments")
+public ResponseEntity<List<TicketCommentResponse>> getCommentsByTicketId(@PathVariable Long ticketId) {
+    return ResponseEntity.ok(ticketService.getCommentsByTicketId(ticketId));
+}
 }
