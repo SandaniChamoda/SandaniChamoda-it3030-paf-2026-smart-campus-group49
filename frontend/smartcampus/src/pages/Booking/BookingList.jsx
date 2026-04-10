@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
 
@@ -21,17 +21,34 @@ function BookingList() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [resourceName, setResourceName] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      fetchBookings(resourceName, statusFilter);
+    }, 300);
 
-  const fetchBookings = async () => {
+    return () => clearTimeout(timeoutId);
+  }, [resourceName, statusFilter]);
+
+  const fetchBookings = async (resource, status) => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await API.get("/bookings");
+      const params = {};
+      const trimmed = (resource ?? "").trim();
+
+      if (trimmed) {
+        params.resourceName = trimmed;
+      }
+
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      const response = await API.get("/bookings", { params });
       setBookings(response.data);
     } catch (e) {
       console.error("Error fetching bookings", e);
@@ -67,6 +84,17 @@ function BookingList() {
     }
   };
 
+  const filteredBookings = useMemo(() => {
+    const search = (resourceName ?? "").trim().toLowerCase();
+
+    return bookings.filter((b) => {
+      const name = ((b?.resourceName ?? "") + "").trim().toLowerCase();
+      const statusOk = statusFilter === "ALL" ? true : b?.status === statusFilter;
+      const searchOk = !search ? true : name.includes(search);
+      return statusOk && searchOk;
+    });
+  }, [bookings, resourceName, statusFilter]);
+
   return (
     <div className="sc-container py-4">
       <div className="sc-card">
@@ -76,8 +104,33 @@ function BookingList() {
             <div className="text-muted small">View all current bookings.</div>
           </div>
 
-          <div className="d-flex gap-2">
-            <button className="btn btn-outline-primary btn-sm" onClick={fetchBookings}>
+          <div className="d-flex gap-2 flex-wrap">
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ width: 200 }}
+              placeholder="Search resource"
+              value={resourceName}
+              onChange={(e) => setResourceName(e.target.value)}
+            />
+
+            <select
+              className="form-select form-select-sm"
+              style={{ width: 180 }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+
+            <button
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => fetchBookings(resourceName, statusFilter)}
+            >
               Refresh
             </button>
             <Link to="/create" className="btn btn-primary btn-sm">
@@ -111,14 +164,14 @@ function BookingList() {
                       Loading…
                     </td>
                   </tr>
-                ) : bookings.length === 0 ? (
+                ) : filteredBookings.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center text-muted py-5">
                       No bookings yet.
                     </td>
                   </tr>
                 ) : (
-                  bookings.map((b) => (
+                  filteredBookings.map((b) => (
                     <tr key={b.id}>
                       <td className="fw-semibold">{b.id}</td>
                       <td>{b.resourceName}</td>

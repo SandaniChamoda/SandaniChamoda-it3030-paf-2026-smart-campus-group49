@@ -24,7 +24,7 @@ function BookingAdmin() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchBookings();
+    fetchBookings(resourceName, statusFilter);
   }, []);
 
   const filteredBookings = useMemo(() => {
@@ -38,12 +38,23 @@ function BookingAdmin() {
     });
   }, [allBookings, resourceName, statusFilter]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (resource, status) => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await API.get("/bookings");
+      const params = {};
+      const trimmed = (resource ?? "").trim();
+
+      if (trimmed) {
+        params.resourceName = trimmed;
+      }
+
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      const response = await API.get("/bookings", { params });
       setAllBookings(response.data);
     } catch (e) {
       console.error("Error fetching bookings", e);
@@ -61,7 +72,7 @@ function BookingAdmin() {
     if (!confirmAction) return;
 
     await API.put(`/bookings/${id}/approve`);
-    fetchBookings();
+    fetchBookings(resourceName, statusFilter);
   };
 
   const rejectBooking = async (id) => {
@@ -80,7 +91,7 @@ function BookingAdmin() {
 
     try {
       await API.put(`/bookings/${id}/reject`, { reason });
-      fetchBookings();
+      fetchBookings(resourceName, statusFilter);
     } catch (e) {
       console.error(e);
       alert("Error rejecting booking");
@@ -95,7 +106,7 @@ function BookingAdmin() {
     if (!confirmAction) return;
 
     await API.put(`/bookings/${id}/cancel`);
-    fetchBookings();
+    fetchBookings(resourceName, statusFilter);
   };
 
   return (
@@ -132,7 +143,10 @@ function BookingAdmin() {
               <option value="CANCELLED">Cancelled</option>
             </select>
 
-            <button className="btn btn-outline-primary" onClick={fetchBookings}>
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => fetchBookings(resourceName, statusFilter)}
+            >
               Refresh
             </button>
           </div>

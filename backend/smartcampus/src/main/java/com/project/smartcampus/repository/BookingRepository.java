@@ -29,7 +29,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             LocalDateTime startTime,
             Long id
     );
-    List<Booking> findByResourceName(String resourceName);
+    List<Booking> findByResourceNameContainingIgnoreCase(String resourceName);
+
+    List<Booking> findByStatus(BookingStatus status);
+
+    List<Booking> findByResourceNameContainingIgnoreCaseAndStatus(
+            String resourceName,
+            BookingStatus status
+    );
 
 List<Booking> findByStartTimeBetween(
         LocalDateTime start,

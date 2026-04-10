@@ -60,6 +60,28 @@ public class BookingService {
         return repository.findAll();
     }
 
+        public List<Booking> getBookingsFiltered(String resourceName, BookingStatus status) {
+                boolean hasResource = resourceName != null && !resourceName.isBlank();
+                boolean hasStatus = status != null;
+
+                if (hasResource && hasStatus) {
+                        return repository.findByResourceNameContainingIgnoreCaseAndStatus(
+                                        resourceName,
+                                        status
+                        );
+                }
+
+                if (hasResource) {
+                        return repository.findByResourceNameContainingIgnoreCase(resourceName);
+                }
+
+                if (hasStatus) {
+                        return repository.findByStatus(status);
+                }
+
+                return repository.findAll();
+        }
+
         public Booking getBookingById(Long id) {
                 return repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -180,7 +202,7 @@ public class BookingService {
 }
 
     public List<Booking> searchByResource(String resourceName) {
-    return repository.findByResourceName(resourceName);
+        return repository.findByResourceNameContainingIgnoreCase(resourceName);
 }
 
 public List<Booking> searchByDateRange(

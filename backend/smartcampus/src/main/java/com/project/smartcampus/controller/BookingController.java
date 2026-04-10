@@ -1,6 +1,7 @@
 package com.project.smartcampus.controller;
 
 import com.project.smartcampus.entity.Booking;
+import com.project.smartcampus.enums.BookingStatus;
 import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.services.BookingService;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +30,10 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<Booking> getAllBookings() {
-        return service.getAllBookings();
+    public List<Booking> getAllBookings(
+            @RequestParam(required = false) String resourceName,
+            @RequestParam(required = false) BookingStatus status) {
+        return service.getBookingsFiltered(resourceName, status);
     }
 
     @GetMapping("/{id}")
