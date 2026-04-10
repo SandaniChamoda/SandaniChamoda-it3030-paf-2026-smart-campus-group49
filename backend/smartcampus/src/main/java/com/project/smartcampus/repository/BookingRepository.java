@@ -1,14 +1,23 @@
 package com.project.smartcampus.repository;
 
 import com.project.smartcampus.entity.Booking;
+import com.project.smartcampus.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.Collection;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByResourceNameAndStartTimeLessThanAndEndTimeGreaterThan(
             String resourceName,
+            LocalDateTime endTime,
+            LocalDateTime startTime
+    );
+
+    List<Booking> findByResourceNameAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
+            String resourceName,
+            Collection<BookingStatus> statuses,
             LocalDateTime endTime,
             LocalDateTime startTime
     );

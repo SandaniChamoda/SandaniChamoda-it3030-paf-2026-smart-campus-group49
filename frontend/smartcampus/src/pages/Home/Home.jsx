@@ -1,85 +1,89 @@
-import './Home.css';
+﻿import "./Home.css";
+import { Link } from "react-router-dom";
 
 function Home() {
+  const highlights = [
+    {
+      title: "Conflict-free booking",
+      desc: "Automatic time-slot validation keeps resource schedules clean.",
+    },
+    {
+      title: "Clear request workflow",
+      desc: "Track bookings through pending, approved, rejected, and cancelled stages.",
+    },
+    {
+      title: "Fast admin controls",
+      desc: "Review, approve, and manage requests from one panel.",
+    },
+  ];
+
+  const quickActions = [
+    { to: "/create", title: "Create a booking", desc: "Request a new resource slot." },
+    { to: "/bookings", title: "View bookings", desc: "Check status and planned sessions." },
+    { to: "/admin/bookings", title: "Manage requests", desc: "Admin review and status updates." },
+  ];
+
   return (
-    <div className="home-container">
-      {/* Hero Section */}
-      <section className="hero-section">
+    <div className="home-shell">
+      <section className="hero-block sc-container">
         <div className="hero-content">
-          <h1 className="hero-title">Smart Campus Booking System</h1>
-          <p className="hero-subtitle">Streamline your campus resource bookings with our modern and intuitive platform</p>
+          <p className="hero-kicker">Smart Campus Platform</p>
+          <h1 className="hero-title">Simple booking operations for a modern campus.</h1>
+          <p className="hero-subtitle">
+            Manage resource reservations with a clean experience designed for students,
+            staff, and admins.
+          </p>
 
-          <div className="cta-buttons">
-            <a href="/create" className="btn btn-primary btn-lg">
-              <span className="btn-icon">+</span>
-              Create Booking
-            </a>
-            <a href="/bookings" className="btn btn-secondary btn-lg">
-              <span className="btn-icon">📋</span>
-              View Bookings
-            </a>
+          <div className="hero-buttons">
+            <Link to="/create" className="btn btn-primary">
+              Start a booking
+            </Link>
+            <Link to="/bookings" className="btn btn-outline-primary">
+              See all bookings
+            </Link>
+          </div>
+
+          <div className="hero-metrics">
+            <article>
+              <h3>100%</h3>
+              <p>Centralized booking visibility</p>
+            </article>
+            <article>
+              <h3>24/7</h3>
+              <p>Self-service request creation</p>
+            </article>
+            <article>
+              <h3>3-step</h3>
+              <p>Approval and status workflow</p>
+            </article>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="features-section">
-        <h2 className="section-title">Why Choose Our System</h2>
+      <section className="quick-actions sc-container">
+        <header className="section-head">
+          <h2>Quick Actions</h2>
+          <p>Move through common tasks with one click.</p>
+        </header>
 
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">⚡</div>
-            <h3>Quick & Easy</h3>
-            <p>Book resources in just a few clicks with our streamlined interface</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">📅</div>
-            <h3>Smart Scheduling</h3>
-            <p>Intelligent scheduling system to avoid conflicts and maximize availability</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">🔒</div>
-            <h3>Secure & Reliable</h3>
-            <p>Enterprise-grade security ensures your data is always protected</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">👥</div>
-            <h3>Admin Control</h3>
-            <p>Comprehensive admin dashboard for complete resource management</p>
-          </div>
+        <div className="action-grid">
+          {quickActions.map((action) => (
+            <Link key={action.to} to={action.to} className="action-card">
+              <h3>{action.title}</h3>
+              <p>{action.desc}</p>
+              <span>Open</span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="how-it-works">
-        <h2 className="section-title">How It Works</h2>
-
-        <div className="steps-container">
-          <div className="step">
-            <div className="step-number">1</div>
-            <h4>Browse</h4>
-            <p>Explore available resources and their schedules</p>
-          </div>
-
-          <div className="step-arrow">→</div>
-
-          <div className="step">
-            <div className="step-number">2</div>
-            <h4>Select</h4>
-            <p>Choose your preferred date and time slot</p>
-          </div>
-
-          <div className="step-arrow">→</div>
-
-          <div className="step">
-            <div className="step-number">3</div>
-            <h4>Confirm</h4>
-            <p>Complete your booking instantly</p>
-          </div>
-        </div>
+      <section className="feature-strip sc-container">
+        {highlights.map((item) => (
+          <article key={item.title} className="feature-item">
+            <h3>{item.title}</h3>
+            <p>{item.desc}</p>
+          </article>
+        ))}
       </section>
     </div>
   );

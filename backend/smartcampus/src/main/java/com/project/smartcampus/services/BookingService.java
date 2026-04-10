@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 //import com.project.smartcampus.exception.BookingConflictException;
 
 import java.util.List;
+import java.util.EnumSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -16,6 +17,8 @@ import java.time.LocalDateTime;
 public class BookingService {
 
     private final BookingRepository repository;
+    private static final EnumSet<BookingStatus> ACTIVE_CONFLICT_STATUSES =
+            EnumSet.of(BookingStatus.PENDING, BookingStatus.APPROVED);
 
     public BookingService(BookingRepository repository) {
         this.repository = repository;
@@ -36,8 +39,9 @@ public class BookingService {
     }
 
     List<Booking> conflicts =
-            repository.findByResourceNameAndStartTimeLessThanAndEndTimeGreaterThan(
+            repository.findByResourceNameAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
                     booking.getResourceName(),
+                    ACTIVE_CONFLICT_STATUSES,
                     booking.getEndTime(),
                     booking.getStartTime()
             );
@@ -61,7 +65,14 @@ public class BookingService {
         Booking booking = repository.findById(id)
                 .orElseThrow();
 
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BookingConflictException(
+                    "Only PENDING bookings can be approved"
+            );
+        }
+
         booking.setStatus(BookingStatus.APPROVED);
+        booking.setRejectionReason(null);
 
         return repository.save(booking);
     }
@@ -70,6 +81,12 @@ public class BookingService {
 
     Booking booking = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+    if (booking.getStatus() != BookingStatus.PENDING) {
+        throw new BookingConflictException(
+                "Only PENDING bookings can be rejected"
+        );
+    }
 
     booking.setStatus(BookingStatus.REJECTED);
 
@@ -82,6 +99,12 @@ public class BookingService {
 
     Booking booking = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+    if (booking.getStatus() != BookingStatus.APPROVED) {
+        throw new BookingConflictException(
+                "Only APPROVED bookings can be cancelled"
+        );
+    }
 
     booking.setStatus(BookingStatus.CANCELLED);
 
@@ -136,8 +159,9 @@ public boolean checkAvailability(
     }
 
     List<Booking> conflicts =
-            repository.findByResourceNameAndStartTimeLessThanAndEndTimeGreaterThan(
+            repository.findByResourceNameAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
                     resourceName,
+                    ACTIVE_CONFLICT_STATUSES,
                     end,
                     start
             );

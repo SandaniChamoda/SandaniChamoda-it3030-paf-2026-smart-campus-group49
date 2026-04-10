@@ -1,6 +1,7 @@
 package com.project.smartcampus.controller;
 
 import com.project.smartcampus.entity.Booking;
+import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.services.BookingService;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,13 +48,13 @@ public class BookingController {
         Object reasonObj = request.get("reason");
 
         if (reasonObj == null) {
-            throw new RuntimeException("Rejection reason is required");
+            throw new BookingConflictException("Rejection reason is required");
         }
 
         String reason = reasonObj.toString();
 
         if (reason.isBlank()) {
-            throw new RuntimeException("Rejection reason cannot be empty");
+            throw new BookingConflictException("Rejection reason cannot be empty");
         }
 
         return service.rejectBooking(id, reason);
