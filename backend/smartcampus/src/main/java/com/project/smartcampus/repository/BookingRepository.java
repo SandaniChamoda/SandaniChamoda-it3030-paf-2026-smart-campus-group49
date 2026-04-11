@@ -6,9 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.util.Collection;
-
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-
     List<Booking> findByResourceNameAndStartTimeLessThanAndEndTimeGreaterThan(
             String resourceName,
             LocalDateTime endTime,

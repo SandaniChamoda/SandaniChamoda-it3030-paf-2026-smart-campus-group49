@@ -84,6 +84,29 @@ function BookingList() {
     }
   };
 
+  const buildQrUrl = (qrCode) => {
+    const value = (qrCode ?? "").trim();
+    if (!value) return "";
+
+    if (/^https?:\/\//i.test(value)) {
+      return value;
+    }
+
+    const apiBase = (API.defaults.baseURL ?? "").replace(/\/api\/?$/, "");
+    return `${apiBase}/${value.replace(/^\/+/, "")}`;
+  };
+
+  const handleViewQr = (qrCode) => {
+    const qrUrl = buildQrUrl(qrCode);
+
+    if (!qrUrl) {
+      setError("QR is not available for this booking yet.");
+      return;
+    }
+
+    window.open(qrUrl, "_blank", "noopener,noreferrer");
+  };
+
   const filteredBookings = useMemo(() => {
     const search = (resourceName ?? "").trim().toLowerCase();
 
@@ -153,7 +176,7 @@ function BookingList() {
                   <th style={{ width: 200 }}>Start</th>
                   <th style={{ width: 200 }}>End</th>
                   <th style={{ width: 140 }}>Status</th>
-                  <th style={{ width: 160 }}>Actions</th>
+                  <th style={{ width: 230 }}>Actions</th>
                 </tr>
               </thead>
 
@@ -206,13 +229,22 @@ function BookingList() {
                             </button>
                           </div>
                         ) : b.status === "APPROVED" ? (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleCancel(b.id)}
-                          >
-                            Cancel
-                          </button>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleViewQr(b.qrCode)}
+                            >
+                              View QR
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleCancel(b.id)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-muted small">No actions</span>
                         )}

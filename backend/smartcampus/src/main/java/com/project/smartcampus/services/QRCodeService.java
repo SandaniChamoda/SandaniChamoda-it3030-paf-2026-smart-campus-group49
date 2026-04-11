@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -18,8 +19,8 @@ public class QRCodeService {
         try {
 
             String data =
-                "http://localhost:8086/api/bookings/checkin/"
-                + bookingId;
+    "http://192.168.8.102:5173/verify/"
+    + bookingId;
 
             QRCodeWriter writer = new QRCodeWriter();
 
@@ -31,8 +32,19 @@ public class QRCodeService {
                     200
                 );
 
-            Path path =
+            Path outputDir =
                 Paths.get(
+                    "src",
+                    "main",
+                    "resources",
+                    "static",
+                    "qr"
+                );
+
+            Files.createDirectories(outputDir);
+
+            Path path =
+                outputDir.resolve(
                     "qr_" + bookingId + ".png"
                 );
 
@@ -42,7 +54,7 @@ public class QRCodeService {
                 path
             );
 
-            return path.toString();
+            return "qr/qr_" + bookingId + ".png";
 
         } catch (Exception e) {
 

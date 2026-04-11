@@ -33,7 +33,6 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
           <Route path="/admin/bookings" element={<BookingAdmin />} />
-
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
