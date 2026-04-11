@@ -1,6 +1,6 @@
 package com.project.smartcampus.controller;
 
-import com.project.smartcampus.entity.Resource;
+import com.project.smartcampus.dto.ResourceDTO;
 import com.project.smartcampus.enums.ResourceType;
 import com.project.smartcampus.services.ResourceService;
 
@@ -26,33 +26,33 @@ public class ResourceController {
     private ResourceService service;
 
     @GetMapping
-    public List<Resource> getAll() {
+    public List<ResourceDTO> getAll() {
         return service.getAll();
     }
 
     @PostMapping
-    public Resource create(@Valid @RequestBody Resource r) {
-    return service.create(r);
+    public ResourceDTO create(@Valid @RequestBody ResourceDTO dto) {
+    return service.create(dto);
     }
 
     @GetMapping("/{id}")
-    public Resource getById(@PathVariable Long id) {
+    public ResourceDTO getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
     @GetMapping("/type/{type}")
-    public List<Resource> getByType(@PathVariable ResourceType type) {
+    public List<ResourceDTO> getByType(@PathVariable ResourceType type) {
         return service.getByType(type);
     }
 
     @GetMapping("/location/{location}")
-    public List<Resource> getByLocation(@PathVariable String location) {
+    public List<ResourceDTO> getByLocation(@PathVariable String location) {
         return service.getByLocation(location);
     }
 
     @PutMapping("/{id}")
-    public Resource update(@PathVariable Long id, @Valid @RequestBody Resource r) {
-        return service.update(id, r);
+    public ResourceDTO update(@PathVariable Long id, @Valid @RequestBody ResourceDTO dto) {
+        return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
