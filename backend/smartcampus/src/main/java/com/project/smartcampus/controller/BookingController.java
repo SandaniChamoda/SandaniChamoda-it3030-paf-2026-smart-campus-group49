@@ -4,6 +4,9 @@ import com.project.smartcampus.entity.Booking;
 import com.project.smartcampus.enums.BookingStatus;
 import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.services.BookingService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -18,6 +21,8 @@ import java.util.Map;
 
 public class BookingController {
 
+    @Autowired
+    private BookingService bookingService;
     private final BookingService service;
 
     public BookingController(BookingService service) {
@@ -123,6 +128,15 @@ public class BookingController {
         response.put("available", available);
 
         return response;
+    }
+
+    @PutMapping("/checkin/{id}")
+    public ResponseEntity<Booking> checkInBooking(
+            @PathVariable Long id) {
+
+        Booking booking = bookingService.checkIn(id);
+
+        return ResponseEntity.ok(booking);
     }
 
 }
