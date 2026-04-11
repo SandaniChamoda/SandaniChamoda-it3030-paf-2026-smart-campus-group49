@@ -3,6 +3,7 @@ package com.project.smartcampus.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -33,10 +34,15 @@ public class GlobalExceptionHandler {
     }
 
     //sandani
-     @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(
             RuntimeException ex
     ) {
+        // Let Spring Security handle AccessDeniedException (returns 403)
+        if (ex instanceof AccessDeniedException) {
+            throw (AccessDeniedException) ex;
+        }
+
         Map<String, Object> response = new HashMap<>();
 
         response.put("timestamp", LocalDateTime.now());
