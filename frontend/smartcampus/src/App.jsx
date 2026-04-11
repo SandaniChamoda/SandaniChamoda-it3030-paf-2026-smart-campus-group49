@@ -8,6 +8,8 @@ import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import MockScannerPage from "./pages/Booking/MockScannerPage";
+import MockVerifyPage from "./pages/Booking/MockVerifyPage";
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
           <Route path="/admin/bookings" element={<BookingAdmin />} />
+          <Route path="/scanner-mock" element={<MockScannerPage />} />
+          <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>

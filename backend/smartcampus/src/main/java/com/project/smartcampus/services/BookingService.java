@@ -147,8 +147,7 @@ public class BookingService {
                 booking.setRejectionReason(null);
 
                 // Generate QR code
-                String qrPath = qrCodeService.generateQRCode(
-                                booking.getId());
+                String qrPath = qrCodeService.generateQRCode(booking);
 
                 // Save QR path
                 booking.setQrCode(qrPath);
