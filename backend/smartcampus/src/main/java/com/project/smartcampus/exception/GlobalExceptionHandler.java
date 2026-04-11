@@ -32,14 +32,14 @@ public class GlobalExceptionHandler {
         );
     }
 
- feature/dakshika/facilities-catalogue-module
+ 
     @ExceptionHandler(ResourceNotFoundException.class)
     public Map<String, String> handleNotFound(ResourceNotFoundException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
         return error;
     }
-}
+
 
 
     //sandani
@@ -89,14 +89,17 @@ public ResponseEntity<Map<String, Object>> handleValidationException(
     response.put("status", 400);
     response.put("error", "Validation Error");
 
-    String errorMessage = ex.getBindingResult()
-            .getFieldErrors()
-            .get(0)
-            .getDefaultMessage();
+    String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+            .findFirst()
+            .map(fieldError -> fieldError.getDefaultMessage())
+            .orElseGet(() -> ex.getBindingResult().getGlobalErrors().stream()
+                    .findFirst()
+                    .map(globalError -> globalError.getDefaultMessage())
+                    .orElse("Validation failed"));
 
     response.put("message", errorMessage);
 
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 }
 }
- deployment
+
