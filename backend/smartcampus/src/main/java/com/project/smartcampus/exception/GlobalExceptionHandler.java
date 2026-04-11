@@ -32,6 +32,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+ feature/dakshika/facilities-catalogue-module
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public Map<String, String> handleNotFound(ResourceNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return error;
+    }
+}
+
+
     //sandani
      @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(
@@ -89,3 +99,4 @@ public ResponseEntity<Map<String, Object>> handleValidationException(
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 }
 }
+ deployment
