@@ -1,6 +1,12 @@
-﻿import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
+
+const toDatetimeLocal = (value) => {
+  if (!value) return "";
+  if (typeof value === "string" && value.length >= 16) return value.slice(0, 16);
+  return value;
+};
 
 const toDatetimeLocalMin = (date = new Date()) => {
   const pad = (value) => String(value).padStart(2, "0");
@@ -17,8 +23,9 @@ const resolveEndMin = (startTime, minNow) => {
   return startTime > minNow ? startTime : minNow;
 };
 
-function CreateBooking() {
+function UpdateBooking() {
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [booking, setBooking] = useState({
     resourceName: "",
@@ -32,9 +39,10 @@ function CreateBooking() {
     endTime: false,
   });
 
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const [minNow, setMinNow] = useState(() => toDatetimeLocalMin());
-
   const minEnd = resolveEndMin(booking.startTime, minNow);
   const startTimeError =
     !submitting &&
@@ -60,6 +68,33 @@ function CreateBooking() {
       booking.endTime
     );
   }, [booking]);
+
+  useEffect(() => {
+    const fetchBooking = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await API.get(`/bookings/${id}`);
+        const data = response.data;
+
+        setBooking({
+          resourceName: data.resourceName ?? "",
+          purpose: data.purpose ?? "",
+          attendees: data.attendees ?? "",
+          startTime: toDatetimeLocal(data.startTime),
+          endTime: toDatetimeLocal(data.endTime),
+        });
+      } catch (e) {
+        console.error("Error loading booking", e);
+        setError("Couldn't load booking. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooking();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -106,11 +141,12 @@ function CreateBooking() {
     setSubmitting(true);
 
     try {
-      await API.post("/bookings", booking);
-      alert("Booking created successfully");
+      await API.put(`/bookings/${id}`, booking);
+      alert("Booking updated successfully");
       navigate("/bookings");
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating booking");
+    } catch (e) {
+      console.error("Error updating booking", e);
+      alert(e.response?.data?.message || "Error updating booking");
     } finally {
       setSubmitting(false);
     }
@@ -120,13 +156,15 @@ function CreateBooking() {
     <div className="sc-container py-4">
       <div className="sc-card" style={{ maxWidth: 900, margin: "0 auto" }}>
         <div className="sc-card-header">
-          <h2 className="h4 mb-1">Create Booking</h2>
+          <h2 className="h4 mb-1">Update Booking</h2>
           <div className="text-muted small">
-            Fill in the details below to reserve a campus resource.
+            Update your booking details below.
           </div>
         </div>
 
         <div className="sc-card-body">
+          {error ? <div className="alert alert-warning mb-3">{error}</div> : null}
+
           <form onSubmit={handleSubmit} className="row g-3">
             <div className="col-md-8">
               <label className="form-label">Resource Name</label>
@@ -138,6 +176,7 @@ function CreateBooking() {
                 onChange={handleChange}
                 placeholder="e.g., Auditorium A"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -152,6 +191,7 @@ function CreateBooking() {
                 min={1}
                 placeholder="e.g., 30"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -165,6 +205,7 @@ function CreateBooking() {
                 onChange={handleChange}
                 placeholder="e.g., Workshop / Lecture"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -179,6 +220,7 @@ function CreateBooking() {
                 onFocus={() => setMinNow(toDatetimeLocalMin())}
                 min={minNow}
                 required
+                disabled={loading}
               />
               {startTimeError ? (
                 <div className="form-text text-danger">{startTimeError}</div>
@@ -196,6 +238,7 @@ function CreateBooking() {
                 onFocus={() => setMinNow(toDatetimeLocalMin())}
                 min={minEnd}
                 required
+                disabled={loading}
               />
               {endTimeError ? (
                 <div className="form-text text-danger">{endTimeError}</div>
@@ -215,9 +258,9 @@ function CreateBooking() {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={!isValid || submitting}
+                disabled={!isValid || submitting || loading}
               >
-                {submitting ? "Creating…" : "Create Booking"}
+                {submitting ? "Updating..." : "Update Booking"}
               </button>
             </div>
           </form>
@@ -227,4 +270,4 @@ function CreateBooking() {
   );
 }
 
-export default CreateBooking;
+export default UpdateBooking;

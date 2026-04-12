@@ -1,61 +1,48 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+
+import Header from "./components/Header/Header";
 
 import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
+import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import MockScannerPage from "./pages/Booking/MockScannerPage";
+import MockVerifyPage from "./pages/Booking/MockVerifyPage";
 
 function App() {
-
   return (
+    <div className="app-shell">
 
-    <div>
+      {/* Header Component */}
 
-      {/* Navigation Bar */}
-
-      <nav className="navbar navbar-dark bg-dark px-3">
-
-        <Link to="/" className="navbar-brand">
-          Smart Campus
-        </Link>
-
-        <div>
-
-          <Link to="/home" className="btn btn-light me-2">
-            Home
-          </Link>
-
-          <Link to="/bookings" className="btn btn-light">
-            Bookings
-          </Link>
-
-          <Link to="/create" className="btn btn-light ms-2">
-            Create Booking
-          </Link>
-
-          <Link to="/admin" className="btn btn-light ms-2">
-            Admin
-          </Link>
-
-        </div>
-
-      </nav>
+      <Header />
 
       {/* Pages */}
 
-      <Routes>
+      <main className="sc-page">
+        <Routes>
 
-        <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Navigate to="/" replace />} />
 
-        <Route path="/bookings" element={<BookingList />} />
+          <Route path="/bookings" element={<BookingList />} />
 
-        <Route path="/create" element={<CreateBooking />} />
-        <Route path="/admin" element={<BookingAdmin />} />
+          <Route path="/create" element={<CreateBooking />} />
+          <Route path="/bookings/:id/edit" element={<UpdateBooking />} />
 
-      </Routes>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/bookings" element={<BookingAdmin />} />
+          <Route path="/scanner-mock" element={<MockScannerPage />} />
+          <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+        </Routes>
+      </main>
 
     </div>
-
   );
 }
 

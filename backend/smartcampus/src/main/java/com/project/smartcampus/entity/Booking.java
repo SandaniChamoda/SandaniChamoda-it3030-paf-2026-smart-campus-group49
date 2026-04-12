@@ -29,6 +29,10 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
+    private String qrCode;
+
+    private LocalDateTime checkedInTime;
+
     public Booking() {}
 
     public Booking(String resourceName,
@@ -111,5 +115,21 @@ public class Booking {
 
 public void setRejectionReason(String rejectionReason) {
     this.rejectionReason = rejectionReason;
+}
+
+public String getQrCode() {
+    return qrCode;
+}
+
+public void setQrCode(String qrCode) {
+    this.qrCode = qrCode;
+}
+
+public LocalDateTime getCheckedInTime() {
+    return checkedInTime;
+}
+
+public void setCheckedInTime(LocalDateTime checkedInTime) {
+    this.checkedInTime = checkedInTime;
 }
 }
