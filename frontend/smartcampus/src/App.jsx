@@ -4,6 +4,7 @@ import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
+import ResourcePage from "./pages/Resource/ResourcePage";
 
 function App() {
 
@@ -25,6 +26,10 @@ function App() {
             Home
           </Link>
 
+          <Link to="/resources" className="btn btn-light ms-2">
+          Resources
+          </Link>
+
           <Link to="/bookings" className="btn btn-light">
             Bookings
           </Link>
@@ -44,6 +49,7 @@ function App() {
       {/* Pages */}
 
       <Routes>
+        <Route path="/resources" element={<ResourcePage />} />
 
         <Route path="/home" element={<Home />} />
 
