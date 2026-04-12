@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
@@ -15,6 +15,18 @@ const toDatetimeLocalMin = (date = new Date()) => {
 const resolveEndMin = (startTime, minNow) => {
   if (!startTime) return minNow;
   return startTime > minNow ? startTime : minNow;
+};
+
+const getResourceApiCandidates = () => {
+  const baseURL = (API?.defaults?.baseURL ?? "").replace(/\/+$/, "");
+  const nonApiBase = baseURL.replace(/\/api$/i, "");
+  const candidates = ["/resources"];
+
+  if (nonApiBase) {
+    candidates.push(`${nonApiBase}/resources`);
+  }
+
+  return [...new Set(candidates)];
 };
 
 function CreateBooking() {
@@ -34,6 +46,9 @@ function CreateBooking() {
 
   const [submitting, setSubmitting] = useState(false);
   const [minNow, setMinNow] = useState(() => toDatetimeLocalMin());
+  const [resourceOptions, setResourceOptions] = useState([]);
+  const [resourceLoading, setResourceLoading] = useState(true);
+  const [resourceError, setResourceError] = useState("");
 
   const minEnd = resolveEndMin(booking.startTime, minNow);
   const startTimeError =
@@ -56,14 +71,66 @@ function CreateBooking() {
       booking.resourceName.trim() &&
       booking.purpose.trim() &&
       booking.attendees !== "" &&
+      Number(booking.attendees) > 0 &&
       booking.startTime &&
       booking.endTime
     );
   }, [booking]);
 
+  useEffect(() => {
+    const fetchResources = async () => {
+      setResourceLoading(true);
+      setResourceError("");
+
+      const endpoints = getResourceApiCandidates();
+      let resourceList = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await API.get(endpoint);
+          if (Array.isArray(response.data)) {
+            resourceList = response.data;
+            break;
+          }
+        } catch {
+          // Try next endpoint candidate.
+        }
+      }
+
+      if (!resourceList) {
+        setResourceOptions([]);
+        setResourceError("Couldn't load resources. Please try again.");
+        setResourceLoading(false);
+        return;
+      }
+
+      const names = resourceList
+        .map((resource) => (resource?.name ?? "").trim())
+        .filter(Boolean);
+
+      const uniqueNames = [...new Set(names)].sort((a, b) =>
+        a.localeCompare(b),
+      );
+
+      setResourceOptions(uniqueNames);
+      setResourceLoading(false);
+    };
+
+    fetchResources();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     const minNowValue = toDatetimeLocalMin();
+
+    if (name === "attendees") {
+      const digitsOnly = value.replace(/[^\d]/g, "");
+      setBooking((prev) => ({
+        ...prev,
+        attendees: digitsOnly,
+      }));
+      return;
+    }
 
     if (name === "startTime") {
       const safeStart = value && value < minNowValue ? minNowValue : value;
@@ -106,7 +173,11 @@ function CreateBooking() {
     setSubmitting(true);
 
     try {
-      await API.post("/bookings", booking);
+      const payload = {
+        ...booking,
+        attendees: Number(booking.attendees),
+      };
+      await API.post("/bookings", payload);
       alert("Booking created successfully");
       navigate("/bookings");
     } catch (error) {
@@ -130,15 +201,26 @@ function CreateBooking() {
           <form onSubmit={handleSubmit} className="row g-3">
             <div className="col-md-8">
               <label className="form-label">Resource Name</label>
-              <input
-                type="text"
+              <select
                 className="form-control"
                 name="resourceName"
                 value={booking.resourceName}
                 onChange={handleChange}
-                placeholder="e.g., Auditorium A"
                 required
-              />
+                disabled={resourceLoading || submitting}
+              >
+                <option value="">
+                  {resourceLoading ? "Loading resources..." : "Select a resource"}
+                </option>
+                {resourceOptions.map((resourceName) => (
+                  <option key={resourceName} value={resourceName}>
+                    {resourceName}
+                  </option>
+                ))}
+              </select>
+              {resourceError ? (
+                <div className="form-text text-danger">{resourceError}</div>
+              ) : null}
             </div>
 
             <div className="col-md-4">
@@ -150,6 +232,8 @@ function CreateBooking() {
                 value={booking.attendees}
                 onChange={handleChange}
                 min={1}
+                step={1}
+                inputMode="numeric"
                 placeholder="e.g., 30"
                 required
               />
@@ -217,7 +301,7 @@ function CreateBooking() {
                 className="btn btn-primary"
                 disabled={!isValid || submitting}
               >
-                {submitting ? "Creating…" : "Create Booking"}
+                {submitting ? "Creating..." : "Create Booking"}
               </button>
             </div>
           </form>

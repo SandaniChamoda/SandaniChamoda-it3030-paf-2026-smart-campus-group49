@@ -16,16 +16,44 @@ const getStatusBadgeClass = (status) => {
   }
 };
 
+const getResourceApiCandidates = () => {
+  const baseURL = (API?.defaults?.baseURL ?? "").replace(/\/+$/, "");
+  const nonApiBase = baseURL.replace(/\/api$/i, "");
+  const candidates = ["/resources"];
+
+  if (nonApiBase) {
+    candidates.push(`${nonApiBase}/resources`);
+  }
+
+  return [...new Set(candidates)];
+};
+
+const normalizeName = (value) => (value ?? "").trim().toLowerCase();
+
 function BookingAdmin() {
   const [resourceName, setResourceName] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [allBookings, setAllBookings] = useState([]);
+  const [resourceCapacityMap, setResourceCapacityMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [resourceError, setResourceError] = useState("");
 
   useEffect(() => {
     fetchBookings(resourceName, statusFilter);
+    fetchResources();
   }, []);
+
+  const getCapacity = (name) => {
+    const key = normalizeName(name);
+    return resourceCapacityMap[key] ?? null;
+  };
+
+  const exceedsCapacity = (booking) => {
+    const cap = getCapacity(booking?.resourceName);
+    if (cap == null) return false;
+    return Number(booking?.attendees) > Number(cap);
+  };
 
   const filteredBookings = useMemo(() => {
     const search = (resourceName ?? "").trim().toLowerCase();
@@ -37,6 +65,38 @@ function BookingAdmin() {
       return statusOk && searchOk;
     });
   }, [allBookings, resourceName, statusFilter]);
+
+  const fetchResources = async () => {
+    setResourceError("");
+
+    const endpoints = getResourceApiCandidates();
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await API.get(endpoint);
+
+        if (!Array.isArray(response.data)) {
+          continue;
+        }
+
+        const map = {};
+
+        response.data.forEach((resource) => {
+          const key = normalizeName(resource?.name);
+          if (!key) return;
+          map[key] = resource?.capacity ?? null;
+        });
+
+        setResourceCapacityMap(map);
+        return;
+      } catch {
+        // Try next endpoint candidate.
+      }
+    }
+
+    setResourceCapacityMap({});
+    setResourceError("Couldn't load resource capacities.");
+  };
 
   const fetchBookings = async (resource, status) => {
     setLoading(true);
@@ -75,8 +135,8 @@ function BookingAdmin() {
     fetchBookings(resourceName, statusFilter);
   };
 
-  const rejectBooking = async (id) => {
-    const reason = prompt("Enter rejection reason:");
+  const rejectBooking = async (id, presetReason = "") => {
+    const reason = presetReason || prompt("Enter rejection reason:");
 
     if (!reason) {
       alert("Reason is required");
@@ -145,7 +205,10 @@ function BookingAdmin() {
 
             <button
               className="btn btn-outline-primary"
-              onClick={() => fetchBookings(resourceName, statusFilter)}
+              onClick={() => {
+                fetchBookings(resourceName, statusFilter);
+                fetchResources();
+              }}
             >
               Refresh
             </button>
@@ -154,6 +217,7 @@ function BookingAdmin() {
 
         <div className="sc-card-body">
           {error ? <div className="alert alert-warning mb-3">{error}</div> : null}
+          {resourceError ? <div className="alert alert-warning mb-3">{resourceError}</div> : null}
 
           <div className="table-responsive border rounded-4 overflow-hidden">
             <table className="table table-hover align-middle mb-0">
@@ -162,11 +226,11 @@ function BookingAdmin() {
                   <th style={{ width: 80 }}>ID</th>
                   <th>Resource</th>
                   <th>Purpose</th>
-                  <th style={{ width: 120 }}>Attendees</th>
+                  <th style={{ width: 220 }}>Attendees / Capacity</th>
                   <th style={{ width: 200 }}>Start</th>
                   <th style={{ width: 200 }}>End</th>
                   <th style={{ width: 140 }}>Status</th>
-                  <th style={{ width: 220 }}>Actions</th>
+                  <th style={{ width: 280 }}>Actions</th>
                   <th>Reason</th>
                 </tr>
               </thead>
@@ -175,7 +239,7 @@ function BookingAdmin() {
                 {loading ? (
                   <tr>
                     <td colSpan={9} className="text-center text-muted py-5">
-                      Loading…
+                      Loading...
                     </td>
                   </tr>
                 ) : filteredBookings.length === 0 ? (
@@ -185,54 +249,82 @@ function BookingAdmin() {
                     </td>
                   </tr>
                 ) : (
-                  filteredBookings.map((b) => (
-                    <tr key={b.id}>
-                      <td className="fw-semibold">{b.id}</td>
-                      <td>{b.resourceName}</td>
-                      <td className="text-muted">{b.purpose}</td>
-                      <td>{b.attendees}</td>
-                      <td className="text-muted small">{b.startTime}</td>
-                      <td className="text-muted small">{b.endTime}</td>
-                      <td>
-                        <span
-                          className={`badge rounded-pill ${getStatusBadgeClass(
-                            b.status,
-                          )}`}
-                        >
-                          {b.status}
-                        </span>
-                      </td>
-                      <td>
-                        {b.status === "PENDING" ? (
-                          <div className="d-flex gap-2 flex-wrap">
-                            <button
-                              className="btn btn-success btn-sm"
-                              onClick={() => approveBooking(b.id)}
-                            >
-                              Approve
-                            </button>
+                  filteredBookings.map((b) => {
+                    const capacity = getCapacity(b.resourceName);
+                    const overLimit = exceedsCapacity(b);
 
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => rejectBooking(b.id)}
-                            >
-                              Reject
-                            </button>
+                    return (
+                      <tr key={b.id}>
+                        <td className="fw-semibold">{b.id}</td>
+                        <td>{b.resourceName}</td>
+                        <td className="text-muted">{b.purpose}</td>
+                        <td>
+                          <div className="d-flex flex-column gap-1">
+                            <span>
+                              {b.attendees}
+                              {capacity != null ? ` / ${capacity}` : " / N/A"}
+                            </span>
+                            {overLimit ? (
+                              <span className="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle align-self-start">
+                                Attendees limit exceeded
+                              </span>
+                            ) : null}
                           </div>
-                        ) : b.status === "APPROVED" ? (
-                          <button
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => cancelBooking(b.id)}
+                        </td>
+                        <td className="text-muted small">{b.startTime}</td>
+                        <td className="text-muted small">{b.endTime}</td>
+                        <td>
+                          <span
+                            className={`badge rounded-pill ${getStatusBadgeClass(
+                              b.status,
+                            )}`}
                           >
-                            Cancel
-                          </button>
-                        ) : (
-                          <span className="text-muted small">No actions</span>
-                        )}
-                      </td>
-                      <td className="text-muted small">{b.rejectionReason}</td>
-                    </tr>
-                  ))
+                            {b.status}
+                          </span>
+                        </td>
+                        <td>
+                          {b.status === "PENDING" ? (
+                            <div className="d-flex gap-2 flex-wrap">
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => approveBooking(b.id)}
+                              >
+                                Approve
+                              </button>
+
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => rejectBooking(b.id)}
+                              >
+                                Reject
+                              </button>
+
+                              {overLimit ? (
+                                <button
+                                  className="btn btn-outline-danger btn-sm"
+                                  onClick={() =>
+                                    rejectBooking(b.id, "attendees limit exceed")
+                                  }
+                                >
+                                  Reject Limit
+                                </button>
+                              ) : null}
+                            </div>
+                          ) : b.status === "APPROVED" ? (
+                            <button
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => cancelBooking(b.id)}
+                            >
+                              Cancel
+                            </button>
+                          ) : (
+                            <span className="text-muted small">No actions</span>
+                          )}
+                        </td>
+                        <td className="text-muted small">{b.rejectionReason}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
