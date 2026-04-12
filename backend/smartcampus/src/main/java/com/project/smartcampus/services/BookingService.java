@@ -303,6 +303,7 @@ public class BookingService {
                 Booking booking = new Booking();
                 booking.setResourceName(request.getResourceName());
                 booking.setPurpose(request.getPurpose());
+                booking.setBookedBy(request.getBookedBy());
                 booking.setAttendees(request.getAttendees());
                 booking.setStartTime(request.getStartTime());
                 booking.setEndTime(request.getEndTime());
@@ -314,6 +315,7 @@ public class BookingService {
                 response.setId(booking.getId());
                 response.setResourceName(booking.getResourceName());
                 response.setPurpose(booking.getPurpose());
+                response.setBookedBy(booking.getBookedBy());
                 response.setAttendees(booking.getAttendees());
                 response.setStartTime(booking.getStartTime());
                 response.setEndTime(booking.getEndTime());

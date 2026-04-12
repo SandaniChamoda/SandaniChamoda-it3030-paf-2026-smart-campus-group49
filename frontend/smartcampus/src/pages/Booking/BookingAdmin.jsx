@@ -225,6 +225,7 @@ function BookingAdmin() {
                 <tr>
                   <th style={{ width: 80 }}>ID</th>
                   <th>Resource</th>
+                  <th>Booked By</th>
                   <th>Purpose</th>
                   <th style={{ width: 220 }}>Attendees / Capacity</th>
                   <th style={{ width: 200 }}>Start</th>
@@ -238,13 +239,13 @@ function BookingAdmin() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="text-center text-muted py-5">
+                    <td colSpan={10} className="text-center text-muted py-5">
                       Loading...
                     </td>
                   </tr>
                 ) : filteredBookings.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center text-muted py-5">
+                    <td colSpan={10} className="text-center text-muted py-5">
                       No matching results.
                     </td>
                   </tr>
@@ -257,6 +258,7 @@ function BookingAdmin() {
                       <tr key={b.id}>
                         <td className="fw-semibold">{b.id}</td>
                         <td>{b.resourceName}</td>
+                        <td className="text-muted">{b.bookedBy || "-"}</td>
                         <td className="text-muted">{b.purpose}</td>
                         <td>
                           <div className="d-flex flex-column gap-1">

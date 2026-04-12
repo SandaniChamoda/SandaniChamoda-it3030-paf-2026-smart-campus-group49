@@ -175,7 +175,7 @@ function BookingCalendar() {
                       </div>
                       <div className="event-title">{booking.resourceName}</div>
                       <div className="event-subtitle">
-                        {booking.purpose || "Campus booking"}
+                        {booking.purpose || "Campus booking"} - {booking.bookedBy || "N/A"}
                       </div>
                     </button>
                   ))
@@ -236,6 +236,8 @@ function BookingCalendar() {
                             <span className="event-tooltip">
                               {booking.resourceName} - {booking.purpose || "Booking"}
                               <br />
+                              Booked by: {booking.bookedBy || "N/A"}
+                              <br />
                               {formatTime(booking.start)} - {formatTime(booking.end)}
                             </span>
                           </button>
@@ -274,6 +276,10 @@ function BookingCalendar() {
               <div className="detail-row">
                 <span className="detail-label">Purpose</span>
                 <span>{activeBooking.purpose}</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Booked By</span>
+                <span>{activeBooking.bookedBy || "N/A"}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">Attendees</span>

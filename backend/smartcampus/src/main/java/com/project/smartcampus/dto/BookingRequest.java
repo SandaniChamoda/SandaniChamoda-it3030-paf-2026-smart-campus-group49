@@ -14,6 +14,9 @@ public class BookingRequest {
     @NotBlank(message = "Purpose is required")
     private String purpose;
 
+    @NotBlank(message = "Booked by is required")
+    private String bookedBy;
+
     @Positive(message = "Attendees must be greater than 0")
     private int attendees;
 
@@ -40,6 +43,14 @@ public class BookingRequest {
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
+    }
+
+    public String getBookedBy() {
+        return bookedBy;
+    }
+
+    public void setBookedBy(String bookedBy) {
+        this.bookedBy = bookedBy;
     }
 
     public int getAttendees() {

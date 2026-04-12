@@ -18,6 +18,8 @@ public class Booking {
 
     private String purpose;
 
+    private String bookedBy;
+
     private int attendees;
 
     private LocalDateTime startTime;
@@ -75,6 +77,14 @@ public class Booking {
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
+    }
+
+    public String getBookedBy() {
+        return bookedBy;
+    }
+
+    public void setBookedBy(String bookedBy) {
+        this.bookedBy = bookedBy;
     }
 
     public int getAttendees() {

@@ -42,6 +42,7 @@ function UpdateBooking() {
   const [booking, setBooking] = useState({
     resourceName: "",
     purpose: "",
+    bookedBy: "",
     attendees: "",
     startTime: "",
     endTime: "",
@@ -79,6 +80,7 @@ function UpdateBooking() {
     return (
       booking.resourceName.trim() &&
       booking.purpose.trim() &&
+      booking.bookedBy.trim() &&
       booking.attendees !== "" &&
       Number(booking.attendees) > 0 &&
       booking.startTime &&
@@ -109,6 +111,7 @@ function UpdateBooking() {
         setBooking({
           resourceName: data.resourceName ?? "",
           purpose: data.purpose ?? "",
+          bookedBy: data.bookedBy ?? "",
           attendees: data.attendees ?? "",
           startTime: toDatetimeLocal(data.startTime),
           endTime: toDatetimeLocal(data.endTime),
@@ -271,6 +274,20 @@ function UpdateBooking() {
               {resourceError ? (
                 <div className="form-text text-danger">{resourceError}</div>
               ) : null}
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Booked By (Name)</label>
+              <input
+                type="text"
+                className="form-control"
+                name="bookedBy"
+                value={booking.bookedBy}
+                onChange={handleChange}
+                placeholder="e.g., Nuwan Perera"
+                required
+                disabled={loading}
+              />
             </div>
 
             <div className="col-md-4">

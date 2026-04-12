@@ -9,6 +9,7 @@ public class BookingResponse {
     private Long id;
     private String resourceName;
     private String purpose;
+    private String bookedBy;
     private int attendees;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -42,6 +43,14 @@ public class BookingResponse {
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
+    }
+
+    public String getBookedBy() {
+        return bookedBy;
+    }
+
+    public void setBookedBy(String bookedBy) {
+        this.bookedBy = bookedBy;
     }
 
     public int getAttendees() {

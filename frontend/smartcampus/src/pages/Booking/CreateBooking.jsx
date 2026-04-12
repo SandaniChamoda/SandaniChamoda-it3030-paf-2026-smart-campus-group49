@@ -35,6 +35,7 @@ function CreateBooking() {
   const [booking, setBooking] = useState({
     resourceName: "",
     purpose: "",
+    bookedBy: "",
     attendees: "",
     startTime: "",
     endTime: "",
@@ -70,6 +71,7 @@ function CreateBooking() {
     return (
       booking.resourceName.trim() &&
       booking.purpose.trim() &&
+      booking.bookedBy.trim() &&
       booking.attendees !== "" &&
       Number(booking.attendees) > 0 &&
       booking.startTime &&
@@ -221,6 +223,19 @@ function CreateBooking() {
               {resourceError ? (
                 <div className="form-text text-danger">{resourceError}</div>
               ) : null}
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Booked By (Name)</label>
+              <input
+                type="text"
+                className="form-control"
+                name="bookedBy"
+                value={booking.bookedBy}
+                onChange={handleChange}
+                placeholder="e.g., Nuwan Perera"
+                required
+              />
             </div>
 
             <div className="col-md-4">
