@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 function ResourcePage() {
   const [resources, setResources] = useState([]);
+  const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -24,32 +25,50 @@ function ResourcePage() {
 
   // HANDLE INPUT
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const { name, value } = e.target;
+
+  setForm({
+    ...form,
+    [name]: name === "capacity" ? Number(value) : value,
+  });
+};
 
   // CREATE (POST)
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = (e) => {
+  e.preventDefault();
 
+  if (editingId !== null) {
+    // UPDATE
+    fetch(`http://localhost:8086/resources/${editingId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form),
+    }).then(() => {
+      loadResources();
+      setEditingId(null);
+    });
+  } else {
+    // CREATE
     fetch("http://localhost:8086/resources", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(form),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        loadResources();
-        setForm({
-          name: "",
-          type: "LAB",
-          capacity: "",
-          location: "",
-          status: "ACTIVE",
-        });
-      });
-  };
+    }).then(() => loadResources());
+  }
+
+  // reset form
+  setForm({
+    name: "",
+    type: "LAB",
+    capacity: "",
+    location: "",
+    status: "ACTIVE",
+  });
+};
 
   // DELETE
   const handleDelete = (id) => {
@@ -95,7 +114,9 @@ function ResourcePage() {
           <option value="INACTIVE">INACTIVE</option>
         </select>
 
-        <button type="submit">Add Resource</button>
+        <button type="submit">
+  {editingId !== null ? "Update Resource" : "Add Resource"}
+</button>
       </form>
 
       <hr />
@@ -104,9 +125,25 @@ function ResourcePage() {
       <ul>
         {resources.map((r) => (
           <li key={r.id}>
-            {r.name} | {r.type} | {r.capacity} | {r.location} | {r.status}
-            <button onClick={() => handleDelete(r.id)}>Delete</button>
-          </li>
+  {r.name} | {r.type} | {r.capacity} | {r.location} | {r.status}
+
+  <button onClick={() => handleDelete(r.id)}>Delete</button>
+
+  <button
+    onClick={() => {
+      setForm({
+  name: r.name,
+  type: r.type,
+  capacity: r.capacity,
+  location: r.location,
+  status: r.status,
+});
+      setEditingId(r.id);
+    }}
+  >
+    Edit
+  </button>
+</li>
         ))}
       </ul>
     </div>
