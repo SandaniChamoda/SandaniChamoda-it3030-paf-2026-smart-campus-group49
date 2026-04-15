@@ -13,8 +13,6 @@ public class CreateTicketRequest {
     @NotBlank(message = "Description is required")
     private String description;
 
-    private String image;
-
     @NotNull(message = "Category is required")
     private TicketCategory category;
 
@@ -38,16 +36,6 @@ public class CreateTicketRequest {
     public String getDescription() {
         return description;
     }
-
-    
-
-    public String getImage() {
-    return image;
-}
-
-public void setImage(String image) {
-    this.image = image;
-}
 
     public void setDescription(String description) {
         this.description = description;
