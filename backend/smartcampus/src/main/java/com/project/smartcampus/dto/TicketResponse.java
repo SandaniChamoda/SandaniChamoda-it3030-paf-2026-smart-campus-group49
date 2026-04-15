@@ -5,13 +5,14 @@ import com.project.smartcampus.enums.TicketPriority;
 import com.project.smartcampus.enums.TicketStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class TicketResponse {
 
     private Long id;
     private String title;
     private String description;
-    private String image;
+    private List<String> images;
     private TicketCategory category;
     private TicketPriority priority;
     private TicketStatus status;
@@ -32,91 +33,47 @@ public class TicketResponse {
         this.id = id;
     }
 
-    public String getTitle() {
-        return title;
-    }
+    public String getTitle() { return title; }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public void setTitle(String title) { this.title = title; }
 
-    public String getDescription() {
-        return description;
-    }
+    public String getDescription() { return description; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getImage() {
-        return image;
-    }
+    public List<String> getImages() { return images; }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
+    public void setImages(List<String> images) { this.images = images; }
 
-    public TicketCategory getCategory() {
-        return category;
-    }
+    public TicketCategory getCategory() { return category; }
 
-    public void setCategory(TicketCategory category) {
-        this.category = category;
-    }
+    public void setCategory(TicketCategory category) { this.category = category; }
 
-    public TicketPriority getPriority() {
-        return priority;
-    }
+    public TicketPriority getPriority() { return priority; }
 
-    public void setPriority(TicketPriority priority) {
-        this.priority = priority;
-    }
+    public void setPriority(TicketPriority priority) { this.priority = priority; }
 
-    public TicketStatus getStatus() {
-        return status;
-    }
+    public TicketStatus getStatus() { return status; }
 
-    public void setStatus(TicketStatus status) {
-        this.status = status;
-    }
+    public void setStatus(TicketStatus status) { this.status = status; }
 
-    public Long getCreatedBy() {
-        return createdBy;
-    }
+    public Long getCreatedBy() { return createdBy; }
 
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
+    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
-    public Long getAssignedTo() {
-        return assignedTo;
-    }
+    public Long getAssignedTo() { return assignedTo; }
 
-    public void setAssignedTo(Long assignedTo) {
-        this.assignedTo = assignedTo;
-    }
+    public void setAssignedTo(Long assignedTo) { this.assignedTo = assignedTo; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public LocalDateTime getResolvedAt() {
-        return resolvedAt;
-    }
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
 
-    public void setResolvedAt(LocalDateTime resolvedAt) {
-        this.resolvedAt = resolvedAt;
-    }
+    public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
 }

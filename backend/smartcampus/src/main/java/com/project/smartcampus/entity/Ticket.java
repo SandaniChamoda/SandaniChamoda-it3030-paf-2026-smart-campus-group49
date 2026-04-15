@@ -6,6 +6,8 @@ import com.project.smartcampus.enums.TicketStatus;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tickets")
@@ -19,8 +21,10 @@ public class Ticket {
 
     private String description;
 
-    // Image file name (NOT path)
-    private String image;
+    @ElementCollection
+    @CollectionTable(name = "ticket_images", joinColumns = @JoinColumn(name = "ticket_id"))
+    @Column(name = "image_path")
+    private List<String> imagePaths = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private TicketCategory category;
@@ -31,10 +35,8 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private TicketStatus status;
 
-    // Who created ticket (Student ID)
     private Long createdBy;
 
-    // Assigned technician ID
     private Long assignedTo;
 
     private LocalDateTime createdAt;
@@ -43,99 +45,65 @@ public class Ticket {
 
     private LocalDateTime resolvedAt;
 
-    // Constructor
     public Ticket() {
-        this.createdAt = LocalDateTime.now();
-        this.status = TicketStatus.OPEN;
     }
 
-    // Getters & Setters
-
-    public Long getId() {
-        return id;
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    public String getTitle() {
-        return title;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public Long getId() { return id; }
 
-    public String getDescription() {
-        return description;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public String getTitle() { return title; }
 
-    public String getImage() {
-        return image;
-    }
+    public void setTitle(String title) { this.title = title; }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
+    public String getDescription() { return description; }
 
-    public TicketCategory getCategory() {
-        return category;
-    }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setCategory(TicketCategory category) {
-        this.category = category;
-    }
+    public List<String> getImagePaths() { return imagePaths; }
 
-    public TicketPriority getPriority() {
-        return priority;
-    }
+    public void setImagePaths(List<String> imagePaths) { this.imagePaths = imagePaths; }
 
-    public void setPriority(TicketPriority priority) {
-        this.priority = priority;
-    }
+    public TicketCategory getCategory() { return category; }
 
-    public TicketStatus getStatus() {
-        return status;
-    }
+    public void setCategory(TicketCategory category) { this.category = category; }
 
-    public void setStatus(TicketStatus status) {
-        this.status = status;
-    }
+    public TicketPriority getPriority() { return priority; }
 
-    public Long getCreatedBy() {
-        return createdBy;
-    }
+    public void setPriority(TicketPriority priority) { this.priority = priority; }
 
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
+    public TicketStatus getStatus() { return status; }
 
-    public Long getAssignedTo() {
-        return assignedTo;
-    }
+    public void setStatus(TicketStatus status) { this.status = status; }
 
-    public void setAssignedTo(Long assignedTo) {
-        this.assignedTo = assignedTo;
-    }
+    public Long getCreatedBy() { return createdBy; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public Long getAssignedTo() { return assignedTo; }
 
-    public LocalDateTime getResolvedAt() {
-        return resolvedAt;
-    }
+    public void setAssignedTo(Long assignedTo) { this.assignedTo = assignedTo; }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public void setResolvedAt(LocalDateTime resolvedAt) {
-        this.resolvedAt = resolvedAt;
-    }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
+
+    public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
 }

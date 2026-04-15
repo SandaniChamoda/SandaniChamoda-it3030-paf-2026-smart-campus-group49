@@ -11,6 +11,16 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import MockScannerPage from "./pages/Booking/MockScannerPage";
 import MockVerifyPage from "./pages/Booking/MockVerifyPage";
 
+import CreateTicket from "./pages/Ticket/CreateTicket";
+import MyTickets from "./pages/Ticket/MyTickets";
+import TicketDetails from "./pages/Ticket/TicketDetails";
+import AdminTickets from "./pages/Ticket/AdminTickets";
+import TechnicianTickets from "./pages/Ticket/TechnicianTickets";
+import AssignTechnician from "./pages/Ticket/AssignTechnician";
+import UpdateTicketStatus from "./pages/Ticket/UpdateTicketStatus";
+import TicketComments from "./pages/Ticket/TicketComments";
+import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
+
 function App() {
   return (
     <div className="app-shell">
@@ -38,6 +48,17 @@ function App() {
           <Route path="/scanner-mock" element={<MockScannerPage />} />
           <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+
+          //sandani
+          <Route path="/tickets/create" element={<CreateTicket />} />
+<Route path="/tickets/my" element={<MyTickets />} />
+<Route path="/tickets/details/:id" element={<TicketDetails />} />
+<Route path="/tickets/admin" element={<AdminTickets />} />
+<Route path="/tickets/technician" element={<TechnicianTickets />} />
+<Route path="/tickets/assign/:id" element={<AssignTechnician />} />
+<Route path="/tickets/update-status/:id" element={<UpdateTicketStatus />} />
+<Route path="/tickets/comments/:id" element={<TicketComments />} />
+<Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
 
         </Routes>
       </main>
