@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import API from "../../services/api";
 import "./BookingCalendar.css";
 
-const ACTIVE_STATUSES = new Set(["PENDING", "APPROVED"]);
+const ACTIVE_STATUSES = new Set(["APPROVED"]);
 
 const addDays = (date, days) => {
   const next = new Date(date);

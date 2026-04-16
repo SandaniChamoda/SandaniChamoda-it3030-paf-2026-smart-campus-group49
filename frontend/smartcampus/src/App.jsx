@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Link } from "react-router-dom";
 
 import Header from "./components/Header/Header";
 
@@ -26,38 +26,35 @@ import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
 function App() {
   return (
     <div className="app-shell">
-
       {/* Header Component */}
 
       <Header />
 
-          <Link to="/resources" className="btn btn-light ms-2">
+      {/* <div className="sc-container d-flex flex-wrap gap-2 py-2">
+        <Link to="/resources" className="btn btn-light">
           Resources
-          </Link>
+        </Link>
 
-          <Link to="/bookings" className="btn btn-light">
-            Bookings
-          </Link>
+        <Link to="/bookings" className="btn btn-light">
+          Bookings
+        </Link>
 
-          <Link to="/create" className="btn btn-light ms-2">
-            Create Booking
-          </Link>
+        <Link to="/create" className="btn btn-light">
+          Create Booking
+        </Link>
 
-          <Link to="/admin" className="btn btn-light ms-2">
-            Admin
-          </Link>
-
-        </div>
+        <Link to="/admin" className="btn btn-light">
+          Admin
+        </Link>
+      </div> */}
       {/* Pages */}
 
       <main className="sc-page">
         <Routes>
-
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
 
-      <Routes>
-        <Route path="/resources" element={<ResourcePage />} />
+          <Route path="/resources" element={<ResourcePage />} />
           <Route path="/bookings" element={<BookingList />} />
           <Route path="/bookings/calendar" element={<BookingCalendar />} />
 
@@ -71,20 +68,18 @@ function App() {
           <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
 
-          //sandani
+          {/* sandani */}
           <Route path="/tickets/create" element={<CreateTicket />} />
-<Route path="/tickets/my" element={<MyTickets />} />
-<Route path="/tickets/details/:id" element={<TicketDetails />} />
-<Route path="/tickets/admin" element={<AdminTickets />} />
-<Route path="/tickets/technician" element={<TechnicianTickets />} />
-<Route path="/tickets/assign/:id" element={<AssignTechnician />} />
-<Route path="/tickets/update-status/:id" element={<UpdateTicketStatus />} />
-<Route path="/tickets/comments/:id" element={<TicketComments />} />
-<Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
-
+          <Route path="/tickets/my" element={<MyTickets />} />
+          <Route path="/tickets/details/:id" element={<TicketDetails />} />
+          <Route path="/tickets/admin" element={<AdminTickets />} />
+          <Route path="/tickets/technician" element={<TechnicianTickets />} />
+          <Route path="/tickets/assign/:id" element={<AssignTechnician />} />
+          <Route path="/tickets/update-status/:id" element={<UpdateTicketStatus />} />
+          <Route path="/tickets/comments/:id" element={<TicketComments />} />
+          <Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
         </Routes>
       </main>
-
     </div>
   );
 }
