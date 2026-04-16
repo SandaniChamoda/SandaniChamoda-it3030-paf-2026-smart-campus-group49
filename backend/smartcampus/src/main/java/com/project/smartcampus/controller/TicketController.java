@@ -5,12 +5,14 @@ import com.project.smartcampus.dto.CreateTicketRequest;
 import com.project.smartcampus.dto.TicketResponse;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
 import com.project.smartcampus.services.TicketService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.project.smartcampus.dto.CreateCommentRequest;
 import com.project.smartcampus.dto.TicketCommentResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,9 +27,11 @@ public class TicketController {
         this.ticketService = ticketService;
     }
 
-    @PostMapping
-    public ResponseEntity<TicketResponse> createTicket(@RequestBody @Valid CreateTicketRequest request) {
-        TicketResponse response = ticketService.createTicket(request);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TicketResponse> createTicket(
+            @Valid @ModelAttribute CreateTicketRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        TicketResponse response = ticketService.createTicket(request, images);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -64,17 +68,17 @@ public class TicketController {
             @RequestBody UpdateTicketStatusRequest request) {
         return ResponseEntity.ok(ticketService.updateTicketStatus(ticketId, request));
     }
-    
-    @PostMapping("/{ticketId}/comments")
-public ResponseEntity<TicketCommentResponse> addComment(
-        @PathVariable Long ticketId,
-        @Valid @RequestBody CreateCommentRequest request) {
-    TicketCommentResponse response = ticketService.addComment(ticketId, request);
-    return new ResponseEntity<>(response, HttpStatus.CREATED);
-}
 
-@GetMapping("/{ticketId}/comments")
-public ResponseEntity<List<TicketCommentResponse>> getCommentsByTicketId(@PathVariable Long ticketId) {
-    return ResponseEntity.ok(ticketService.getCommentsByTicketId(ticketId));
-}
+    @PostMapping("/{ticketId}/comments")
+    public ResponseEntity<TicketCommentResponse> addComment(
+            @PathVariable Long ticketId,
+            @Valid @RequestBody CreateCommentRequest request) {
+        TicketCommentResponse response = ticketService.addComment(ticketId, request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{ticketId}/comments")
+    public ResponseEntity<List<TicketCommentResponse>> getCommentsByTicketId(@PathVariable Long ticketId) {
+        return ResponseEntity.ok(ticketService.getCommentsByTicketId(ticketId));
+    }
 }
