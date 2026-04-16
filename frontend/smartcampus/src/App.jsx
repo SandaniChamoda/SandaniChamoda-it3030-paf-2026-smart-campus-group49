@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Link } from "react-router-dom";
 
 import Header from "./components/Header/Header";
 
@@ -26,59 +26,47 @@ function App() {
   return (
     <div className="app-shell">
 
-      {/* Header Component */}
-
       <Header />
 
-          <Link to="/resources" className="btn btn-light ms-2">
-          Resources
-          </Link>
+      {/* Navigation */}
+      <div>
+        <Link to="/resources" className="btn btn-light ms-2">Resources</Link>
+        <Link to="/bookings" className="btn btn-light">Bookings</Link>
+        <Link to="/create" className="btn btn-light ms-2">Create Booking</Link>
+        <Link to="/admin" className="btn btn-light ms-2">Admin</Link>
+      </div>
 
-          <Link to="/bookings" className="btn btn-light">
-            Bookings
-          </Link>
-
-          <Link to="/create" className="btn btn-light ms-2">
-            Create Booking
-          </Link>
-
-          <Link to="/admin" className="btn btn-light ms-2">
-            Admin
-          </Link>
-
-        </div>
       {/* Pages */}
-
       <main className="sc-page">
         <Routes>
 
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
 
-      <Routes>
-        <Route path="/resources" element={<ResourcePage />} />
+          <Route path="/resources" element={<ResourcePage />} />
           <Route path="/bookings" element={<BookingList />} />
-
           <Route path="/create" element={<CreateBooking />} />
           <Route path="/bookings/:id/edit" element={<UpdateBooking />} />
 
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
           <Route path="/admin/bookings" element={<BookingAdmin />} />
+
           <Route path="/scanner-mock" element={<MockScannerPage />} />
           <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
 
-          //sandani
+          {/* Ticket routes */}
           <Route path="/tickets/create" element={<CreateTicket />} />
-<Route path="/tickets/my" element={<MyTickets />} />
-<Route path="/tickets/details/:id" element={<TicketDetails />} />
-<Route path="/tickets/admin" element={<AdminTickets />} />
-<Route path="/tickets/technician" element={<TechnicianTickets />} />
-<Route path="/tickets/assign/:id" element={<AssignTechnician />} />
-<Route path="/tickets/update-status/:id" element={<UpdateTicketStatus />} />
-<Route path="/tickets/comments/:id" element={<TicketComments />} />
-<Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
+          <Route path="/tickets/my" element={<MyTickets />} />
+          <Route path="/tickets/details/:id" element={<TicketDetails />} />
+          <Route path="/tickets/admin" element={<AdminTickets />} />
+          <Route path="/tickets/technician" element={<TechnicianTickets />} />
+          <Route path="/tickets/assign/:id" element={<AssignTechnician />} />
+          <Route path="/tickets/update-status/:id" element={<UpdateTicketStatus />} />
+          <Route path="/tickets/comments/:id" element={<TicketComments />} />
+          <Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
       </main>

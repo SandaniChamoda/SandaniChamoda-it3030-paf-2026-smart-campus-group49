@@ -23,19 +23,19 @@ public class Resource {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    private String name;
+    @NotBlank(message = "Name cannot be empty")
+private String name;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     private ResourceType type;
 
     @NotNull
-    @Min(1)
-    private Integer  capacity;
+    @Min(value = 1, message = "Capacity must be at least 1")
+private Integer capacity;
 
-    @NotBlank
-    private String location;
+    @NotBlank(message = "Location cannot be empty")
+private String location;
 
     @NotNull
     @Enumerated(EnumType.STRING)

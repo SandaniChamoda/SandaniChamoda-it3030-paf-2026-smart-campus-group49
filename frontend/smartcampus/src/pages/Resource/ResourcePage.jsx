@@ -47,37 +47,42 @@ function ResourcePage() {
 const handleSubmit = (e) => {
   e.preventDefault();
 
-  if (editingId !== null) {
-    // UPDATE
-    fetch(`http://localhost:8086/resources/${editingId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    }).then(() => {
+  const url =
+    editingId !== null
+      ? `http://localhost:8086/resources/${editingId}`
+      : "http://localhost:8086/resources";
+
+  const method = editingId !== null ? "PUT" : "POST";
+
+  fetch(url, {
+    method: method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(form),
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Validation failed");
+      }
+      return res.json();
+    })
+    .then(() => {
       loadResources();
       setEditingId(null);
-    });
-  } else {
-    // CREATE
-    fetch("http://localhost:8086/resources", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    }).then(() => loadResources());
-  }
 
-  // reset form
-  setForm({
-    name: "",
-    type: "LAB",
-    capacity: "",
-    location: "",
-    status: "ACTIVE",
-  });
+      //CREATE 
+      setForm({
+        name: "",
+        type: "LAB",
+        capacity: "",
+        location: "",
+        status: "ACTIVE",
+      });
+    })
+    .catch(() => {
+      alert("Validation error: please check inputs");
+    });
 };
 
   // DELETE
