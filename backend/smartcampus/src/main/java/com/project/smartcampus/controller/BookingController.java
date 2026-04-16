@@ -1,7 +1,11 @@
 package com.project.smartcampus.controller;
 
 import com.project.smartcampus.entity.Booking;
+import com.project.smartcampus.enums.BookingStatus;
+import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.services.BookingService;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -15,7 +19,6 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:5173")
 
 public class BookingController {
-
     private final BookingService service;
 
     public BookingController(BookingService service) {
@@ -28,8 +31,23 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<Booking> getAllBookings() {
-        return service.getAllBookings();
+    public List<Booking> getAllBookings(
+            @RequestParam(required = false) String resourceName,
+            @RequestParam(required = false) BookingStatus status) {
+        return service.getBookingsFiltered(resourceName, status);
+    }
+
+    @GetMapping("/{id}")
+    public Booking getBookingById(@PathVariable Long id) {
+        return service.getBookingById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Booking updateBooking(
+            @PathVariable Long id,
+            @RequestBody Booking updatedBooking) {
+
+        return service.updateBooking(id, updatedBooking);
     }
 
     @PutMapping("/{id}/approve")
@@ -47,13 +65,13 @@ public class BookingController {
         Object reasonObj = request.get("reason");
 
         if (reasonObj == null) {
-            throw new RuntimeException("Rejection reason is required");
+            throw new BookingConflictException("Rejection reason is required");
         }
 
         String reason = reasonObj.toString();
 
         if (reason.isBlank()) {
-            throw new RuntimeException("Rejection reason cannot be empty");
+            throw new BookingConflictException("Rejection reason cannot be empty");
         }
 
         return service.rejectBooking(id, reason);
@@ -106,6 +124,15 @@ public class BookingController {
         response.put("available", available);
 
         return response;
+    }
+
+    @PutMapping("/checkin/{id}")
+    public ResponseEntity<Booking> checkInBooking(
+            @PathVariable Long id) {
+
+        Booking booking = service.checkIn(id);
+
+        return ResponseEntity.ok(booking);
     }
 
 }
