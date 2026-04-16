@@ -50,6 +50,13 @@ function Header() {
             New Booking
           </NavLink>
           <NavLink
+            to="/bookings/calendar"
+            className={navLinkClass}
+            onClick={closeMenu}
+          >
+            Booking Calendar
+          </NavLink>
+          <NavLink
             to="/admin"
             className={navLinkClass}
             onClick={closeMenu}

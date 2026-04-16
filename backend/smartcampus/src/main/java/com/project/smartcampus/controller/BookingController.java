@@ -1,10 +1,12 @@
 package com.project.smartcampus.controller;
 
-import com.project.smartcampus.entity.Booking;
+import com.project.smartcampus.dto.BookingRequest;
+import com.project.smartcampus.dto.BookingResponse;
+import com.project.smartcampus.dto.RejectBookingRequest;
 import com.project.smartcampus.enums.BookingStatus;
-import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.services.BookingService;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,59 +28,45 @@ public class BookingController {
     }
 
     @PostMapping
-    public Booking createBooking(@RequestBody Booking booking) {
-        return service.createBooking(booking);
+    public BookingResponse createBooking(@Valid @RequestBody BookingRequest request) {
+        return service.createBooking(request);
     }
 
     @GetMapping
-    public List<Booking> getAllBookings(
+    public List<BookingResponse> getAllBookings(
             @RequestParam(required = false) String resourceName,
             @RequestParam(required = false) BookingStatus status) {
         return service.getBookingsFiltered(resourceName, status);
     }
 
     @GetMapping("/{id}")
-    public Booking getBookingById(@PathVariable Long id) {
+    public BookingResponse getBookingById(@PathVariable Long id) {
         return service.getBookingById(id);
     }
 
     @PutMapping("/{id}")
-    public Booking updateBooking(
+    public BookingResponse updateBooking(
             @PathVariable Long id,
-            @RequestBody Booking updatedBooking) {
+            @Valid @RequestBody BookingRequest request) {
 
-        return service.updateBooking(id, updatedBooking);
+        return service.updateBooking(id, request);
     }
 
     @PutMapping("/{id}/approve")
-    public Booking approveBooking(@PathVariable Long id) {
+    public BookingResponse approveBooking(@PathVariable Long id) {
         return service.approveBooking(id);
     }
 
     @PutMapping("/{id}/reject")
-    public Booking rejectBooking(
+    public BookingResponse rejectBooking(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> request) {
+            @Valid @RequestBody RejectBookingRequest request) {
 
-        System.out.println("Reject request body: " + request);
-
-        Object reasonObj = request.get("reason");
-
-        if (reasonObj == null) {
-            throw new BookingConflictException("Rejection reason is required");
-        }
-
-        String reason = reasonObj.toString();
-
-        if (reason.isBlank()) {
-            throw new BookingConflictException("Rejection reason cannot be empty");
-        }
-
-        return service.rejectBooking(id, reason);
+        return service.rejectBooking(id, request.getReason());
     }
 
     @PutMapping("/{id}/cancel")
-    public Booking cancelBooking(@PathVariable Long id) {
+    public BookingResponse cancelBooking(@PathVariable Long id) {
         return service.cancelBooking(id);
     }
 
@@ -88,20 +76,20 @@ public class BookingController {
     }
 
     @GetMapping("/search/resource")
-    public List<Booking> searchByResource(
+    public List<BookingResponse> searchByResource(
             @RequestParam String resourceName) {
         return service.searchByResource(resourceName);
     }
 
     @GetMapping("/search/date")
-    public List<Booking> searchByDateRange(
+    public List<BookingResponse> searchByDateRange(
             @RequestParam LocalDateTime start,
             @RequestParam LocalDateTime end) {
         return service.searchByDateRange(start, end);
     }
 
     @GetMapping("/search")
-    public List<Booking> searchByResourceAndDate(
+    public List<BookingResponse> searchByResourceAndDate(
             @RequestParam String resourceName,
             @RequestParam LocalDateTime start,
             @RequestParam LocalDateTime end) {
@@ -127,10 +115,10 @@ public class BookingController {
     }
 
     @PutMapping("/checkin/{id}")
-    public ResponseEntity<Booking> checkInBooking(
+    public ResponseEntity<BookingResponse> checkInBooking(
             @PathVariable Long id) {
 
-        Booking booking = service.checkIn(id);
+        BookingResponse booking = service.checkIn(id);
 
         return ResponseEntity.ok(booking);
     }

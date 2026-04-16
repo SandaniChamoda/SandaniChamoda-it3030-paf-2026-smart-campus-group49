@@ -7,6 +7,7 @@ import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
+import BookingCalendar from "./pages/Booking/BookingCalendar";
 import ResourcePage from "./pages/Resource/ResourcePage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import MockScannerPage from "./pages/Booking/MockScannerPage";
@@ -58,6 +59,7 @@ function App() {
       <Routes>
         <Route path="/resources" element={<ResourcePage />} />
           <Route path="/bookings" element={<BookingList />} />
+          <Route path="/bookings/calendar" element={<BookingCalendar />} />
 
           <Route path="/create" element={<CreateBooking />} />
           <Route path="/bookings/:id/edit" element={<UpdateBooking />} />

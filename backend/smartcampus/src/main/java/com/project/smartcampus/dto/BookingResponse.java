@@ -1,66 +1,32 @@
-package com.project.smartcampus.entity;
+package com.project.smartcampus.dto;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import com.project.smartcampus.enums.BookingStatus;
 
-@Entity
-@Table(name = "bookings")
-public class Booking {
+import java.time.LocalDateTime;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class BookingResponse {
+
     private Long id;
-
-    //private Long userId;
-
     private String resourceName;
-
     private String purpose;
-
     private String bookedBy;
-
     private int attendees;
-
     private LocalDateTime startTime;
-
     private LocalDateTime endTime;
-
     private String rejectionReason;
-
-    @Enumerated(EnumType.STRING)
     private BookingStatus status;
-
     private String qrCode;
-
     private LocalDateTime checkedInTime;
 
-    public Booking() {}
-
-    public Booking(String resourceName,
-                   String purpose,
-                   int attendees,
-                   LocalDateTime startTime,
-                   LocalDateTime endTime,
-                   BookingStatus status) {
-        this.resourceName = resourceName;
-        this.purpose = purpose;
-        this.attendees = attendees;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.status = status;
+    public BookingResponse() {
     }
 
-
-//     public Long getUserId() {
-//     return userId;
-// }
-
-// public void setUserId(Long userId) {
-//     this.userId = userId;
-// }
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getResourceName() {
@@ -111,6 +77,14 @@ public class Booking {
         this.endTime = endTime;
     }
 
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
     public BookingStatus getStatus() {
         return status;
     }
@@ -119,27 +93,19 @@ public class Booking {
         this.status = status;
     }
 
-    public String getRejectionReason() {
-    return rejectionReason;
-}
+    public String getQrCode() {
+        return qrCode;
+    }
 
-public void setRejectionReason(String rejectionReason) {
-    this.rejectionReason = rejectionReason;
-}
+    public void setQrCode(String qrCode) {
+        this.qrCode = qrCode;
+    }
 
-public String getQrCode() {
-    return qrCode;
-}
+    public LocalDateTime getCheckedInTime() {
+        return checkedInTime;
+    }
 
-public void setQrCode(String qrCode) {
-    this.qrCode = qrCode;
-}
-
-public LocalDateTime getCheckedInTime() {
-    return checkedInTime;
-}
-
-public void setCheckedInTime(LocalDateTime checkedInTime) {
-    this.checkedInTime = checkedInTime;
-}
+    public void setCheckedInTime(LocalDateTime checkedInTime) {
+        this.checkedInTime = checkedInTime;
+    }
 }

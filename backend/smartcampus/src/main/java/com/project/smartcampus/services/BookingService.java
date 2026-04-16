@@ -1,6 +1,8 @@
 //backend\smartcampus\src\main\java\com\project\smartcampus\services\BookingService.java
 package com.project.smartcampus.services;
 
+import com.project.smartcampus.dto.BookingRequest;
+import com.project.smartcampus.dto.BookingResponse;
 import com.project.smartcampus.entity.Booking;
 import com.project.smartcampus.enums.BookingStatus;
 import com.project.smartcampus.exception.BookingConflictException;
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 //import com.project.smartcampus.exception.BookingConflictException;
 
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.EnumSet;
 import java.time.LocalDate;
@@ -29,7 +32,8 @@ public class BookingService {
                 this.repository = repository;
         }
 
-        public Booking createBooking(Booking booking) {
+        public BookingResponse createBooking(BookingRequest request) {
+                Booking booking = mapToEntity(request);
 
                 if (booking.getStartTime().isBefore(LocalDateTime.now())) {
                         throw new BookingConflictException(
@@ -55,40 +59,53 @@ public class BookingService {
 
                 booking.setStatus(BookingStatus.PENDING);
 
-                return repository.save(booking);
+                return mapToResponse(repository.save(booking));
         }
 
-        public List<Booking> getAllBookings() {
-                return repository.findAll();
+        public List<BookingResponse> getAllBookings() {
+                return repository.findAll()
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
         }
 
-        public List<Booking> getBookingsFiltered(String resourceName, BookingStatus status) {
+        public List<BookingResponse> getBookingsFiltered(String resourceName, BookingStatus status) {
                 boolean hasResource = resourceName != null && !resourceName.isBlank();
                 boolean hasStatus = status != null;
 
+                List<Booking> bookings;
+
                 if (hasResource && hasStatus) {
-                        return repository.findByResourceNameContainingIgnoreCaseAndStatus(
+                        bookings = repository.findByResourceNameContainingIgnoreCaseAndStatus(
                                         resourceName,
                                         status);
+                        return bookings.stream().map(this::mapToResponse).collect(Collectors.toList());
                 }
 
                 if (hasResource) {
-                        return repository.findByResourceNameContainingIgnoreCase(resourceName);
+                        bookings = repository.findByResourceNameContainingIgnoreCase(resourceName);
+                        return bookings.stream().map(this::mapToResponse).collect(Collectors.toList());
                 }
 
                 if (hasStatus) {
-                        return repository.findByStatus(status);
+                        bookings = repository.findByStatus(status);
+                        return bookings.stream().map(this::mapToResponse).collect(Collectors.toList());
                 }
 
-                return repository.findAll();
+                return repository.findAll()
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
         }
 
-        public Booking getBookingById(Long id) {
-                return repository.findById(id)
+        public BookingResponse getBookingById(Long id) {
+                Booking booking = repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+                return mapToResponse(booking);
         }
 
-        public Booking updateBooking(Long id, Booking updatedBooking) {
+        public BookingResponse updateBooking(Long id, BookingRequest request) {
+                Booking updatedBooking = mapToEntity(request);
 
                 Booking existing = repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -127,10 +144,10 @@ public class BookingService {
                 existing.setPurpose(updatedBooking.getPurpose());
                 existing.setAttendees(updatedBooking.getAttendees());
 
-                return repository.save(existing);
+                return mapToResponse(repository.save(existing));
         }
 
-        public Booking approveBooking(Long id) {
+        public BookingResponse approveBooking(Long id) {
 
                 Booking booking = repository.findById(id)
                                 .orElseThrow();
@@ -152,10 +169,10 @@ public class BookingService {
                 // Save QR path
                 booking.setQrCode(qrPath);
 
-                return repository.save(booking);
+                return mapToResponse(repository.save(booking));
         }
 
-        public Booking rejectBooking(Long id, String reason) {
+        public BookingResponse rejectBooking(Long id, String reason) {
 
                 Booking booking = repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -169,10 +186,10 @@ public class BookingService {
 
                 booking.setRejectionReason(reason);
 
-                return repository.save(booking);
+                return mapToResponse(repository.save(booking));
         }
 
-        public Booking cancelBooking(Long id) {
+        public BookingResponse cancelBooking(Long id) {
 
                 Booking booking = repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -184,7 +201,7 @@ public class BookingService {
 
                 booking.setStatus(BookingStatus.CANCELLED);
 
-                return repository.save(booking);
+                return mapToResponse(repository.save(booking));
         }
 
         public void deleteBooking(Long id) {
@@ -200,24 +217,33 @@ public class BookingService {
                 repository.delete(booking);
         }
 
-        public List<Booking> searchByResource(String resourceName) {
-                return repository.findByResourceNameContainingIgnoreCase(resourceName);
+        public List<BookingResponse> searchByResource(String resourceName) {
+                return repository.findByResourceNameContainingIgnoreCase(resourceName)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
         }
 
-        public List<Booking> searchByDateRange(
+        public List<BookingResponse> searchByDateRange(
                         LocalDateTime start,
                         LocalDateTime end) {
-                return repository.findByStartTimeBetween(start, end);
+                return repository.findByStartTimeBetween(start, end)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
         }
 
-        public List<Booking> searchByResourceAndDate(
+        public List<BookingResponse> searchByResourceAndDate(
                         String resourceName,
                         LocalDateTime start,
                         LocalDateTime end) {
                 return repository.findByResourceNameAndStartTimeBetween(
                                 resourceName,
                                 start,
-                                end);
+                                end)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
         }
 
         public boolean checkAvailability(
@@ -247,7 +273,7 @@ public class BookingService {
                 return conflicts.isEmpty();
         }
 
-        public Booking checkIn(Long id) {
+        public BookingResponse checkIn(Long id) {
 
                 Booking booking = repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -270,7 +296,34 @@ public class BookingService {
                 booking.setCheckedInTime(
                                 LocalDateTime.now());
 
-                return repository.save(booking);
+                return mapToResponse(repository.save(booking));
+        }
+
+        private Booking mapToEntity(BookingRequest request) {
+                Booking booking = new Booking();
+                booking.setResourceName(request.getResourceName());
+                booking.setPurpose(request.getPurpose());
+                booking.setBookedBy(request.getBookedBy());
+                booking.setAttendees(request.getAttendees());
+                booking.setStartTime(request.getStartTime());
+                booking.setEndTime(request.getEndTime());
+                return booking;
+        }
+
+        private BookingResponse mapToResponse(Booking booking) {
+                BookingResponse response = new BookingResponse();
+                response.setId(booking.getId());
+                response.setResourceName(booking.getResourceName());
+                response.setPurpose(booking.getPurpose());
+                response.setBookedBy(booking.getBookedBy());
+                response.setAttendees(booking.getAttendees());
+                response.setStartTime(booking.getStartTime());
+                response.setEndTime(booking.getEndTime());
+                response.setRejectionReason(booking.getRejectionReason());
+                response.setStatus(booking.getStatus());
+                response.setQrCode(booking.getQrCode());
+                response.setCheckedInTime(booking.getCheckedInTime());
+                return response;
         }
 
 }
