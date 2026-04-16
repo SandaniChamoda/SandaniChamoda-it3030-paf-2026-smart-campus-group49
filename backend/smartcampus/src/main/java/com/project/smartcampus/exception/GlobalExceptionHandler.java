@@ -3,14 +3,12 @@ package com.project.smartcampus.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -33,16 +31,21 @@ public class GlobalExceptionHandler {
         );
     }
 
+ 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public Map<String, String> handleNotFound(ResourceNotFoundException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return error;
+    }
+
+
+
     //sandani
-    @ExceptionHandler(RuntimeException.class)
+     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(
             RuntimeException ex
     ) {
-        // Let Spring Security handle AccessDeniedException (returns 403)
-        if (ex instanceof AccessDeniedException) {
-            throw (AccessDeniedException) ex;
-        }
-
         Map<String, Object> response = new HashMap<>();
 
         response.put("timestamp", LocalDateTime.now());
@@ -85,13 +88,17 @@ public ResponseEntity<Map<String, Object>> handleValidationException(
     response.put("status", 400);
     response.put("error", "Validation Error");
 
-    String errorMessage = ex.getBindingResult()
-            .getFieldErrors()
-            .get(0)
-            .getDefaultMessage();
+    String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+            .findFirst()
+            .map(fieldError -> fieldError.getDefaultMessage())
+            .orElseGet(() -> ex.getBindingResult().getGlobalErrors().stream()
+                    .findFirst()
+                    .map(globalError -> globalError.getDefaultMessage())
+                    .orElse("Validation failed"));
 
     response.put("message", errorMessage);
 
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 }
 }
+

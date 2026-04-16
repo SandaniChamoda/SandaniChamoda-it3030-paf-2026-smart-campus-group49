@@ -1,83 +1,91 @@
-import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+
+import Header from "./components/Header/Header";
 
 import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
+import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
+import BookingCalendar from "./pages/Booking/BookingCalendar";
+import ResourcePage from "./pages/Resource/ResourcePage";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import MockScannerPage from "./pages/Booking/MockScannerPage";
+import MockVerifyPage from "./pages/Booking/MockVerifyPage";
 
-import LoginPage from "./components/auth/LoginPage";
-import OAuth2RedirectHandler from "./components/auth/OAuth2RedirectHandler";
-import NotificationBell from "./components/notifications/NotificationBell";
-import NotificationList from "./components/notifications/NotificationList";
-import UserManagement from "./components/users/UserManagement";
-
-import { AuthProvider, useAuth } from "./context/AuthContext";
-
-function NavBar() {
-  const { isAuthenticated, isAdmin, user, logout } = useAuth();
-
-  if (!isAuthenticated) return null;
-
-  return (
-    <nav className="navbar navbar-dark bg-dark px-3">
-      <Link to="/home" className="navbar-brand">
-        Smart Campus
-      </Link>
-
-      <div className="d-flex align-items-center gap-2">
-        <Link to="/home" className="btn btn-light btn-sm">Home</Link>
-        <Link to="/bookings" className="btn btn-light btn-sm">Bookings</Link>
-        <Link to="/create" className="btn btn-light btn-sm">Create Booking</Link>
-        <Link to="/admin" className="btn btn-light btn-sm">Admin</Link>
-        {isAdmin && (
-          <Link to="/users" className="btn btn-warning btn-sm">Users</Link>
-        )}
-        <Link to="/notifications" className="btn btn-link p-0">
-          <NotificationBell />
-        </Link>
-        <span className="text-white-50 small">{user?.name}</span>
-        <button onClick={logout} className="btn btn-outline-light btn-sm">
-          Logout
-        </button>
-      </div>
-    </nav>
-  );
-}
-
-function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) return <div className="text-center p-5">Loading...</div>;
-
-  return (
-    <>
-      <NavBar />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/home" />} />
-        <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
-
-        {/* Protected routes */}
-        <Route path="/home" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
-        <Route path="/bookings" element={isAuthenticated ? <BookingList /> : <Navigate to="/login" />} />
-        <Route path="/create" element={isAuthenticated ? <CreateBooking /> : <Navigate to="/login" />} />
-        <Route path="/admin" element={isAuthenticated ? <BookingAdmin /> : <Navigate to="/login" />} />
-        <Route path="/notifications" element={isAuthenticated ? <NotificationList /> : <Navigate to="/login" />} />
-        <Route path="/users" element={isAuthenticated ? <UserManagement /> : <Navigate to="/login" />} />
-
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} />
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} />
-      </Routes>
-    </>
-  );
-}
+import CreateTicket from "./pages/Ticket/CreateTicket";
+import MyTickets from "./pages/Ticket/MyTickets";
+import TicketDetails from "./pages/Ticket/TicketDetails";
+import AdminTickets from "./pages/Ticket/AdminTickets";
+import TechnicianTickets from "./pages/Ticket/TechnicianTickets";
+import AssignTechnician from "./pages/Ticket/AssignTechnician";
+import UpdateTicketStatus from "./pages/Ticket/UpdateTicketStatus";
+import TicketComments from "./pages/Ticket/TicketComments";
+import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <div className="app-shell">
+
+      {/* Header Component */}
+
+      <Header />
+
+          <Link to="/resources" className="btn btn-light ms-2">
+          Resources
+          </Link>
+
+          <Link to="/bookings" className="btn btn-light">
+            Bookings
+          </Link>
+
+          <Link to="/create" className="btn btn-light ms-2">
+            Create Booking
+          </Link>
+
+          <Link to="/admin" className="btn btn-light ms-2">
+            Admin
+          </Link>
+
+        </div>
+      {/* Pages */}
+
+      <main className="sc-page">
+        <Routes>
+
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Navigate to="/" replace />} />
+
+      <Routes>
+        <Route path="/resources" element={<ResourcePage />} />
+          <Route path="/bookings" element={<BookingList />} />
+          <Route path="/bookings/calendar" element={<BookingCalendar />} />
+
+          <Route path="/create" element={<CreateBooking />} />
+          <Route path="/bookings/:id/edit" element={<UpdateBooking />} />
+
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/bookings" element={<BookingAdmin />} />
+          <Route path="/scanner-mock" element={<MockScannerPage />} />
+          <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+          //sandani
+          <Route path="/tickets/create" element={<CreateTicket />} />
+<Route path="/tickets/my" element={<MyTickets />} />
+<Route path="/tickets/details/:id" element={<TicketDetails />} />
+<Route path="/tickets/admin" element={<AdminTickets />} />
+<Route path="/tickets/technician" element={<TechnicianTickets />} />
+<Route path="/tickets/assign/:id" element={<AssignTechnician />} />
+<Route path="/tickets/update-status/:id" element={<UpdateTicketStatus />} />
+<Route path="/tickets/comments/:id" element={<TicketComments />} />
+<Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
+
+        </Routes>
+      </main>
+
+    </div>
   );
 }
 
