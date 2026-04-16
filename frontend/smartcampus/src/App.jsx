@@ -7,7 +7,6 @@ import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
-import ResourcePage from "./pages/Resource/ResourcePage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import MockScannerPage from "./pages/Booking/MockScannerPage";
 import MockVerifyPage from "./pages/Booking/MockVerifyPage";
@@ -22,6 +21,8 @@ import UpdateTicketStatus from "./pages/Ticket/UpdateTicketStatus";
 import TicketComments from "./pages/Ticket/TicketComments";
 import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
 
+import ResourceList from "./pages/Resource/ResourceList";
+import AdminResourcePage from "./pages/Resource/AdminResourcePage";
 function App() {
   return (
     <div className="app-shell">
@@ -43,7 +44,9 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
 
-          <Route path="/resources" element={<ResourcePage />} />
+          <Route path="/resources" element={<ResourceList />} />
+          <Route path="/admin/resources" element={<AdminResourcePage />} />
+
           <Route path="/bookings" element={<BookingList />} />
           <Route path="/create" element={<CreateBooking />} />
           <Route path="/bookings/:id/edit" element={<UpdateBooking />} />
