@@ -8,6 +8,7 @@ import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
 import BookingCalendar from "./pages/Booking/BookingCalendar";
+import ResourcePage from "./pages/Resource/ResourcePage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import MockScannerPage from "./pages/Booking/MockScannerPage";
 import MockVerifyPage from "./pages/Booking/MockVerifyPage";
@@ -30,6 +31,23 @@ function App() {
 
       <Header />
 
+          <Link to="/resources" className="btn btn-light ms-2">
+          Resources
+          </Link>
+
+          <Link to="/bookings" className="btn btn-light">
+            Bookings
+          </Link>
+
+          <Link to="/create" className="btn btn-light ms-2">
+            Create Booking
+          </Link>
+
+          <Link to="/admin" className="btn btn-light ms-2">
+            Admin
+          </Link>
+
+        </div>
       {/* Pages */}
 
       <main className="sc-page">
@@ -38,6 +56,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
 
+      <Routes>
+        <Route path="/resources" element={<ResourcePage />} />
           <Route path="/bookings" element={<BookingList />} />
           <Route path="/bookings/calendar" element={<BookingCalendar />} />
 
