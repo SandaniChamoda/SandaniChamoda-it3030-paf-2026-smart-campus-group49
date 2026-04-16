@@ -2,20 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import "./AdminResourcePage.css";
 
 function AdminResourcePage() {
+  const FACILITY_CATEGORIES = ["LECTURE_HALL", "LAB", "MEETING_ROOM", "AUDITORIUM"];
+  const EQUIPMENT_CATEGORIES = ["PROJECTOR", "CAMERA", "LAPTOP", "MICROPHONE", "SPEAKER"];
+
   const [resources, setResources] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
   const [capacityFilter, setCapacityFilter] = useState("ANY");
   const [locationFilter, setLocationFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
 
   const [form, setForm] = useState({
     name: "",
-    type: "LAB",
+    type: "FACILITY",
+    category: "LECTURE_HALL",
     capacity: "",
     location: "",
+    availabilityStart: "",
+    availabilityEnd: "",
+    description: "",
     status: "ACTIVE",
   });
 
@@ -33,14 +41,38 @@ function AdminResourcePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterType, capacityFilter, locationFilter]);
+  }, [search, filterType, filterCategory, capacityFilter, locationFilter]);
+
+  const normalizeType = (type) => {
+    const normalized = String(type || "").toUpperCase();
+    if (normalized === "LAB" || normalized === "ROOM") {
+      return "FACILITY";
+    }
+    return normalized;
+  };
+
+  const getCategoryOptionsByType = (type) => {
+    return normalizeType(type) === "EQUIPMENT" ? EQUIPMENT_CATEGORIES : FACILITY_CATEGORIES;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    if (name === "type") {
+      const options = getCategoryOptionsByType(value);
+      const nextType = normalizeType(value);
+      setForm((prev) => ({
+        ...prev,
+        type: nextType,
+        category: options[0],
+        capacity: nextType === "EQUIPMENT" ? "" : prev.capacity,
+      }));
+      return;
+    }
+
     setForm({
       ...form,
-      [name]: name === "capacity" ? Number(value) : value,
+      [name]: name === "capacity" ? (value === "" ? "" : Number(value)) : value,
     });
   };
 
@@ -48,15 +80,33 @@ function AdminResourcePage() {
     setEditingId(null);
     setForm({
       name: "",
-      type: "LAB",
+      type: "FACILITY",
+      category: "LECTURE_HALL",
       capacity: "",
       location: "",
+      availabilityStart: "",
+      availabilityEnd: "",
+      description: "",
       status: "ACTIVE",
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const payload = {
+      ...form,
+      type: normalizeType(form.type),
+      capacity:
+        normalizeType(form.type) === "EQUIPMENT"
+          ? null
+          : form.capacity === ""
+            ? null
+            : Number(form.capacity),
+      availabilityStart: form.availabilityStart || null,
+      availabilityEnd: form.availabilityEnd || null,
+      description: form.description || null,
+    };
 
     const url =
       editingId !== null
@@ -70,7 +120,7 @@ function AdminResourcePage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     })
       .then((res) => {
         if (!res.ok) {
@@ -95,11 +145,17 @@ function AdminResourcePage() {
   };
 
   const handleEdit = (resource) => {
+    const normalizedType = normalizeType(resource.type);
+    const categoryOptions = getCategoryOptionsByType(normalizedType);
     setForm({
       name: resource.name,
-      type: resource.type,
-      capacity: resource.capacity,
+      type: normalizedType,
+      category: resource.category || categoryOptions[0],
+      capacity: resource.capacity ?? "",
       location: resource.location,
+      availabilityStart: resource.availabilityStart || "",
+      availabilityEnd: resource.availabilityEnd || "",
+      description: resource.description || "",
       status: resource.status,
     });
     setEditingId(resource.id);
@@ -137,7 +193,8 @@ function AdminResourcePage() {
 
   const filteredResources = useMemo(() => {
     return resources.filter((resource) => {
-      const text = [resource.name, resource.location, resource.type, resource.id]
+      const normalizedType = normalizeType(resource.type);
+      const text = [resource.name, resource.location, normalizedType, resource.category, resource.id]
         .join(" ")
         .toLowerCase();
 
@@ -145,14 +202,19 @@ function AdminResourcePage() {
         locationFilter === "ALL" ||
         String(resource.location || "") === locationFilter;
 
+      const resourceCapacity = Number(resource.capacity);
+      const capacityAllowed =
+        normalizedType === "EQUIPMENT" ? capacityFilter === "ANY" : capacityMatches(Number.isNaN(resourceCapacity) ? 0 : resourceCapacity);
+
       return (
         text.includes(search.toLowerCase()) &&
-        (filterType === "" || resource.type === filterType) &&
-        capacityMatches(Number(resource.capacity) || 0) &&
+        (filterType === "" || normalizedType === filterType) &&
+        (filterCategory === "" || String(resource.category || "") === filterCategory) &&
+        capacityAllowed &&
         locationMatches
       );
     });
-  }, [resources, search, filterType, capacityFilter, locationFilter]);
+  }, [resources, search, filterType, filterCategory, capacityFilter, locationFilter]);
 
   const locationOptions = useMemo(() => {
     return Array.from(
@@ -180,9 +242,9 @@ function AdminResourcePage() {
       : [1, 2, 3, "...", totalPages];
 
   const renderResourceGlyph = (type) => {
-    const normalizedType = String(type || "").toUpperCase();
+    const normalizedType = normalizeType(type);
 
-    if (normalizedType === "LAB") {
+    if (normalizedType === "FACILITY") {
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 3h6" />
@@ -193,8 +255,9 @@ function AdminResourcePage() {
 
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="4" y="5" width="16" height="12" rx="1.5" />
-        <path d="M8 20h8" />
+        <rect x="3" y="7" width="18" height="10" rx="2" />
+        <circle cx="9" cy="12" r="1.8" />
+        <path d="M13 12h5" />
       </svg>
     );
   };
@@ -288,8 +351,16 @@ function AdminResourcePage() {
                 />
 
                 <select name="type" value={form.type} onChange={handleChange}>
-                  <option value="LAB">LAB</option>
-                  <option value="ROOM">ROOM</option>
+                  <option value="FACILITY">FACILITY</option>
+                  <option value="EQUIPMENT">EQUIPMENT</option>
+                </select>
+
+                <select name="category" value={form.category} onChange={handleChange}>
+                  {getCategoryOptionsByType(form.type).map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
 
                 <input
@@ -299,7 +370,7 @@ function AdminResourcePage() {
                   min="1"
                   value={form.capacity}
                   onChange={handleChange}
-                  required
+                  required={form.type === "FACILITY"}
                 />
 
                 <input
@@ -310,9 +381,30 @@ function AdminResourcePage() {
                   required
                 />
 
+                <input
+                  name="availabilityStart"
+                  type="time"
+                  value={form.availabilityStart}
+                  onChange={handleChange}
+                />
+
+                <input
+                  name="availabilityEnd"
+                  type="time"
+                  value={form.availabilityEnd}
+                  onChange={handleChange}
+                />
+
+                <input
+                  name="description"
+                  placeholder="Description"
+                  value={form.description}
+                  onChange={handleChange}
+                />
+
                 <select name="status" value={form.status} onChange={handleChange}>
                   <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
+                  <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
                 </select>
 
                 <div className="admin-resource-form-actions">
@@ -351,8 +443,17 @@ function AdminResourcePage() {
             <div className="toolbar-filter-row">
               <select value={filterType} onChange={(event) => setFilterType(event.target.value)}>
                 <option value="">Type: All</option>
-                <option value="LAB">Type: Lab</option>
-                <option value="ROOM">Type: Room</option>
+                <option value="FACILITY">Type: Facility</option>
+                <option value="EQUIPMENT">Type: Equipment</option>
+              </select>
+
+              <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)}>
+                <option value="">Category: All</option>
+                {[...FACILITY_CATEGORIES, ...EQUIPMENT_CATEGORIES].map((category) => (
+                  <option key={category} value={category}>
+                    Category: {toTitleCase(category)}
+                  </option>
+                ))}
               </select>
 
               <select value={capacityFilter} onChange={(event) => setCapacityFilter(event.target.value)}>
@@ -413,11 +514,13 @@ function AdminResourcePage() {
                           </div>
                         </td>
                         <td>
-                          <span className="chip">{toTitleCase(resource.type)}</span>
+                          <span className="chip">{toTitleCase(normalizeType(resource.type))}</span>
                         </td>
                         <td>
-                          <strong>{resource.capacity} Seats</strong>
-                          <span>{resource.location}</span>
+                          <strong>
+                            {resource.capacity == null ? "N/A" : `${resource.capacity} Seats`}
+                          </strong>
+                          <span>{toTitleCase(resource.category) || resource.location}</span>
                         </td>
                         <td>
                           <span className={`status-pill ${active ? "active" : "inactive"}`}>
