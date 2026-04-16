@@ -18,6 +18,131 @@ const getStatusBadgeClass = (status) => {
 };
 
 function BookingList() {
+  const colors = {
+    primaryDark: "#1A1F5A",
+    primaryGradientEnd: "#2A3080",
+    accentOrange: "#F5A623",
+    accentOrangeHover: "#E09612",
+    textDark: "#1A1F5A",
+    textMedium: "#6B7BA4",
+    textLight: "#C8D9FF",
+    bgLight: "#F7F9FF",
+    bgStats: "#F0F4FF",
+    borderLight: "#E3E9F8",
+    white: "#FFFFFF",
+    danger: "#DC2626",
+  };
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: `linear-gradient(180deg, ${colors.bgLight} 0%, ${colors.white} 100%)`,
+      padding: "32px 20px 60px",
+    },
+    wrapper: {
+      maxWidth: "1100px",
+      margin: "0 auto",
+    },
+    hero: {
+      background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primaryGradientEnd} 100%)`,
+      borderRadius: "24px",
+      padding: "32px",
+      color: colors.white,
+      marginBottom: "28px",
+      boxShadow: "0 18px 40px rgba(26, 31, 90, 0.16)",
+    },
+    heroTitle: {
+      margin: 0,
+      fontSize: "34px",
+      fontWeight: "800",
+      lineHeight: "1.2",
+    },
+    heroText: {
+      marginTop: "10px",
+      marginBottom: 0,
+      color: colors.textLight,
+      fontSize: "15px",
+      lineHeight: "1.7",
+      maxWidth: "760px",
+    },
+    card: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "22px",
+      padding: "28px",
+      boxShadow: "0 16px 36px rgba(17, 24, 39, 0.06)",
+    },
+    sectionTitle: {
+      margin: 0,
+      fontSize: "22px",
+      fontWeight: "700",
+      color: colors.textDark,
+    },
+    sectionText: {
+      marginTop: "8px",
+      color: colors.textMedium,
+      fontSize: "14px",
+      lineHeight: "1.7",
+    },
+    actionRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "16px",
+      flexWrap: "wrap",
+      marginTop: "18px",
+    },
+    input: {
+      width: "100%",
+      padding: "10px 12px",
+      borderRadius: "12px",
+      border: `1px solid ${colors.borderLight}`,
+      backgroundColor: colors.white,
+      fontSize: "13px",
+      color: colors.textDark,
+      outline: "none",
+      boxSizing: "border-box",
+    },
+    primaryButton: {
+      border: "none",
+      borderRadius: "12px",
+      backgroundColor: colors.accentOrange,
+      color: colors.white,
+      fontSize: "13px",
+      fontWeight: "800",
+      padding: "10px 16px",
+      cursor: "pointer",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 10px 20px rgba(245, 166, 35, 0.2)",
+    },
+    ghostButton: {
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "12px",
+      backgroundColor: colors.white,
+      color: colors.textDark,
+      fontSize: "13px",
+      fontWeight: "700",
+      padding: "10px 14px",
+      cursor: "pointer",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    errorBox: {
+      backgroundColor: "#FEF2F2",
+      border: "1px solid #FECACA",
+      color: colors.danger,
+      padding: "12px 14px",
+      borderRadius: "14px",
+      fontSize: "13px",
+      fontWeight: "600",
+      marginBottom: "18px",
+    },
+  };
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -119,51 +244,57 @@ function BookingList() {
   }, [bookings, resourceName, statusFilter]);
 
   return (
-    <div className="sc-container py-4">
-      <div className="sc-card">
-        <div className="sc-card-header d-flex align-items-end justify-content-between flex-wrap gap-2">
-          <div>
-            <h2 className="h4 mb-1">Bookings</h2>
-            <div className="text-muted small">View all current bookings.</div>
-          </div>
+    <div style={styles.page}>
+      <div style={styles.wrapper}>
+        <div style={styles.hero}>
+          <h1 style={styles.heroTitle}>Booking Overview</h1>
+          <p style={styles.heroText}>
+            Track upcoming reservations and manage your bookings in one place.
+            Use filters to find a resource quickly.
+          </p>
+        </div>
 
-          <div className="d-flex gap-2 flex-wrap">
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              style={{ width: 200 }}
-              placeholder="Search resource"
-              value={resourceName}
-              onChange={(e) => setResourceName(e.target.value)}
-            />
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>Bookings</h2>
+          <p style={styles.sectionText}>View all current bookings.</p>
 
-            <select
-              className="form-select form-select-sm"
-              style={{ width: 180 }}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="ALL">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="APPROVED">Approved</option>
-              <option value="REJECTED">Rejected</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+          <div style={styles.actionRow}>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <input
+                type="text"
+                placeholder="Search resource"
+                value={resourceName}
+                onChange={(e) => setResourceName(e.target.value)}
+                style={{ ...styles.input, width: 200 }}
+              />
 
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => fetchBookings(resourceName, statusFilter)}
-            >
-              Refresh
-            </button>
-            <Link to="/create" className="btn btn-primary btn-sm">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                style={{ ...styles.input, width: 180 }}
+              >
+                <option value="ALL">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+
+              <button
+                type="button"
+                style={styles.ghostButton}
+                onClick={() => fetchBookings(resourceName, statusFilter)}
+              >
+                Refresh
+              </button>
+            </div>
+
+            <Link to="/create" style={styles.primaryButton}>
               Create Booking
             </Link>
           </div>
-        </div>
 
-        <div className="sc-card-body">
-          {error ? <div className="alert alert-warning mb-3">{error}</div> : null}
+          {error ? <div style={styles.errorBox}>{error}</div> : null}
 
           <div className="table-responsive border rounded-4 overflow-hidden">
             <table className="table table-hover align-middle mb-0">

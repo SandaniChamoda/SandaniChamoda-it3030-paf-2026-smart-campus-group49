@@ -49,6 +49,87 @@ const isSameMonth = (a, b) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 
 function BookingCalendar() {
+  const colors = {
+    primaryDark: "#1A1F5A",
+    primaryGradientEnd: "#2A3080",
+    textDark: "#1A1F5A",
+    textMedium: "#6B7BA4",
+    textLight: "#C8D9FF",
+    bgLight: "#F7F9FF",
+    borderLight: "#E3E9F8",
+    white: "#FFFFFF",
+    danger: "#DC2626",
+  };
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: `linear-gradient(180deg, ${colors.bgLight} 0%, ${colors.white} 100%)`,
+      padding: "32px 20px 60px",
+    },
+    wrapper: {
+      maxWidth: "1200px",
+      margin: "0 auto",
+    },
+    hero: {
+      background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primaryGradientEnd} 100%)`,
+      borderRadius: "24px",
+      padding: "32px",
+      color: colors.white,
+      marginBottom: "28px",
+      boxShadow: "0 18px 40px rgba(26, 31, 90, 0.16)",
+    },
+    heroTitle: {
+      margin: 0,
+      fontSize: "34px",
+      fontWeight: "800",
+      lineHeight: "1.2",
+    },
+    heroText: {
+      marginTop: "10px",
+      marginBottom: 0,
+      color: colors.textLight,
+      fontSize: "15px",
+      lineHeight: "1.7",
+      maxWidth: "760px",
+    },
+    card: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "22px",
+      padding: "28px",
+      boxShadow: "0 16px 36px rgba(17, 24, 39, 0.06)",
+    },
+    headerRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: "12px",
+    },
+    sectionTitle: {
+      margin: 0,
+      fontSize: "22px",
+      fontWeight: "700",
+      color: colors.textDark,
+    },
+    sectionText: {
+      marginTop: "8px",
+      color: colors.textMedium,
+      fontSize: "14px",
+      lineHeight: "1.7",
+    },
+    errorBox: {
+      backgroundColor: "#FEF2F2",
+      border: "1px solid #FECACA",
+      color: colors.danger,
+      padding: "12px 14px",
+      borderRadius: "14px",
+      fontSize: "13px",
+      fontWeight: "600",
+      marginBottom: "18px",
+    },
+  };
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,35 +198,43 @@ function BookingCalendar() {
   });
 
   return (
-    <div className="sc-container py-4 booking-calendar">
-      <div className="sc-card">
-        <div className="sc-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div>
-            <h2 className="h4 mb-1">Booking Calendar</h2>
-            <div className="text-muted small">
-              Hover a booking to preview details, click to view more.
+    <div style={styles.page}>
+      <div style={styles.wrapper}>
+        <div style={styles.hero}>
+          <h1 style={styles.heroTitle}>Booking Calendar</h1>
+          <p style={styles.heroText}>
+            Explore active bookings across the month. Hover to preview or click
+            events to view more details.
+          </p>
+        </div>
+
+        <div style={styles.card} className="booking-calendar">
+          <div style={styles.headerRow}>
+            <div>
+              <h2 style={styles.sectionTitle}>Calendar View</h2>
+              <p style={styles.sectionText}>
+                Hover a booking to preview details, click to view more.
+              </p>
+            </div>
+
+            <div className="d-flex align-items-center gap-2">
+              <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
+              >
+                Prev
+              </button>
+              <span className="fw-semibold">{monthLabel}</span>
+              <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
+              >
+                Next
+              </button>
             </div>
           </div>
 
-          <div className="d-flex align-items-center gap-2">
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
-            >
-              Prev
-            </button>
-            <span className="fw-semibold">{monthLabel}</span>
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-
-        <div className="sc-card-body">
-          {error ? <div className="alert alert-warning mb-3">{error}</div> : null}
+          {error ? <div style={styles.errorBox}>{error}</div> : null}
           {loading ? <div className="text-muted">Loading calendar...</div> : null}
 
           <div className="calendar-layout">
@@ -253,54 +342,53 @@ function BookingCalendar() {
             </section>
           </div>
         </div>
-      </div>
 
-      {activeBooking ? (
-        <div className="calendar-modal" role="dialog" aria-modal="true">
-          <div className="calendar-modal-card">
-            <div className="calendar-modal-header">
-              <h4 className="h5 mb-0">Booking Details</h4>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary"
-                onClick={() => setActiveBooking(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="calendar-modal-body">
-              <div className="detail-row">
-                <span className="detail-label">Resource</span>
-                <span>{activeBooking.resourceName}</span>
+        {activeBooking ? (
+          <div className="calendar-modal" role="dialog" aria-modal="true">
+            <div className="calendar-modal-card">
+              <div className="calendar-modal-header">
+                <h4 className="h5 mb-0">Booking Details</h4>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => setActiveBooking(null)}
+                >
+                  Close
+                </button>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Purpose</span>
-                <span>{activeBooking.purpose}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Booked By</span>
-                <span>{activeBooking.bookedBy || "N/A"}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Attendees</span>
-                <span>{activeBooking.attendees}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Status</span>
-                <span>{activeBooking.status}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Time</span>
-                <span>
-                  {formatTime(activeBooking.start)} - {formatTime(activeBooking.end)}
-                </span>
+              <div className="calendar-modal-body">
+                <div className="detail-row">
+                  <span className="detail-label">Resource</span>
+                  <span>{activeBooking.resourceName}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Purpose</span>
+                  <span>{activeBooking.purpose}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Booked By</span>
+                  <span>{activeBooking.bookedBy || "N/A"}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Attendees</span>
+                  <span>{activeBooking.attendees}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Status</span>
+                  <span>{activeBooking.status}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Time</span>
+                  <span>
+                    {formatTime(activeBooking.start)} - {formatTime(activeBooking.end)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
-
 export default BookingCalendar;
