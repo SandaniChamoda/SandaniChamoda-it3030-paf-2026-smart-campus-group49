@@ -16,6 +16,9 @@ function AdminResourcePage() {
   const [capacityFilter, setCapacityFilter] = useState("ANY");
   const [locationFilter, setLocationFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const [form, setForm] = useState({
     name: "",
@@ -51,6 +54,18 @@ function AdminResourcePage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterType, filterCategory, capacityFilter, locationFilter]);
+
+  useEffect(() => {
+    if (!toast.show) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 2600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   const normalizeType = (type) => {
     const normalized = String(type || "").toUpperCase();
@@ -157,10 +172,49 @@ function AdminResourcePage() {
       });
   };
 
-  const handleDelete = (id) => {
-    fetch(`http://localhost:8086/resources/${id}`, {
+  const openDeleteConfirm = (resource) => {
+    setDeleteCandidate(resource);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (!deleteInProgress) {
+      setDeleteCandidate(null);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!deleteCandidate?.id || deleteInProgress) {
+      return;
+    }
+
+    setDeleteInProgress(true);
+
+    fetch(`http://localhost:8086/resources/${deleteCandidate.id}`, {
       method: "DELETE",
-    }).then(() => loadResources());
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Delete failed");
+        }
+
+        loadResources();
+        setToast({
+          show: true,
+          message: `Deleted successfully: ${deleteCandidate.name}`,
+          type: "success",
+        });
+        setDeleteCandidate(null);
+      })
+      .catch(() => {
+        setToast({
+          show: true,
+          message: "Could not delete resource. Please try again.",
+          type: "error",
+        });
+      })
+      .finally(() => {
+        setDeleteInProgress(false);
+      });
   };
 
   const handleEdit = (resource) => {
@@ -266,17 +320,22 @@ function AdminResourcePage() {
     if (normalizedType === "FACILITY") {
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 3h6" />
-          <path d="M10 3v5l-5 8a3 3 0 0 0 2.6 5h8.8a3 3 0 0 0 2.6-5l-5-8V3" />
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <path d="M9 20V4" />
+          <path d="M15 20V4" />
+          <path d="M4 10h16" />
+          <path d="M4 15h16" />
         </svg>
       );
     }
 
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="3" y="7" width="18" height="10" rx="2" />
-        <circle cx="9" cy="12" r="1.8" />
-        <path d="M13 12h5" />
+        <rect x="5" y="6" width="14" height="12" rx="2" />
+        <path d="M8 10h8" />
+        <path d="M8 14h5" />
+        <path d="M10 3v3" />
+        <path d="M14 3v3" />
       </svg>
     );
   };
@@ -322,6 +381,12 @@ function AdminResourcePage() {
 
       <div className="admin-main-area">
         <div className="admin-resource-shell">
+          {toast.show && (
+            <div className={`admin-resource-toast ${toast.type === "error" ? "error" : "success"}`} role="status" aria-live="polite">
+              {toast.message}
+            </div>
+          )}
+
           <div className="admin-resource-page">
           <header className="admin-resource-header">
             <div>
@@ -431,6 +496,11 @@ function AdminResourcePage() {
                 <tbody>
                   {pagedResources.map((resource) => {
                     const active = String(resource.status).toUpperCase() === "ACTIVE";
+                    const normalizedType = normalizeType(resource.type);
+                    const capacityText =
+                      normalizedType === "EQUIPMENT" || resource.capacity == null
+                        ? "N/A"
+                        : `${resource.capacity} Seats`;
                     return (
                       <tr key={resource.id}>
                         <td>
@@ -446,12 +516,10 @@ function AdminResourcePage() {
                           </div>
                         </td>
                         <td>
-                          <span className="chip">{toTitleCase(normalizeType(resource.type))}</span>
+                          <span className="chip">{toTitleCase(normalizedType)}</span>
                         </td>
                         <td>
-                          <strong>
-                            {resource.capacity == null ? "N/A" : `${resource.capacity} Seats`}
-                          </strong>
+                          <strong>{capacityText}</strong>
                           <span>{toTitleCase(resource.category) || resource.location}</span>
                         </td>
                         <td>
@@ -474,7 +542,7 @@ function AdminResourcePage() {
                                 <path d="m12 6 4 4" />
                               </svg>
                             </button>
-                            <button type="button" title="Delete" aria-label="Delete" onClick={() => handleDelete(resource.id)}>
+                            <button type="button" title="Delete" aria-label="Delete" onClick={() => openDeleteConfirm(resource)}>
                               <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M4 7h16" />
                                 <path d="M9 7V4h6v3" />
@@ -649,6 +717,56 @@ function AdminResourcePage() {
                     </div>
                   </form>
                 </section>
+              </section>
+            </div>
+          )}
+
+          {deleteCandidate && (
+            <div
+              className="admin-resource-modal-backdrop"
+              role="presentation"
+              onClick={closeDeleteConfirm}
+            >
+              <section
+                className="admin-resource-delete-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Confirm delete resource"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="admin-resource-delete-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 7h16" />
+                    <path d="M9 7V4h6v3" />
+                    <path d="M8 7v13h8V7" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                </div>
+
+                <h3>Delete Resource?</h3>
+                <p>
+                  You are about to remove <strong>{deleteCandidate.name}</strong>. This action cannot be undone.
+                </p>
+
+                <div className="admin-resource-delete-actions">
+                  <button
+                    type="button"
+                    className="resource-btn-light"
+                    onClick={closeDeleteConfirm}
+                    disabled={deleteInProgress}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="resource-btn-danger"
+                    onClick={confirmDelete}
+                    disabled={deleteInProgress}
+                  >
+                    {deleteInProgress ? "Deleting..." : "Delete Resource"}
+                  </button>
+                </div>
               </section>
             </div>
           )}
