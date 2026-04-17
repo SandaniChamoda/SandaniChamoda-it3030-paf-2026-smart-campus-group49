@@ -46,4 +46,12 @@ List<Booking> findByResourceNameAndStartTimeBetween(
         LocalDateTime start,
         LocalDateTime end
 );
+
+List<Booking> findByBookedBy(String bookedBy);
+
+List<Booking> findByBookedByAndStatus(String bookedBy, BookingStatus status);
+
+List<Booking> findByBookedByAndResourceNameContainingIgnoreCase(String bookedBy, String resourceName);
+
+List<Booking> findByBookedByAndResourceNameContainingIgnoreCaseAndStatus(String bookedBy, String resourceName, BookingStatus status);
 }

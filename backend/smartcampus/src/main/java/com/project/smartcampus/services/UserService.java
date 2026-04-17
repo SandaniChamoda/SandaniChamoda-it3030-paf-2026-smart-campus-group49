@@ -178,4 +178,15 @@ public class UserService {
             throw new UnauthorizedException("Invalid authentication context.");
         }
     }
+
+    /**
+     * Extracts the user's email from the Authentication object.
+     * Works with both JWT-based and OAuth2 authentication.
+     */
+    public String extractUserEmail(Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return user.getEmail();
+    }
 }

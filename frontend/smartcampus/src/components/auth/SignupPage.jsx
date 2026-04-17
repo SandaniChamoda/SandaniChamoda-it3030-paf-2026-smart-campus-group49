@@ -112,6 +112,7 @@ function SignupPage() {
             required
           >
             <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
             <option value="TECHNICIAN">TECHNICIAN</option>
           </select>
 
