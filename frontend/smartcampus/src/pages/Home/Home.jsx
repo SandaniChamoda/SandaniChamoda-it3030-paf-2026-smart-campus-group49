@@ -1,5 +1,6 @@
 ﻿import "./Home.css";
 import { Link } from "react-router-dom";
+import Footer from "../../components/Footer/Footer";
 
 function Home() {
   const features = [
@@ -69,6 +70,60 @@ function Home() {
     { to: "/admin", title: "Admin dashboard", desc: "Review requests and approvals." },
   ];
 
+  const benefits = [
+    {
+      id: 1,
+      icon: "📚",
+      title: "Real-Time Visibility",
+      desc: "Access complete facility information and resource availability instantly across campus."
+    },
+    {
+      id: 2,
+      icon: "✅",
+      title: "Conflict-Free Booking",
+      desc: "Intelligent validation engine eliminates scheduling conflicts automatically."
+    },
+    {
+      id: 3,
+      icon: "🚀",
+      title: "Fast Incident Response",
+      desc: "Route issues to technicians intelligently with priority-based assignment."
+    },
+    {
+      id: 4,
+      icon: "🔐",
+      title: "Role-Based Control",
+      desc: "Admin-grade access management with real-time approval workflows."
+    }
+  ];
+
+  const platformHighlights = [
+    {
+      id: 1,
+      category: "Resources",
+      title: "Facilities Catalog",
+      desc: "Complete inventory of campus facilities with live availability"
+    },
+    {
+      id: 2,
+      category: "Booking",
+      title: "Smart Scheduling",
+      desc: "Zero-conflict booking engine with instant approvals"
+    },
+    {
+      id: 3,
+      category: "Tickets",
+      title: "Incident Management",
+      desc: "Unified ticketing with intelligent technician routing"
+    },
+    {
+      id: 4,
+      category: "Admin",
+      title: "Operations Hub",
+      desc: "Centralized control dashboard for all approvals and settings"
+    }
+  ];
+
   return (
     <div className="home-shell">
       {/* Hero Section */}
@@ -108,7 +163,7 @@ function Home() {
         <div className="story-container">
           <div className="story-image-placeholder">
             <div className="placeholder-content">
-             <img src="/malabe-library4.png" alt="Smart Campus" />
+             <img src="/public/malabe-library4.png" alt="Smart Campus" />
             </div>
           </div>
           <div className="story-content">

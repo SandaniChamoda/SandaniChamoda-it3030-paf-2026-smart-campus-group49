@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Header from "./components/Header/Header";
+import Footer from "./components/Footer/Footer";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
@@ -56,6 +57,9 @@ function RoleHomeRedirect() {
   return <Navigate to={getRoleDashboardPath(user?.role)} replace />;
 }
 
+import ResourceList from "./pages/Resource/ResourceList";
+import AdminResourcePage from "./pages/Resource/AdminResourcePage";
+import Footer from "./components/Footer/Footer";
 function App() {
   return (
     <div className="app-shell">
@@ -311,6 +315,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+    <Footer />
     </div>
   );
 }
