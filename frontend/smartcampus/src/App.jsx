@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 
 import Header from "./components/Header/Header";
+import Footer from "./components/Footer/Footer";
 
 import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
@@ -80,6 +81,7 @@ function App() {
           <Route path="/tickets/admin/details/:id" element={<AdminTicketDetails />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }

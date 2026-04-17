@@ -303,35 +303,19 @@
   box-shadow: 0 20px 48px rgba(26, 31, 90, 0.12);
 }
 
-.service-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(245, 166, 35, 0.1);
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.service-card:hover .service-icon {
-  background: rgba(245, 166, 35, 0.2);
-}
-
 .service-card h3 {
-  margin: 1rem 0 0.6rem;
-  font-size: 1.15rem;
+  margin: 0 0 0.8rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--sc-text);
+  line-height: 1.4;
 }
 
 .service-card p {
   margin: 0;
   color: var(--sc-muted);
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 /* Quick Actions Section */
