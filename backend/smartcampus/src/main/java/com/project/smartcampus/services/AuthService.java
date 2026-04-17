@@ -10,7 +10,6 @@ import com.project.smartcampus.dto.ResetPasswordRequest;
 import com.project.smartcampus.dto.SignupRequest;
 import com.project.smartcampus.dto.UserDTO;
 import com.project.smartcampus.entity.User;
-import com.project.smartcampus.enums.Role;
 import com.project.smartcampus.exception.UnauthorizedException;
 import com.project.smartcampus.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -48,10 +47,6 @@ public class AuthService {
 
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("An account already exists with this email.");
-        }
-
-        if (request.getRole() == Role.ADMIN) {
-            throw new RuntimeException("Admin accounts cannot be created from public signup.");
         }
 
         User user = User.builder()
