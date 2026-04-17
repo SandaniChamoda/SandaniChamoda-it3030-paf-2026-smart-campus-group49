@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import API from "../../services/api";
 import "../Admin/AdminDashboard.css";
 import "./AdminResourcePage.css";
 
@@ -42,9 +43,9 @@ function AdminResourcePage() {
   ];
 
   const loadResources = () => {
-    fetch("http://localhost:8086/resources")
-      .then((res) => res.json())
-      .then((data) => setResources(data));
+    API.get("/resources")
+      .then((res) => setResources(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setResources([]));
   };
 
   useEffect(() => {
@@ -142,33 +143,23 @@ function AdminResourcePage() {
       description: form.description || null,
     };
 
-    const url =
+    const request =
       editingId !== null
-        ? `http://localhost:8086/resources/${editingId}`
-        : "http://localhost:8086/resources";
+        ? API.put(`/resources/${editingId}`, payload)
+        : API.post("/resources", payload);
 
-    const method = editingId !== null ? "PUT" : "POST";
-
-    fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Validation failed");
-        }
-        return res.json();
-      })
+    request
       .then(() => {
         loadResources();
         resetForm();
         setShowForm(false);
       })
-      .catch(() => {
-        alert("Validation error: please check inputs");
+      .catch((error) => {
+        const message =
+          typeof error.response?.data === "string"
+            ? error.response.data
+            : error.response?.data?.message;
+        alert(message || "Validation error: please check inputs");
       });
   };
 
@@ -189,14 +180,8 @@ function AdminResourcePage() {
 
     setDeleteInProgress(true);
 
-    fetch(`http://localhost:8086/resources/${deleteCandidate.id}`, {
-      method: "DELETE",
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Delete failed");
-        }
-
+    API.delete(`/resources/${deleteCandidate.id}`)
+      .then(() => {
         loadResources();
         setToast({
           show: true,
