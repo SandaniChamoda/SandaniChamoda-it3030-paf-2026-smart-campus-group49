@@ -4,9 +4,12 @@ package com.project.smartcampus.services;
 import com.project.smartcampus.dto.BookingRequest;
 import com.project.smartcampus.dto.BookingResponse;
 import com.project.smartcampus.entity.Booking;
+import com.project.smartcampus.entity.Resource;
 import com.project.smartcampus.enums.BookingStatus;
+import com.project.smartcampus.enums.ResourceStatus;
 import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.repository.BookingRepository;
+import com.project.smartcampus.repository.ResourceRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,14 +28,18 @@ public class BookingService {
         private QRCodeService qrCodeService;
 
         private final BookingRepository repository;
+        private final ResourceRepository resourceRepository;
         private static final EnumSet<BookingStatus> ACTIVE_CONFLICT_STATUSES = EnumSet.of(BookingStatus.PENDING,
                         BookingStatus.APPROVED);
 
-        public BookingService(BookingRepository repository) {
+        public BookingService(BookingRepository repository, ResourceRepository resourceRepository) {
                 this.repository = repository;
+                this.resourceRepository = resourceRepository;
         }
 
         public BookingResponse createBooking(BookingRequest request) {
+                validateResourceIsBookable(request.getResourceName());
+
                 Booking booking = mapToEntity(request);
 
                 if (booking.getStartTime().isBefore(LocalDateTime.now())) {
@@ -105,6 +112,8 @@ public class BookingService {
         }
 
         public BookingResponse updateBooking(Long id, BookingRequest request) {
+                validateResourceIsBookable(request.getResourceName());
+
                 Booking updatedBooking = mapToEntity(request);
 
                 Booking existing = repository.findById(id)
@@ -251,6 +260,8 @@ public class BookingService {
                         LocalDateTime start,
                         LocalDateTime end) {
 
+                validateResourceIsBookable(resourceName);
+
                 // Rule 1 — Start must be today or future
                 if (start.toLocalDate().isBefore(LocalDate.now())) {
                         throw new BookingConflictException(
@@ -297,6 +308,16 @@ public class BookingService {
                                 LocalDateTime.now());
 
                 return mapToResponse(repository.save(booking));
+        }
+
+        private void validateResourceIsBookable(String resourceName) {
+                Resource resource = resourceRepository
+                                .findFirstByNameIgnoreCase(resourceName)
+                                .orElseThrow(() -> new BookingConflictException("Selected resource was not found"));
+
+                if (resource.getStatus() != ResourceStatus.ACTIVE) {
+                        throw new BookingConflictException("This resource is out of service and cannot be booked");
+                }
         }
 
         private Booking mapToEntity(BookingRequest request) {

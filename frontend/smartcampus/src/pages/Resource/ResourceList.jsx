@@ -12,6 +12,7 @@ function ResourceList() {
   const [capacityFilter, setCapacityFilter] = useState("ALL");
   const [locationFilter, setLocationFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedResource, setSelectedResource] = useState(null);
 
   const pageSize = 6;
   const themedImageCatalog = {
@@ -27,6 +28,65 @@ function ResourceList() {
     ],
     DEFAULT: [
       "https://lh3.googleusercontent.com/aida-public/AB6AXuD1lUVgc9BP8EwPlWkzl54TxvunKrDTpvO8f2hiLB3IZang27bEuoaYPfBY6PVklHzNbz5qJczlM7_4myuTUsF3WQB8CMVOCNDxkf_vHFdh9VHLrxlmmmbZC8Xbg2jsi98_3u5W9toPTX1u54bEffpQYhbmxM66U5qB3ieHeBIh8qbCaCFdVyzv2TVXl1Y-MJnjV-1YQ4HKNzURtFOmYll8rk7e8FKJo69DZCVr1o4g3_NX577mfJkVXGceXuAt2yBiF735X4zX_ubh",
+    ],
+  };
+
+  const categoryImageMap = {
+    LECTURE_HALL: [
+      themedImageCatalog.FACILITY[0],
+      themedImageCatalog.FACILITY[1],
+      themedImageCatalog.FACILITY[2],
+      "https://images.pexels.com/photos/159740/classroom-education-library-room-159740.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    ],
+    AUDITORIUM: [
+      themedImageCatalog.FACILITY[0],
+      themedImageCatalog.FACILITY[2],
+      themedImageCatalog.DEFAULT[0],
+      "https://images.pexels.com/photos/1184572/pexels-photo-1184572.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    ],
+    MEETING_ROOM: [
+      themedImageCatalog.FACILITY[1],
+      themedImageCatalog.FACILITY[2],
+      themedImageCatalog.DEFAULT[0],
+      "https://images.pexels.com/photos/1181396/pexels-photo-1181396.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/416320/pexels-photo-416320.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    ],
+    LAB: [
+      themedImageCatalog.FACILITY[2],
+      themedImageCatalog.EQUIPMENT[0],
+      themedImageCatalog.EQUIPMENT[1],
+      "https://images.pexels.com/photos/2280571/pexels-photo-2280571.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/3825581/pexels-photo-3825581.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/3912512/pexels-photo-3912512.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "https://images.pexels.com/photos/3938023/pexels-photo-3938023.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    ],
+    PROJECTOR: [
+      themedImageCatalog.EQUIPMENT[0],
+      themedImageCatalog.EQUIPMENT[1],
+      themedImageCatalog.EQUIPMENT[2],
+    ],
+    CAMERA: [
+      themedImageCatalog.EQUIPMENT[1],
+      themedImageCatalog.EQUIPMENT[0],
+      themedImageCatalog.EQUIPMENT[2],
+    ],
+    LAPTOP: [
+      themedImageCatalog.EQUIPMENT[2],
+      themedImageCatalog.EQUIPMENT[1],
+      themedImageCatalog.EQUIPMENT[0],
+    ],
+    MICROPHONE: [
+      themedImageCatalog.EQUIPMENT[1],
+      themedImageCatalog.EQUIPMENT[2],
+      themedImageCatalog.EQUIPMENT[0],
+    ],
+    SPEAKER: [
+      themedImageCatalog.EQUIPMENT[2],
+      themedImageCatalog.EQUIPMENT[0],
+      themedImageCatalog.EQUIPMENT[1],
     ],
   };
 
@@ -82,6 +142,11 @@ function ResourceList() {
   };
 
   const resolveImageGroup = (resource) => {
+    const categoryKey = String(resource.category || "").toUpperCase();
+    if (categoryImageMap[categoryKey]) {
+      return categoryImageMap[categoryKey];
+    }
+
     const normalizedType = normalizeType(resource.type);
     if (normalizedType === "FACILITY") {
       return themedImageCatalog.FACILITY;
@@ -94,10 +159,12 @@ function ResourceList() {
     return themedImageCatalog.DEFAULT;
   };
 
-  const getCardImage = (resource) => {
-    const imageGroup = resolveImageGroup(resource);
-    const stableIndex = Math.abs(Number(resource.id) || resource.name.length || 0) % imageGroup.length;
-    return imageGroup[stableIndex];
+  const getResourceKey = (resource, index = 0) => {
+    if (resource.id != null) {
+      return String(resource.id);
+    }
+
+    return `${String(resource.name || "resource")}-${index}`;
   };
 
   const getLastCheckText = (resource) => {
@@ -172,11 +239,53 @@ function ResourceList() {
   const pageNumbers = createPageNumbers(totalPages, currentSafePage);
   const pageStart = (currentSafePage - 1) * pageSize;
   const pagedResources = filteredResources.slice(pageStart, pageStart + pageSize);
+  const weeklySalt = Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7));
+
+  const uniqueImageByResourceKey = useMemo(() => {
+    const usedUrls = new Set();
+    const imageMap = new Map();
+
+    pagedResources.forEach((resource, index) => {
+      const imageGroup = resolveImageGroup(resource);
+      const baseIndex = Math.abs((Number(resource.id) || resource.name?.length || 0) + weeklySalt) % imageGroup.length;
+
+      let selectedUrl = "";
+      for (let offset = 0; offset < imageGroup.length; offset += 1) {
+        const candidate = imageGroup[(baseIndex + offset) % imageGroup.length];
+        if (!usedUrls.has(candidate)) {
+          selectedUrl = candidate;
+          break;
+        }
+      }
+
+      // If category pools are exhausted, use a deterministic seeded fallback to keep images unique.
+      if (!selectedUrl) {
+        const categoryToken = encodeURIComponent(
+          String(resource.category || resource.type || "campus").toLowerCase().replaceAll("_", " ")
+        );
+        const uniqueSeed = `${weeklySalt}-${getResourceKey(resource, index)}`;
+        selectedUrl = `https://loremflickr.com/1280/720/${categoryToken}?lock=${encodeURIComponent(uniqueSeed)}`;
+      }
+
+      usedUrls.add(selectedUrl);
+      imageMap.set(getResourceKey(resource, index), selectedUrl);
+    });
+
+    return imageMap;
+  }, [pagedResources, weeklySalt]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage >= 1 && nextPage <= totalPages) {
       setCurrentPage(nextPage);
     }
+  };
+
+  const openResourceDetails = (resource) => {
+    setSelectedResource(resource);
+  };
+
+  const closeResourceDetails = () => {
+    setSelectedResource(null);
   };
 
   return (
@@ -270,15 +379,21 @@ function ResourceList() {
 
       <section className="resource-grid" aria-label="Facilities">
         {pagedResources.map((r) => {
+          const resourceKey = getResourceKey(r);
+          const normalizedType = normalizeType(r.type);
           const isActive = String(r.status).toUpperCase() === "ACTIVE";
           const statusText = isActive ? "ACTIVE" : "OUT_OF_SERVICE";
+          const capacityText =
+            normalizedType === "EQUIPMENT" || r.capacity == null
+              ? "Capacity N/A"
+              : `${Number(r.capacity) || 0} seats`;
 
           return (
             <article className="resource-card" key={r.id}>
               <div className="resource-image-wrap">
                 <img
                   className="resource-image"
-                  src={getCardImage(r)}
+                  src={uniqueImageByResourceKey.get(resourceKey) || themedImageCatalog.DEFAULT[0]}
                   alt={`${r.name} overview`}
                   loading="lazy"
                 />
@@ -290,7 +405,7 @@ function ResourceList() {
 
               <div className="resource-card-body">
                 <p className="resource-type">
-                  {toTitleCase(normalizeType(r.type))}
+                  {toTitleCase(normalizedType)}
                   {r.category ? ` • ${toTitleCase(r.category)}` : ""}
                 </p>
                 <h3>{r.name}</h3>
@@ -302,14 +417,18 @@ function ResourceList() {
                     <path d="M3.5 18c0-2.5 2-4.5 4.5-4.5h0c2.5 0 4.5 2 4.5 4.5" />
                     <path d="M13.5 18c0-1.9 1.5-3.5 3.5-3.5h0c1.9 0 3.5 1.5 3.5 3.5" />
                   </svg>
-                  {r.capacity == null ? "Capacity N/A" : `${Number(r.capacity) || 0} seats`}
+                  {capacityText}
                 </p>
 
                 <div className="resource-card-footer">
                   <span>Last check: {getLastCheckText(r)}</span>
-                  <a href="#" onClick={(e) => e.preventDefault()}>
-                    {isActive ? "Manage Details" : "View Ticket"}
-                  </a>
+                  <button
+                    type="button"
+                    className="resource-details-link"
+                    onClick={() => openResourceDetails(r)}
+                  >
+                    View Details
+                  </button>
                 </div>
 
                 {!isActive && <p className="resource-warning">{getIssueText(r)}</p>}
@@ -368,6 +487,101 @@ function ResourceList() {
           &gt;
         </button>
       </nav>
+
+      {selectedResource && (
+        <div
+          className="resource-details-backdrop"
+          role="presentation"
+          onClick={closeResourceDetails}
+        >
+          <section
+            className="resource-details-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Resource details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="resource-details-head">
+              <div>
+                <p className="resource-details-kicker">Resource Profile</p>
+                <h3>{selectedResource.name}</h3>
+              </div>
+              <button
+                type="button"
+                className="resource-details-close"
+                onClick={closeResourceDetails}
+                aria-label="Close details"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="resource-details-grid">
+              <article>
+                <span>ID</span>
+                <strong>FAC-{String(selectedResource.id).padStart(3, "0")}</strong>
+              </article>
+              <article>
+                <span>Type</span>
+                <strong>{toTitleCase(normalizeType(selectedResource.type))}</strong>
+              </article>
+              <article>
+                <span>Category</span>
+                <strong>{toTitleCase(selectedResource.category)}</strong>
+              </article>
+              <article>
+                <span>Status</span>
+                <strong>{String(selectedResource.status || "").toUpperCase()}</strong>
+              </article>
+              <article>
+                <span>Capacity</span>
+                <strong>
+                  {normalizeType(selectedResource.type) === "EQUIPMENT" || selectedResource.capacity == null
+                    ? "N/A"
+                    : `${Number(selectedResource.capacity) || 0} seats`}
+                </strong>
+              </article>
+              <article>
+                <span>Location</span>
+                <strong>{selectedResource.location || "N/A"}</strong>
+              </article>
+              <article>
+                <span>Availability Start</span>
+                <strong>{selectedResource.availabilityStart || "N/A"}</strong>
+              </article>
+              <article>
+                <span>Availability End</span>
+                <strong>{selectedResource.availabilityEnd || "N/A"}</strong>
+              </article>
+            </div>
+
+            <div className="resource-details-description">
+              <p>Description</p>
+              <div>
+                {selectedResource.description?.trim()
+                  ? selectedResource.description
+                  : "No description available for this resource."}
+              </div>
+            </div>
+
+            <div className="resource-details-actions">
+              {String(selectedResource.status || "").toUpperCase() === "ACTIVE" ? (
+                <Link
+                  to="/bookings/calendar"
+                  className="resource-book-now-btn"
+                  onClick={closeResourceDetails}
+                >
+                  View Bookings
+                </Link>
+              ) : (
+                <button type="button" className="resource-book-now-btn disabled" disabled>
+                  Not Bookable
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
