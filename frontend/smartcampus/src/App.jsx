@@ -1,6 +1,7 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Link } from "react-router-dom";
 
 import Header from "./components/Header/Header";
+import Footer from "./components/Footer/Footer";
 
 import Home from "./pages/Home/Home";
 import BookingList from "./pages/Booking/BookingList";
@@ -31,16 +32,38 @@ import AdminResourcePage from "./pages/Resource/AdminResourcePage";
 function App() {
   return (
     <div className="app-shell">
+      {/* Header Component */}
+
+      <Header />
+
+      {/* <div className="sc-container d-flex flex-wrap gap-2 py-2">
+        <Link to="/resources" className="btn btn-light">
+          Resources
+        </Link>
+
+        <Link to="/bookings" className="btn btn-light">
+          Bookings
+        </Link>
+
+        <Link to="/create" className="btn btn-light">
+          Create Booking
+        </Link>
+
+        <Link to="/admin" className="btn btn-light">
+          Admin
+        </Link>
+      </div> */}
 
       <Header />
 
       {/* Pages */}
       <main className="sc-page">
         <Routes>
-
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
 
+          <Route path="/resources" element={<ResourcePage />} />
+          <Route path="/bookings" element={<BookingList />} />
 
           <Route path="/resources" element={<ResourceList />} />
           <Route path="/admin/resources" element={<AdminResourcePage />} />
@@ -61,6 +84,7 @@ function App() {
           <Route path="/scanner-mock" element={<MockScannerPage />} />
           <Route path="/mock-verify/:id" element={<MockVerifyPage />} />
 
+          {/* sandani */}
           {/* Ticket routes */}
           <Route path="/tickets/create" element={<CreateTicket />} />
           <Route path="/tickets/my" element={<MyTickets />} />
@@ -76,7 +100,7 @@ function App() {
 
         </Routes>
       </main>
-
+      <Footer />
     </div>
   );
 }

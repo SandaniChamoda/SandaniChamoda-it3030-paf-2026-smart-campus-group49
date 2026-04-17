@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import API from "../../services/api";
 import "./BookingCalendar.css";
 
-const ACTIVE_STATUSES = new Set(["PENDING", "APPROVED"]);
+const ACTIVE_STATUSES = new Set(["APPROVED"]);
 
 const addDays = (date, days) => {
   const next = new Date(date);
@@ -25,7 +25,12 @@ const endOfCalendar = (date) => {
   return addDays(end, 6 - day);
 };
 
-const formatDateKey = (date) => date.toISOString().slice(0, 10);
+const formatDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const formatTime = (date) =>
   date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
@@ -181,6 +186,12 @@ function BookingCalendar() {
       }
       map.get(key).push(booking);
     });
+    
+    // Sort bookings by start time for each date
+    map.forEach((bookingsForDate) => {
+      bookingsForDate.sort((a, b) => a.start - b.start);
+    });
+    
     return map;
   }, [bookings]);
 
@@ -309,7 +320,7 @@ function BookingCalendar() {
                         <span className="calendar-date">{day.getDate()}</span>
                       </div>
                       <div className="calendar-events">
-                        {dayBookings.slice(0, 2).map((booking) => (
+                        {dayBookings.slice(0, 4).map((booking) => (
                           <button
                             key={booking.id}
                             type="button"
@@ -317,7 +328,7 @@ function BookingCalendar() {
                             onClick={() => setActiveBooking(booking)}
                           >
                             <span className="event-time">
-                              {formatTime(booking.start)} - {formatTime(booking.end)}
+                              {formatTime(booking.start)}
                             </span>
                             <span className="event-title">
                               {booking.resourceName}
@@ -331,8 +342,14 @@ function BookingCalendar() {
                             </span>
                           </button>
                         ))}
-                        {dayBookings.length > 2 ? (
-                          <span className="event-more">+{dayBookings.length - 2} more</span>
+                        {dayBookings.length > 4 ? (
+                          <button
+                            type="button"
+                            className="event-more-btn"
+                            onClick={() => setActiveBooking({ __isViewAll: true, date: key, bookings: dayBookings })}
+                          >
+                            +{dayBookings.length - 4} more
+                          </button>
                         ) : null}
                       </div>
                     </div>
