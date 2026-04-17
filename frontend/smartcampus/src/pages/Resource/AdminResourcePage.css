@@ -1,0 +1,548 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap");
+
+.admin-resource-shell {
+  min-height: calc(100vh - 130px);
+  display: block;
+  background: linear-gradient(180deg, #f7f9ff 0%, #ffffff 100%);
+  border-radius: 22px;
+  border: 1px solid #e3e9f8;
+  box-shadow: 0 14px 34px rgba(26, 31, 90, 0.08);
+  overflow: visible;
+}
+
+.admin-main-area {
+  position: relative;
+  padding: 20px 22px 28px;
+}
+
+.admin-resource-page {
+  --primary-dark: #1a1f5a;
+  --primary-gradient-end: #2a3080;
+  --accent-orange: #f5a623;
+  --accent-orange-hover: #e09612;
+  --text-dark: #1a1f5a;
+  --text-medium: #6b7ba4;
+  --text-light: #c8d9ff;
+  --bg-light: #f7f9ff;
+  --bg-stats: #f0f4ff;
+  --border-light: #e3e9f8;
+  --white: #ffffff;
+  --footer-text: #b6c6f0;
+
+  padding: 0 0 28px;
+  font-family: "Inter", "Segoe UI", Tahoma, sans-serif;
+  color: var(--text-dark);
+}
+
+.admin-resource-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-gradient-end) 100%);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 20px 50px rgba(26, 31, 90, 0.18);
+}
+
+.admin-resource-tag {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.admin-resource-header h1 {
+  margin: 0.5rem 0 0;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+  font-size: clamp(1.85rem, 3vw, 2.2rem);
+  line-height: 1.2;
+  color: var(--white);
+  letter-spacing: -0.03em;
+}
+
+.admin-resource-header p {
+  margin: 8px 0 0;
+  color: var(--text-light);
+  max-width: 640px;
+  font-size: 0.94rem;
+}
+
+.admin-resource-create-btn {
+  margin-top: 0;
+  border: 0;
+  background: var(--accent-orange);
+  color: var(--primary-dark);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.admin-resource-create-btn:hover {
+  background: var(--accent-orange-hover);
+  transform: translateY(-1px);
+}
+
+.admin-resource-metrics {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 10px 28px rgba(26, 31, 90, 0.06);
+}
+
+.metric-card p {
+  margin: 0;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+.metric-card h2 {
+  margin: 10px 0 6px;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+  font-size: clamp(1.6rem, 2.5vw, 2rem);
+  line-height: 1;
+}
+
+.metric-card span {
+  font-size: 13px;
+}
+
+.metric-card-primary {
+  background: var(--white);
+  color: var(--text-dark);
+  border-top: 4px solid var(--primary-dark);
+}
+
+.metric-card-warning {
+  background: var(--white);
+  color: var(--text-dark);
+  border-top: 4px solid var(--accent-orange);
+}
+
+.metric-card-neutral {
+  background: var(--bg-stats);
+  color: var(--text-dark);
+  border-top: 4px solid #8ea0c3;
+}
+
+.metric-card-neutral h2 {
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+}
+
+.admin-resource-form-wrap {
+  margin-top: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  background: var(--white);
+  padding: 20px;
+  box-shadow: 0 10px 28px rgba(26, 31, 90, 0.06);
+}
+
+.admin-resource-form-wrap h3 {
+  margin: 0 0 14px;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+}
+
+.admin-resource-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-resource-form input,
+.admin-resource-form select {
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.admin-resource-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+}
+
+.resource-btn-primary,
+.resource-btn-light {
+  height: 40px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 700;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.resource-btn-primary {
+  background: var(--accent-orange);
+  color: var(--primary-dark);
+}
+
+.resource-btn-primary:hover {
+  background: var(--accent-orange-hover);
+}
+
+.resource-btn-light {
+  background: var(--bg-stats);
+  color: var(--text-dark);
+}
+
+.admin-resource-toolbar {
+  margin-top: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  background: var(--white);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 10px 28px rgba(26, 31, 90, 0.06);
+}
+
+.toolbar-search {
+  position: relative;
+}
+
+.toolbar-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  stroke: #8f9bc0;
+  stroke-width: 2;
+  fill: none;
+}
+
+.toolbar-search input,
+.admin-resource-toolbar select {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #e8ebf4;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--white);
+  color: #4f5f8f;
+}
+
+.toolbar-search input {
+  padding-left: 32px;
+}
+
+.toolbar-filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-resource-registry {
+  margin-top: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  background: var(--white);
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(26, 31, 90, 0.06);
+}
+
+.registry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+}
+
+.registry-head h3 {
+  margin: 0;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+  font-size: 1.4rem;
+}
+
+.registry-head p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-medium);
+}
+
+.registry-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.registry-table-wrap tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.registry-table-wrap tbody tr:hover {
+  background: rgba(236, 238, 244, 0.55);
+}
+
+.registry-table-wrap th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  line-height: 1;
+  text-align: left;
+  color: #2d3c66;
+  padding: 14px 20px;
+  background: #f9fbff;
+  white-space: nowrap;
+}
+
+.registry-table-wrap td {
+  padding: 16px 20px;
+  border-top: 1px solid #edf1f9;
+  vertical-align: middle;
+}
+
+.registry-table-wrap td strong {
+  display: block;
+  font-size: 16px;
+  line-height: 1.2;
+  color: #091657;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+}
+
+.registry-table-wrap td span {
+  display: block;
+  font-size: 12px;
+  color: #8ea0c3;
+  line-height: 1.2;
+}
+
+.resource-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resource-icon-badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: #dfe2f7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.resource-icon-badge svg {
+  width: 26px;
+  height: 26px;
+  stroke: #0e1f6a;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.resource-name-meta {
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  background: #eef2ff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: #334674;
+  font-weight: 500;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 5px 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+.status-pill.active {
+  background: #f8d7a8;
+  color: #6c4100;
+}
+
+.status-pill.inactive {
+  background: #f2cbca;
+  color: #8e1111;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.action-buttons button {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #8093bd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.action-buttons button svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  fill: none;
+}
+
+.action-buttons button:hover {
+  color: #2a3c6d;
+}
+
+.registry-empty {
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--text-medium);
+}
+
+.registry-footer {
+  border-top: 1px solid #edf1f9;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.registry-footer p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-medium);
+}
+
+.registry-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.registry-pagination button,
+.registry-pagination span {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-medium);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.registry-pagination button {
+  cursor: pointer;
+}
+
+.registry-pagination button.active {
+  background: var(--primary-dark);
+  color: var(--white);
+}
+
+.registry-pagination button:disabled {
+  color: #c2cae4;
+  cursor: not-allowed;
+}
+
+.floating-support-btn {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  border: 0;
+  background: linear-gradient(135deg, #1a1f5a, #2a3080);
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(26, 31, 90, 0.35);
+}
+
+@media (max-width: 1020px) {
+  .admin-main-area {
+    padding: 10px 12px 16px;
+  }
+
+  .admin-resource-header {
+    flex-direction: column;
+  }
+
+  .admin-resource-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-resource-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-resource-toolbar {
+    width: 100%;
+  }
+
+  .toolbar-filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .registry-head,
+  .registry-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .registry-table-wrap {
+    overflow-x: auto;
+  }
+
+  .registry-table-wrap table {
+    min-width: 760px;
+  }
+
+  .floating-support-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 22px;
+  }
+}

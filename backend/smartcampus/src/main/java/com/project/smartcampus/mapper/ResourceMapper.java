@@ -10,8 +10,12 @@ public class ResourceMapper {
         dto.setId(r.getId());
         dto.setName(r.getName());
         dto.setType(r.getType());
+        dto.setCategory(r.getCategory());
         dto.setCapacity(r.getCapacity());
         dto.setLocation(r.getLocation());
+        dto.setAvailabilityStart(r.getAvailabilityStart());
+        dto.setAvailabilityEnd(r.getAvailabilityEnd());
+        dto.setDescription(r.getDescription());
         dto.setStatus(r.getStatus());
         return dto;
     }
@@ -21,8 +25,12 @@ public class ResourceMapper {
         r.setId(dto.getId());
         r.setName(dto.getName());
         r.setType(dto.getType());
+        r.setCategory(dto.getCategory());
         r.setCapacity(dto.getCapacity());
         r.setLocation(dto.getLocation());
+        r.setAvailabilityStart(dto.getAvailabilityStart());
+        r.setAvailabilityEnd(dto.getAvailabilityEnd());
+        r.setDescription(dto.getDescription());
         r.setStatus(dto.getStatus());
         return r;
     }

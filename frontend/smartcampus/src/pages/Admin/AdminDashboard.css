@@ -21,9 +21,7 @@
 }
 
 .admin-sidebar {
-  position: sticky;
-  top: 0;
-  height: calc(100vh - 130px);
+  min-height: calc(100vh - 130px);
   border: 1px solid var(--border-light);
   border-radius: 18px;
   background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-gradient-end) 100%);
@@ -33,7 +31,6 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 1.2rem;
-  overflow-y: auto;
 }
 
 .admin-side-kicker {
