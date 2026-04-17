@@ -1,5 +1,6 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 
 const toDatetimeLocalMin = (date = new Date()) => {
@@ -31,15 +32,27 @@ const getResourceApiCandidates = () => {
 
 function CreateBooking() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [booking, setBooking] = useState({
     resourceName: "",
     purpose: "",
-    bookedBy: "",
+    bookedBy: user?.name || "",
     attendees: "",
     startTime: "",
     endTime: "",
   });
+
+  useEffect(() => {
+    if (!user?.name) {
+      return;
+    }
+
+    setBooking((prev) => ({
+      ...prev,
+      bookedBy: user.name,
+    }));
+  }, [user?.name]);
   const [touched, setTouched] = useState({
     startTime: false,
     endTime: false,
@@ -484,15 +497,14 @@ function CreateBooking() {
 
                 <div style={styles.group}>
                   <label style={styles.label} htmlFor="bookedBy">
-                    Booked By (Name)
+                    Booked By (Email)
                   </label>
                   <input
                     id="bookedBy"
                     type="text"
                     name="bookedBy"
                     value={booking.bookedBy}
-                    onChange={handleChange}
-                    placeholder="e.g., Nuwan Perera"
+                    readOnly
                     style={styles.input}
                     required
                   />
@@ -654,3 +666,4 @@ function CreateBooking() {
 }
 
 export default CreateBooking;
+

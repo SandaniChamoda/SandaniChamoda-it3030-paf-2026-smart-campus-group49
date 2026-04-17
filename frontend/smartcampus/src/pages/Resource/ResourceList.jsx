@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import API from "../../services/api";
 import "./ResourceList.css";
 
 function ResourceList() {
@@ -30,10 +31,14 @@ function ResourceList() {
     ],
   };
 
-  const loadResources = () => {
-    fetch("http://localhost:8086/resources")
-      .then((res) => res.json())
-      .then((data) => setResources(data));
+  const loadResources = async () => {
+    try {
+      const response = await API.get("/resources");
+      setResources(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error("Failed to load resources", error);
+      setResources([]);
+    }
   };
 
   useEffect(() => {
@@ -373,3 +378,4 @@ function ResourceList() {
 }
 
 export default ResourceList;
+

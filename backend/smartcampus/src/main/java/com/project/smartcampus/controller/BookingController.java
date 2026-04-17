@@ -5,9 +5,11 @@ import com.project.smartcampus.dto.BookingResponse;
 import com.project.smartcampus.dto.RejectBookingRequest;
 import com.project.smartcampus.enums.BookingStatus;
 import com.project.smartcampus.services.BookingService;
+import com.project.smartcampus.services.UserService;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -22,13 +24,18 @@ import java.util.Map;
 
 public class BookingController {
     private final BookingService service;
+    private final UserService userService;
 
-    public BookingController(BookingService service) {
+    public BookingController(BookingService service, UserService userService) {
         this.service = service;
+        this.userService = userService;
     }
 
     @PostMapping
-    public BookingResponse createBooking(@Valid @RequestBody BookingRequest request) {
+    public BookingResponse createBooking(
+            @Valid @RequestBody BookingRequest request,
+            Authentication authentication) {
+        request.setBookedBy(userService.extractUserEmail(authentication));
         return service.createBooking(request);
     }
 
@@ -37,6 +44,15 @@ public class BookingController {
             @RequestParam(required = false) String resourceName,
             @RequestParam(required = false) BookingStatus status) {
         return service.getBookingsFiltered(resourceName, status);
+    }
+
+    @GetMapping("/my-bookings")
+    public List<BookingResponse> getMyBookings(
+            Authentication authentication,
+            @RequestParam(required = false) String resourceName,
+            @RequestParam(required = false) BookingStatus status) {
+        String userEmail = userService.extractUserEmail(authentication);
+        return service.getUserBookingsFiltered(userEmail, resourceName, status);
     }
 
     @GetMapping("/{id}")
@@ -124,3 +140,4 @@ public class BookingController {
     }
 
 }
+

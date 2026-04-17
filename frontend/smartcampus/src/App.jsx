@@ -56,10 +56,6 @@ function RoleHomeRedirect() {
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <Navigate to={getRoleDashboardPath(user?.role)} replace />;
 }
-
-import ResourceList from "./pages/Resource/ResourceList";
-import AdminResourcePage from "./pages/Resource/AdminResourcePage";
-import Footer from "./components/Footer/Footer";
 function App() {
   return (
     <div className="app-shell">

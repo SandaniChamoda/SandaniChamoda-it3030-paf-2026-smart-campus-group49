@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 
 const getStatusBadgeClass = (status) => {
@@ -297,20 +298,26 @@ function BookingList() {
     },
     cardFooter: {
       display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "10px",
       paddingTop: "12px",
       borderTop: `1px solid rgba(26, 31, 90, 0.08)`,
     },
+    footerRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "10px",
+    },
     createdBy: {
-      fontSize: "11px",
+      fontSize: "12px",
       color: colors.textMedium,
       fontWeight: "600",
     },
     arrowButton: {
-      width: "auto",
-      height: "32px",
-      borderRadius: "8px",
+      minHeight: "34px",
+      borderRadius: "10px",
       backgroundColor: colors.accentOrange,
       border: "none",
       color: colors.white,
@@ -319,8 +326,40 @@ function BookingList() {
       alignItems: "center",
       justifyContent: "center",
       fontSize: "12px",
-      fontWeight: "600",
-      padding: "0 14px",
+      fontWeight: "700",
+      padding: "0 16px",
+      transition: "all 0.2s ease",
+    },
+    actionGroup: {
+      display: "flex",
+      gap: "10px",
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    actionSecondary: {
+      borderRadius: "10px",
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      color: colors.textDark,
+      fontSize: "12px",
+      fontWeight: "700",
+      padding: "6px 14px",
+      cursor: "pointer",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "all 0.2s ease",
+    },
+    actionDanger: {
+      borderRadius: "10px",
+      backgroundColor: "#FDECEC",
+      border: "1px solid #F5C2C2",
+      color: colors.danger,
+      fontSize: "12px",
+      fontWeight: "700",
+      padding: "6px 14px",
+      cursor: "pointer",
       transition: "all 0.2s ease",
     },
     cardActions: {
@@ -349,6 +388,7 @@ function BookingList() {
   const [error, setError] = useState("");
   const [resourceName, setResourceName] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -374,7 +414,9 @@ function BookingList() {
         params.status = status;
       }
 
-      const response = await API.get("/bookings", { params });
+      // Use my-bookings endpoint for regular users, all bookings for admin
+      const endpoint = isAdmin ? "/bookings" : "/bookings/my-bookings";
+      const response = await API.get(endpoint, { params });
       setBookings(response.data);
     } catch (e) {
       console.error("Error fetching bookings", e);
@@ -566,30 +608,56 @@ function BookingList() {
                 </div>
 
                 <div style={styles.cardFooter}>
-                  <div>
+                  <div style={styles.footerRow}>
                     <span style={styles.createdBy}>
                       Booked by: <strong>{b.bookedBy || "-"}</strong>
                     </span>
+                    {b.status === "PENDING" && (
+                      <div style={styles.actionGroup}>
+                        <Link
+                          to={`/bookings/${b.id}/edit`}
+                          style={styles.actionSecondary}
+                        >
+                          Update
+                        </Link>
+                        <button
+                          type="button"
+                          style={styles.actionDanger}
+                          onClick={() => handleDelete(b.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                    {b.status === "APPROVED" && (
+                      <div style={styles.actionGroup}>
+                        <button
+                          type="button"
+                          style={styles.arrowButton}
+                          onClick={() => handleViewQr(b.qrCode)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              colors.accentOrangeHover;
+                            e.currentTarget.style.transform = "scale(1.05)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              colors.accentOrange;
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                        >
+                          View QR
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.actionDanger}
+                          onClick={() => handleCancel(b.id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  {b.status === "APPROVED" && (
-                    <button
-                      type="button"
-                      style={styles.arrowButton}
-                      onClick={() => handleViewQr(b.qrCode)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          colors.accentOrangeHover;
-                        e.currentTarget.style.transform = "scale(1.05)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          colors.accentOrange;
-                        e.currentTarget.style.transform = "scale(1)";
-                      }}
-                    >
-                      📱 View QR
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
