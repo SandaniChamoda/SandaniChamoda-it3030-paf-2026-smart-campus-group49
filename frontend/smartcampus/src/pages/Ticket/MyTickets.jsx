@@ -57,7 +57,7 @@ function MyTickets() {
         return colors.danger;
       case "MEDIUM":
         return colors.warning;
-      case "LOW":
+      case "LOW":``
         return colors.success;
       default:
         return colors.textMedium;
