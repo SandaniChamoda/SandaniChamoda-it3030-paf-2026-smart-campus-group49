@@ -17,7 +17,8 @@ import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
 import BookingCalendar from "./pages/Booking/BookingCalendar";
-import ResourcePage from "./pages/Resource/ResourcePage";
+import ResourceList from "./pages/Resource/ResourceList";
+import AdminResourcePage from "./pages/Resource/AdminResourcePage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import MockScannerPage from "./pages/Booking/MockScannerPage";
 import MockVerifyPage from "./pages/Booking/MockVerifyPage";
@@ -58,10 +59,8 @@ function RoleHomeRedirect() {
 function App() {
   return (
     <div className="app-shell">
-      {/* Header Component */}
       <Header />
 
-      {/* Pages */}
       <main className="sc-page">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -126,6 +125,7 @@ function App() {
               </ProtectedRoute>
             )}
           />
+
           <Route
             path="/account/settings"
             element={(
@@ -155,10 +155,19 @@ function App() {
             path="/resources"
             element={(
               <ProtectedRoute>
-                <ResourcePage />
+                <ResourceList />
               </ProtectedRoute>
             )}
           />
+          <Route
+            path="/admin/resources"
+            element={(
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminResourcePage />
+              </ProtectedRoute>
+            )}
+          />
+
           <Route
             path="/bookings"
             element={(
@@ -175,7 +184,6 @@ function App() {
               </ProtectedRoute>
             )}
           />
-
           <Route
             path="/create"
             element={(
@@ -227,7 +235,6 @@ function App() {
             )}
           />
 
-          {/* sandani */}
           <Route
             path="/tickets/create"
             element={(

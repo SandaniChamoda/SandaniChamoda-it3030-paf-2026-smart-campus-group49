@@ -8,5 +8,7 @@ import java.util.List;
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
     List<Resource> findByType(ResourceType type);
 
-List<Resource> findByLocation(String location);
+    List<Resource> findByTypeIn(List<ResourceType> types);
+
+    List<Resource> findByLocation(String location);
 }

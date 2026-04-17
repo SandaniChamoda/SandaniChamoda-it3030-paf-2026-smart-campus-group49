@@ -51,6 +51,52 @@ function Header() {
                 Dashboard
               </NavLink>
               <NavLink
+                to="/resources"
+                className={navLinkClass}
+                onClick={closeMenu}
+              >
+                Resources
+              </NavLink>
+              <NavLink
+                to="/bookings"
+                className={navLinkClass}
+                onClick={closeMenu}
+              >
+                My Bookings
+              </NavLink>
+              <NavLink
+                to="/create"
+                className={navLinkClass}
+                onClick={closeMenu}
+              >
+                New Booking
+              </NavLink>
+              <NavLink
+                to="/bookings/calendar"
+                className={navLinkClass}
+                onClick={closeMenu}
+              >
+                Booking Calendar
+              </NavLink>
+              {user?.role === "ADMIN" && (
+                <>
+                  <NavLink
+                    to="/admin"
+                    className={navLinkClass}
+                    onClick={closeMenu}
+                  >
+                    Admin Dashboard
+                  </NavLink>
+                  <NavLink
+                    to="/admin/resources"
+                    className={navLinkClass}
+                    onClick={closeMenu}
+                  >
+                    Manage Resources
+                  </NavLink>
+                </>
+              )}
+              <NavLink
                 to="/notifications"
                 className={navLinkClass}
                 onClick={closeMenu}
