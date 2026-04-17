@@ -28,6 +28,7 @@ import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
 
 import ResourceList from "./pages/Resource/ResourceList";
 import AdminResourcePage from "./pages/Resource/AdminResourcePage";
+import Footer from "./components/Footer/Footer";
 function App() {
   return (
     <div className="app-shell">
@@ -76,7 +77,7 @@ function App() {
 
         </Routes>
       </main>
-
+    <Footer />
     </div>
   );
 }
