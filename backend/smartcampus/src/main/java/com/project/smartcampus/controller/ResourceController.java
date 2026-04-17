@@ -7,15 +7,10 @@ import com.project.smartcampus.services.ResourceService;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,38 +22,46 @@ public class ResourceController {
     @Autowired
     private ResourceService service;
 
+    // GET ALL
     @GetMapping
-    public List<ResourceDTO> getAll() {
-        return service.getAll();
+    public ResponseEntity<List<ResourceDTO>> getAll() {
+        return ResponseEntity.ok(service.getAll());
     }
 
+    // CREATE
     @PostMapping
-    public ResourceDTO create(@Valid @RequestBody ResourceDTO dto) {
-    return service.create(dto);
+    public ResponseEntity<ResourceDTO> create(@Valid @RequestBody ResourceDTO dto) {
+        return new ResponseEntity<>(service.create(dto), HttpStatus.CREATED);
     }
 
+    // GET BY ID
     @GetMapping("/{id}")
-    public ResourceDTO getById(@PathVariable Long id) {
-        return service.getById(id);
+    public ResponseEntity<ResourceDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getById(id));
     }
 
+    // FILTER BY TYPE
     @GetMapping("/type/{type}")
-    public List<ResourceDTO> getByType(@PathVariable ResourceType type) {
-        return service.getByType(type);
+    public ResponseEntity<List<ResourceDTO>> getByType(@PathVariable ResourceType type) {
+        return ResponseEntity.ok(service.getByType(type));
     }
 
+    // FILTER BY LOCATION
     @GetMapping("/location/{location}")
-    public List<ResourceDTO> getByLocation(@PathVariable String location) {
-        return service.getByLocation(location);
+    public ResponseEntity<List<ResourceDTO>> getByLocation(@PathVariable String location) {
+        return ResponseEntity.ok(service.getByLocation(location));
     }
 
+    // UPDATE
     @PutMapping("/{id}")
-    public ResourceDTO update(@PathVariable Long id, @Valid @RequestBody ResourceDTO dto) {
-        return service.update(id, dto);
+    public ResponseEntity<ResourceDTO> update(@PathVariable Long id, @Valid @RequestBody ResourceDTO dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
+    // DELETE
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

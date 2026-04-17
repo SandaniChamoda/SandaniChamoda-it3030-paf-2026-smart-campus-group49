@@ -36,6 +36,13 @@ function Header() {
             Home
           </NavLink>
           <NavLink
+            to="/resources"
+            className={navLinkClass}
+            onClick={closeMenu}
+          >
+            Resources
+          </NavLink>
+          <NavLink
             to="/bookings"
             className={navLinkClass}
             onClick={closeMenu}
