@@ -100,6 +100,16 @@ function AdminResourcePage() {
     });
   };
 
+  const openCreateForm = () => {
+    resetForm();
+    setShowForm(true);
+  };
+
+  const closeFormModal = () => {
+    resetForm();
+    setShowForm(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -108,9 +118,9 @@ function AdminResourcePage() {
       type: normalizeType(form.type),
       capacity:
         normalizeType(form.type) === "EQUIPMENT"
-          ? null
+          ? 0
           : form.capacity === ""
-            ? null
+            ? 0
             : Number(form.capacity),
       availabilityStart: form.availabilityStart || null,
       availabilityEnd: form.availabilityEnd || null,
@@ -323,14 +333,9 @@ function AdminResourcePage() {
             <button
               className="admin-resource-create-btn"
               type="button"
-              onClick={() => {
-                if (editingId !== null) {
-                  resetForm();
-                }
-                setShowForm((prev) => !prev);
-              }}
+              onClick={openCreateForm}
             >
-              {showForm ? "Close Form" : "Register New Resource"}
+              Register New Resource
             </button>
           </header>
 
@@ -353,96 +358,6 @@ function AdminResourcePage() {
               <span>Science District Audit</span>
             </article>
           </section>
-
-          {showForm && (
-            <section className="admin-resource-form-wrap" aria-label="Resource form">
-              <h3>{editingId !== null ? "Edit Resource" : "Add New Resource"}</h3>
-
-              <form className="admin-resource-form" onSubmit={handleSubmit}>
-                <input
-                  name="name"
-                  placeholder="Resource name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                />
-
-                <select name="type" value={form.type} onChange={handleChange}>
-                  <option value="FACILITY">FACILITY</option>
-                  <option value="EQUIPMENT">EQUIPMENT</option>
-                </select>
-
-                <select name="category" value={form.category} onChange={handleChange}>
-                  {getCategoryOptionsByType(form.type).map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  name="capacity"
-                  placeholder="Capacity"
-                  type="number"
-                  min="1"
-                  value={form.capacity}
-                  onChange={handleChange}
-                  required={form.type === "FACILITY"}
-                />
-
-                <input
-                  name="location"
-                  placeholder="Location"
-                  value={form.location}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  name="availabilityStart"
-                  type="time"
-                  value={form.availabilityStart}
-                  onChange={handleChange}
-                />
-
-                <input
-                  name="availabilityEnd"
-                  type="time"
-                  value={form.availabilityEnd}
-                  onChange={handleChange}
-                />
-
-                <input
-                  name="description"
-                  placeholder="Description"
-                  value={form.description}
-                  onChange={handleChange}
-                />
-
-                <select name="status" value={form.status} onChange={handleChange}>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
-                </select>
-
-                <div className="admin-resource-form-actions">
-                  <button className="resource-btn-primary" type="submit">
-                    {editingId !== null ? "Update Resource" : "Add Resource"}
-                  </button>
-
-                  <button
-                    className="resource-btn-light"
-                    type="button"
-                    onClick={() => {
-                      resetForm();
-                      setShowForm(false);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
 
           <section className="admin-resource-toolbar" aria-label="Resource filters">
             <div className="toolbar-search">
@@ -625,6 +540,118 @@ function AdminResourcePage() {
           <button className="floating-support-btn" type="button" aria-label="Support agent">
             🎧
           </button>
+
+          {showForm && (
+            <div
+              className="admin-resource-modal-backdrop"
+              role="presentation"
+              onClick={closeFormModal}
+            >
+              <section
+                className="admin-resource-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Resource form"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="admin-resource-modal-head">
+                  <h3>{editingId !== null ? "Edit Resource" : "Add New Resource"}</h3>
+                  <button
+                    className="admin-resource-modal-close"
+                    type="button"
+                    onClick={closeFormModal}
+                    aria-label="Close form"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <section className="admin-resource-form-wrap" aria-label="Resource form">
+                  <form className="admin-resource-form" onSubmit={handleSubmit}>
+                    <input
+                      name="name"
+                      placeholder="Resource name"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
+                    />
+
+                    <select name="type" value={form.type} onChange={handleChange}>
+                      <option value="FACILITY">FACILITY</option>
+                      <option value="EQUIPMENT">EQUIPMENT</option>
+                    </select>
+
+                    <select name="category" value={form.category} onChange={handleChange}>
+                      {getCategoryOptionsByType(form.type).map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      name="capacity"
+                      placeholder="Capacity"
+                      type="number"
+                      min="1"
+                      value={form.capacity}
+                      onChange={handleChange}
+                      required={form.type === "FACILITY"}
+                    />
+
+                    <input
+                      name="location"
+                      placeholder="Location"
+                      value={form.location}
+                      onChange={handleChange}
+                      required
+                    />
+
+                    <input
+                      name="availabilityStart"
+                      type="time"
+                      value={form.availabilityStart}
+                      onChange={handleChange}
+                    />
+
+                    <input
+                      name="availabilityEnd"
+                      type="time"
+                      value={form.availabilityEnd}
+                      onChange={handleChange}
+                    />
+
+                    <textarea
+                      name="description"
+                      placeholder="Description"
+                      value={form.description}
+                      onChange={handleChange}
+                      rows={3}
+                    />
+
+                    <select name="status" value={form.status} onChange={handleChange}>
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
+                    </select>
+
+                    <div className="admin-resource-form-actions">
+                      <button className="resource-btn-primary" type="submit">
+                        {editingId !== null ? "Update Resource" : "Add Resource"}
+                      </button>
+
+                      <button
+                        className="resource-btn-light"
+                        type="button"
+                        onClick={closeFormModal}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              </section>
+            </div>
+          )}
         </div>
       </div>
     </section>

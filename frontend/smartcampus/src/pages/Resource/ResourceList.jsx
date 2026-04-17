@@ -8,9 +8,9 @@ function ResourceList() {
 
   const [resources, setResources] = useState([]);
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [capacityFilter, setCapacityFilter] = useState("ALL");
+  const [locationFilter, setLocationFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
 
   const pageSize = 6;
@@ -42,7 +42,7 @@ function ResourceList() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterType, filterCategory, capacityFilter]);
+  }, [search, filterCategory, capacityFilter, locationFilter]);
 
   const normalizeType = (type) => {
     const normalized = String(type || "").toUpperCase();
@@ -145,15 +145,27 @@ function ResourceList() {
   const filteredResources = useMemo(() => {
     return resources.filter((r) => {
       const haystack = [r.name, r.type, r.location, r.id].join(" ").toLowerCase();
+      const locationMatches =
+        locationFilter === "ALL" || String(r.location || "") === locationFilter;
 
       return (
         haystack.includes(search.toLowerCase()) &&
-        (filterType === "" || normalizeType(r.type) === filterType) &&
         (filterCategory === "" || String(r.category || "") === filterCategory) &&
-        capacityMatches(r.capacity == null ? null : Number(r.capacity))
+        capacityMatches(r.capacity == null ? null : Number(r.capacity)) &&
+        locationMatches
       );
     });
-  }, [resources, search, filterType, filterCategory, capacityFilter]);
+  }, [resources, search, filterCategory, capacityFilter, locationFilter]);
+
+  const locationOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        resources
+          .map((resource) => String(resource.location || "").trim())
+          .filter(Boolean)
+      )
+    ).sort((left, right) => left.localeCompare(right));
+  }, [resources]);
 
   const totalPages = Math.max(1, Math.ceil(filteredResources.length / pageSize));
   const currentSafePage = Math.min(currentPage, totalPages);
@@ -201,19 +213,6 @@ function ResourceList() {
 
         <div className="resource-filter-controls">
           <div className="resource-select-group">
-            <label htmlFor="resource-type">Asset Category</label>
-            <select
-              id="resource-type"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              <option value="">All Types</option>
-              <option value="FACILITY">Facility</option>
-              <option value="EQUIPMENT">Equipment</option>
-            </select>
-          </div>
-
-          <div className="resource-select-group">
             <label htmlFor="resource-category">Category</label>
             <select
               id="resource-category"
@@ -240,6 +239,22 @@ function ResourceList() {
               <option value="SMALL">1 - 30 seats</option>
               <option value="MEDIUM">31 - 100 seats</option>
               <option value="LARGE">101+ seats</option>
+            </select>
+          </div>
+
+          <div className="resource-select-group">
+            <label htmlFor="resource-location">Location</label>
+            <select
+              id="resource-location"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+            >
+              <option value="ALL">All Locations</option>
+              {locationOptions.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
             </select>
           </div>
 
