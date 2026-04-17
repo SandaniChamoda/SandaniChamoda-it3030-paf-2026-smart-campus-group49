@@ -5,22 +5,38 @@ import './DashboardPages.css';
 
 function AccountSettingsPage() {
   const { user, setUser } = useAuth();
-  const [form, setForm] = useState({ name: '', profilePicture: '', notificationsEnabled: true });
+  const [form, setForm] = useState({ name: '', phone: '', notificationsEnabled: true });
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
   useEffect(() => {
     if (!user) return;
-    setForm({
+    setForm((prev) => ({
+      ...prev,
       name: user.name || '',
-      profilePicture: user.profilePicture || '',
       notificationsEnabled: Boolean(user.notificationsEnabled),
-    });
+    }));
   }, [user]);
 
   const setMessage = (type, message) => {
     setFeedback({ type, message });
+  };
+
+  const formatMemberSince = (dateValue) => {
+    if (!dateValue) return 'N/A';
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatProvider = (provider) => {
+    if (!provider) return 'Local';
+    return provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase();
   };
 
   const handleProfileSubmit = async (e) => {
@@ -31,7 +47,7 @@ function AccountSettingsPage() {
     try {
       const updatedUser = await authService.updateProfile({
         name: form.name,
-        profilePicture: form.profilePicture,
+        profilePicture: user?.profilePicture ?? '',
       });
       setUser(updatedUser);
       setMessage('success', 'Profile updated successfully.');
@@ -88,13 +104,13 @@ function AccountSettingsPage() {
               </div>
 
               <div className="account-field">
-                <label htmlFor="profilePicture">Profile Picture URL</label>
+                <label htmlFor="phone">Phone Number</label>
                 <input
-                  id="profilePicture"
-                  type="url"
-                  value={form.profilePicture}
-                  onChange={(e) => setForm((prev) => ({ ...prev, profilePicture: e.target.value }))}
-                  placeholder="https://example.com/photo.png"
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+                  placeholder="+94 7X XXX XXXX"
                 />
               </div>
             </div>
@@ -105,6 +121,33 @@ function AccountSettingsPage() {
               </button>
             </div>
           </form>
+        </article>
+
+        <article className="account-card">
+          <h2>Account Information</h2>
+          <p className="account-subtext">View your account metadata and sign-in details.</p>
+
+          <div className="account-info-grid">
+            <div className="account-info-item">
+              <p className="account-info-label">Role</p>
+              <p className="account-info-value">{user?.role || 'N/A'}</p>
+            </div>
+
+            <div className="account-info-item">
+              <p className="account-info-label">Email</p>
+              <p className="account-info-value">{user?.email || 'N/A'}</p>
+            </div>
+
+            <div className="account-info-item">
+              <p className="account-info-label">Provider</p>
+              <p className="account-info-value">{formatProvider(user?.provider)}</p>
+            </div>
+
+            <div className="account-info-item">
+              <p className="account-info-label">Member Since</p>
+              <p className="account-info-value">{formatMemberSince(user?.createdAt)}</p>
+            </div>
+          </div>
         </article>
 
         <article className="account-card">

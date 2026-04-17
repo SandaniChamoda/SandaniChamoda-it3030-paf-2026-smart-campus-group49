@@ -28,21 +28,21 @@ function NotificationList() {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const data = filter === 'unread'
-        ? await notificationService.getUnreadNotifications()
-        : await notificationService.getNotifications();
-      setNotifications(data);
-    } catch {
-      setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = filter === 'unread'
+          ? await notificationService.getUnreadNotifications()
+          : await notificationService.getNotifications();
+        setNotifications(data);
+      } catch {
+        setNotifications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     load();
   }, [filter]);
 

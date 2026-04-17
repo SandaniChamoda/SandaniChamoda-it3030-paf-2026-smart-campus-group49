@@ -8,12 +8,30 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SmartcampusApplication {
 
     public static void main(String[] args) {
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = Dotenv.configure()
+                .ignoreIfMissing()
+                .load();
 
-        System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
-        System.setProperty("DB_USERNAME", dotenv.get("DB_USERNAME"));
-        System.setProperty("DB_URL", dotenv.get("DB_URL"));
+        setSystemPropertyIfPresent(dotenv, "DB_PASSWORD");
+        setSystemPropertyIfPresent(dotenv, "DB_USERNAME");
+        setSystemPropertyIfPresent(dotenv, "DB_URL");
+
+        // Required for Spring OAuth2 Google client registration placeholders.
+        setSystemPropertyIfPresent(dotenv, "GOOGLE_CLIENT_ID");
+        setSystemPropertyIfPresent(dotenv, "GOOGLE_CLIENT_SECRET");
+
+        // Keep other placeholders aligned with .env when present.
+        setSystemPropertyIfPresent(dotenv, "FRONTEND_URL");
+        setSystemPropertyIfPresent(dotenv, "JWT_SECRET");
+        setSystemPropertyIfPresent(dotenv, "JWT_EXPIRATION");
 
         SpringApplication.run(SmartcampusApplication.class, args);
+    }
+
+    private static void setSystemPropertyIfPresent(Dotenv dotenv, String key) {
+        String value = dotenv.get(key);
+        if (value != null && !value.isBlank()) {
+            System.setProperty(key, value);
+        }
     }
 }

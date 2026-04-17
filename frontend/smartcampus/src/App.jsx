@@ -1,22 +1,22 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Header from "./components/Header/Header";
-import LoginPage from "./components/auth/LoginPage";
-import SignupPage from "./components/auth/SignupPage";
-import ForgotPasswordPage from "./components/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./components/auth/ResetPasswordPage";
-import OAuth2RedirectHandler from "./components/auth/OAuth2RedirectHandler";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import NotificationList from "./components/notifications/NotificationList";
-import UserManagement from "./components/users/UserManagement";
 import { useAuth } from "./context/AuthContext";
 
 import Home from "./pages/Home/Home";
+import LoginPage from "./pages/Auth/LoginPage";
+import SignupPage from "./pages/Auth/SignupPage";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
+import OAuth2RedirectHandler from "./pages/Auth/OAuth2RedirectHandler";
 import BookingList from "./pages/Booking/BookingList";
 import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
 import BookingCalendar from "./pages/Booking/BookingCalendar";
+import NotificationList from "./pages/Notification/NotificationList";
+import UserManagement from "./pages/Admin/UserManagement";
 import ResourceList from "./pages/Resource/ResourceList";
 import AdminResourcePage from "./pages/Resource/AdminResourcePage";
 import AdminDashboard from "./pages/Admin/AdminDashboard";

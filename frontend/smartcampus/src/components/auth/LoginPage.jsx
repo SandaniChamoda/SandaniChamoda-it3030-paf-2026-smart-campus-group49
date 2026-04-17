@@ -25,8 +25,19 @@ function LoginPage() {
       const authData = await loginWithEmail(form);
       navigate(getRoleDashboardPath(authData?.user?.role), { replace: true });
     } catch (err) {
-      const fallback = 'Unable to sign in. Check your credentials and try again.';
-      setError(err.response?.data?.message || fallback);
+      const apiMessage =
+        typeof err.response?.data === 'string'
+          ? err.response.data
+          : err.response?.data?.message;
+
+      const fallback =
+        err.code === 'ERR_NETWORK'
+          ? 'Cannot connect to the server. Please ensure the backend is running on http://localhost:8086.'
+          : err.response?.status === 401
+            ? 'Sign in failed. Check your email, password, and selected role.'
+            : 'Unable to sign in. Check your credentials and try again.';
+
+      setError(apiMessage || fallback);
     } finally {
       setSubmitting(false);
     }

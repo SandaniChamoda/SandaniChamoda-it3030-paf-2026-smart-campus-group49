@@ -30,9 +30,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         this.userRepository = userRepository;
     }
 
+    // Wrapped for testability so OAuth2 provider calls can be stubbed in unit tests.
+    protected OAuth2User loadProviderUser(OAuth2UserRequest userRequest) {
+        return super.loadUser(userRequest);
+    }
+
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+        OAuth2User oAuth2User = loadProviderUser(userRequest);
 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");

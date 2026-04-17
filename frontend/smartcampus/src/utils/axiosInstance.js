@@ -4,6 +4,16 @@ const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8086',
 });
 
+const PUBLIC_AUTH_ENDPOINTS = [
+  '/api/auth/login',
+  '/api/auth/signup',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+];
+
+const isPublicAuthEndpoint = (url = '') =>
+  PUBLIC_AUTH_ENDPOINTS.some((endpoint) => url.includes(endpoint));
+
 // Attach JWT token to every request
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -20,10 +30,17 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || '';
+
+    if (status === 401 && !isPublicAuthEndpoint(requestUrl)) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
+
     return Promise.reject(error);
   }
 );

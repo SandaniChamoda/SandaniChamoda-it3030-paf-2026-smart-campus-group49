@@ -54,7 +54,7 @@ function SignupPage() {
     setSubmitting(true);
 
     try {
-      const { confirmPassword, ...payload } = form;
+      const { confirmPassword: _confirmPassword, ...payload } = form;
       await signupWithEmail(payload);
       navigate('/login', {
         replace: true,
