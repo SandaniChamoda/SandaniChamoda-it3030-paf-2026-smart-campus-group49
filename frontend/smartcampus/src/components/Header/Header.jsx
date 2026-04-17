@@ -36,6 +36,13 @@ function Header() {
             Home
           </NavLink>
           <NavLink
+            to="/resources"
+            className={navLinkClass}
+            onClick={closeMenu}
+          >
+            Resources
+          </NavLink>
+          <NavLink
             to="/bookings"
             className={navLinkClass}
             onClick={closeMenu}
@@ -48,6 +55,13 @@ function Header() {
             onClick={closeMenu}
           >
             New Booking
+          </NavLink>
+          <NavLink
+            to="/bookings/calendar"
+            className={navLinkClass}
+            onClick={closeMenu}
+          >
+            Booking Calendar
           </NavLink>
           <NavLink
             to="/admin"

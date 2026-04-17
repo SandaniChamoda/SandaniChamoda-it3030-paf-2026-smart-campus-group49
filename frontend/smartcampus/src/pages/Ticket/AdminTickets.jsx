@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import API from "../../services/api";
+import "../Admin/AdminDashboard.css";
 
 function AdminTickets() {
   const colors = {
@@ -29,6 +30,13 @@ function AdminTickets() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
+
+  const sideLinks = [
+    { label: "Users" },
+    { to: "/admin/resources", label: "Resources" },
+    { to: "/admin", label: "Bookings", end: true },
+    { to: "/tickets/admin", label: "Tickets", end: true },
+  ];
 
   const fetchAllTickets = async () => {
     try {
@@ -357,125 +365,163 @@ function AdminTickets() {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <div style={styles.heroCard}>
-          <div>
-            <h1 style={styles.heroTitle}>Admin Ticket Management</h1>
-            <p style={styles.heroText}>
-              Review all maintenance tickets, monitor workflow, and open the
-              next action pages for assignment and status handling.
+    <section className="admin-layout">
+      <aside className="admin-sidebar">
+        <div>
+          <p className="admin-side-kicker">Admin Panel</p>
+          <h2 className="admin-side-title">Operations</h2>
+
+          <nav className="admin-side-nav" aria-label="Admin sections">
+            {sideLinks.map((item) => (
+              item.to ? (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `admin-side-link${isActive ? " active" : ""}`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ) : (
+                <button key={item.label} type="button" className="admin-side-link admin-side-link-button">
+                  {item.label}
+                </button>
+              )
+            ))}
+          </nav>
+        </div>
+
+        <div className="admin-side-bottom">
+          <Link to="/tickets/create" className="admin-side-link support-link">
+            Support
+          </Link>
+          <Link to="/" className="admin-side-link logout-link">
+            Logout
+          </Link>
+        </div>
+      </aside>
+
+      <div style={styles.page}>
+        <div style={styles.container}>
+          <div style={styles.heroCard}>
+            <div>
+              <h1 style={styles.heroTitle}>Admin Ticket Management</h1>
+              <p style={styles.heroText}>
+                Review all maintenance tickets, monitor workflow, and open the
+                next action pages for assignment and status handling.
+              </p>
+
+              <div style={styles.heroButtons}>
+                <button style={styles.secondaryButton} onClick={fetchAllTickets}>
+                  Refresh Tickets
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.statsGrid}>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Total Tickets</div>
+              <div style={styles.statValue}>{totalTickets}</div>
+            </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Open</div>
+              <div style={styles.statValue}>{openCount}</div>
+            </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>In Progress</div>
+              <div style={styles.statValue}>{inProgressCount}</div>
+            </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Resolved / Closed</div>
+              <div style={styles.statValue}>{resolvedCount}</div>
+            </div>
+          </div>
+
+          <div style={styles.filterCard}>
+            <h2 style={styles.sectionTitle}>Filter and Search</h2>
+            <p style={styles.sectionSubtext}>
+              Search by ticket id, title, description, or category and narrow the
+              list by status and priority.
             </p>
 
-            <div style={styles.heroButtons}>
-              <button style={styles.secondaryButton} onClick={fetchAllTickets}>
-                Refresh Tickets
-              </button>
+            <div style={styles.filtersGrid}>
+              <div style={styles.inputWrap}>
+                <label style={styles.inputLabel}>Search</label>
+                <input
+                  type="text"
+                  placeholder="Search tickets..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.inputWrap}>
+                <label style={styles.inputLabel}>Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={styles.select}
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+              </div>
+
+              <div style={styles.inputWrap}>
+                <label style={styles.inputLabel}>Priority</label>
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value)}
+                  style={styles.select}
+                >
+                  <option value="ALL">All Priorities</option>
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Tickets</div>
-            <div style={styles.statValue}>{totalTickets}</div>
+          {error && <div style={styles.errorBox}>{error}</div>}
+
+          <div style={styles.resultText}>
+            Showing <strong>{filteredTickets.length}</strong> ticket
+            {filteredTickets.length !== 1 ? "s" : ""}
           </div>
 
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Open</div>
-            <div style={styles.statValue}>{openCount}</div>
-          </div>
-
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>In Progress</div>
-            <div style={styles.statValue}>{inProgressCount}</div>
-          </div>
-
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Resolved / Closed</div>
-            <div style={styles.statValue}>{resolvedCount}</div>
-          </div>
-        </div>
-
-        <div style={styles.filterCard}>
-          <h2 style={styles.sectionTitle}>Filter and Search</h2>
-          <p style={styles.sectionSubtext}>
-            Search by ticket id, title, description, or category and narrow the
-            list by status and priority.
-          </p>
-
-          <div style={styles.filtersGrid}>
-            <div style={styles.inputWrap}>
-              <label style={styles.inputLabel}>Search</label>
-              <input
-                type="text"
-                placeholder="Search tickets..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.inputWrap}>
-              <label style={styles.inputLabel}>Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                style={styles.select}
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="OPEN">Open</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="CLOSED">Closed</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>
-
-            <div style={styles.inputWrap}>
-              <label style={styles.inputLabel}>Priority</label>
-              <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-                style={styles.select}
-              >
-                <option value="ALL">All Priorities</option>
-                <option value="HIGH">High</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="LOW">Low</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {error && <div style={styles.errorBox}>{error}</div>}
-
-        <div style={styles.resultText}>
-          Showing <strong>{filteredTickets.length}</strong> ticket
-          {filteredTickets.length !== 1 ? "s" : ""}
-        </div>
-
-        {loading ? (
-          <div style={styles.loadingBox}>Loading all tickets...</div>
-        ) : filteredTickets.length === 0 ? (
-          <div style={styles.emptyBox}>No tickets found.</div>
-        ) : (
-          <div style={styles.tableWrap}>
-            <div style={styles.tableScroller}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>ID</th>
-                    <th style={styles.th}>Title</th>
-                    <th style={styles.th}>Category</th>
-                    <th style={styles.th}>Priority</th>
-                    <th style={styles.th}>Status</th>
-                    <th style={styles.th}>Created By</th>
-                    <th style={styles.th}>Assigned To</th>
-                    <th style={styles.th}>Created At</th>
-                    <th style={styles.th}>Actions</th>
-                  </tr>
-                </thead>
+          {loading ? (
+            <div style={styles.loadingBox}>Loading all tickets...</div>
+          ) : filteredTickets.length === 0 ? (
+            <div style={styles.emptyBox}>No tickets found.</div>
+          ) : (
+            <div style={styles.tableWrap}>
+              <div style={styles.tableScroller}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>ID</th>
+                      <th style={styles.th}>Title</th>
+                      <th style={styles.th}>Category</th>
+                      <th style={styles.th}>Priority</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Created By</th>
+                      <th style={styles.th}>Assigned To</th>
+                      <th style={styles.th}>Created At</th>
+                      <th style={styles.th}>Actions</th>
+                    </tr>
+                  </thead>
 
                 <tbody>
                   {filteredTickets.map((ticket) => {
@@ -554,13 +600,14 @@ function AdminTickets() {
                       </tr>
                     );
                   })}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 

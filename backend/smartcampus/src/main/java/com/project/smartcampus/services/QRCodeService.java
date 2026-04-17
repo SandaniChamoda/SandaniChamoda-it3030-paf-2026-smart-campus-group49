@@ -70,6 +70,7 @@ public class QRCodeService {
             "ID: " + valueOrNa(booking.getId()),
             "Resource: " + valueOrNa(booking.getResourceName()),
             "Purpose: " + valueOrNa(booking.getPurpose()),
+            "Booked By: " + valueOrNa(booking.getBookedBy()),
             "Attendees: " + valueOrNa(booking.getAttendees()),
             "Start: " + valueOrNa(booking.getStartTime()),
             "End: " + valueOrNa(booking.getEndTime()),

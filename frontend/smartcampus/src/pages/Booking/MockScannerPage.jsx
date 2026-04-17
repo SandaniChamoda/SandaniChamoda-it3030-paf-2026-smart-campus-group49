@@ -68,6 +68,101 @@ const buildMockBooking = (id, rawValue) => {
 };
 
 function MockScannerPage() {
+  const colors = {
+    primaryDark: "#1A1F5A",
+    primaryGradientEnd: "#2A3080",
+    textDark: "#1A1F5A",
+    textMedium: "#6B7BA4",
+    textLight: "#C8D9FF",
+    bgLight: "#F7F9FF",
+    bgStats: "#F0F4FF",
+    borderLight: "#E3E9F8",
+    white: "#FFFFFF",
+    danger: "#DC2626",
+  };
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: `linear-gradient(180deg, ${colors.bgLight} 0%, ${colors.white} 100%)`,
+      padding: "32px 20px 60px",
+    },
+    wrapper: {
+      maxWidth: "1000px",
+      margin: "0 auto",
+    },
+    hero: {
+      background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primaryGradientEnd} 100%)`,
+      borderRadius: "24px",
+      padding: "32px",
+      color: colors.white,
+      marginBottom: "28px",
+      boxShadow: "0 18px 40px rgba(26, 31, 90, 0.16)",
+    },
+    heroTitle: {
+      margin: 0,
+      fontSize: "34px",
+      fontWeight: "800",
+      lineHeight: "1.2",
+    },
+    heroText: {
+      marginTop: "10px",
+      marginBottom: 0,
+      color: colors.textLight,
+      fontSize: "15px",
+      lineHeight: "1.7",
+      maxWidth: "760px",
+    },
+    card: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "22px",
+      padding: "28px",
+      boxShadow: "0 16px 36px rgba(17, 24, 39, 0.06)",
+    },
+    sectionTitle: {
+      margin: 0,
+      fontSize: "22px",
+      fontWeight: "700",
+      color: colors.textDark,
+    },
+    sectionText: {
+      marginTop: "8px",
+      color: colors.textMedium,
+      fontSize: "14px",
+      lineHeight: "1.7",
+    },
+    errorBox: {
+      backgroundColor: "#FEF2F2",
+      border: "1px solid #FECACA",
+      color: colors.danger,
+      padding: "12px 14px",
+      borderRadius: "14px",
+      fontSize: "13px",
+      fontWeight: "600",
+      marginTop: "16px",
+    },
+    noteBox: {
+      backgroundColor: colors.bgStats,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "16px",
+      marginTop: "22px",
+    },
+    noteTitle: {
+      margin: 0,
+      fontSize: "15px",
+      fontWeight: "700",
+      color: colors.textDark,
+    },
+    noteText: {
+      marginTop: "8px",
+      marginBottom: 0,
+      fontSize: "13px",
+      color: colors.textMedium,
+      lineHeight: "1.7",
+    },
+  };
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState("");
 
@@ -129,21 +224,25 @@ function MockScannerPage() {
   }, [booking]);
 
   return (
-    <div className="sc-container py-4">
-      <div className="sc-card">
-        <div className="sc-card-header">
-          <h2 className="h4 mb-1">Mock QR Scanner</h2>
-          <div className="text-muted small">
-            Scans a QR payload and shows booking details as a card.
-          </div>
+    <div style={styles.page}>
+      <div style={styles.wrapper}>
+        <div style={styles.hero}>
+          <h1 style={styles.heroTitle}>Mock QR Scanner</h1>
+          <p style={styles.heroText}>
+            Scan a QR payload to preview booking details. This page uses mock
+            data for testing the verification flow.
+          </p>
         </div>
 
-        <div className="sc-card-body">
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>Scanner</h2>
+          <p style={styles.sectionText}>
+            Point the camera at a QR code to load booking details.
+          </p>
+
           <div id="mock-reader" style={{ maxWidth: 360 }} />
 
-          {error ? (
-            <div className="alert alert-warning mt-3 mb-0">{error}</div>
-          ) : null}
+          {error ? <div style={styles.errorBox}>{error}</div> : null}
 
           {booking ? (
             <div className="mt-4">
@@ -163,7 +262,15 @@ function MockScannerPage() {
                 </table>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div style={styles.noteBox}>
+              <h3 style={styles.noteTitle}>Ready to Scan</h3>
+              <p style={styles.noteText}>
+                Use a mock QR code to simulate a booking verification. Once
+                scanned, the booking summary will appear here.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

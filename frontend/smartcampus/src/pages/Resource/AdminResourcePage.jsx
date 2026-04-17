@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import "../Admin/AdminDashboard.css";
 import "./AdminResourcePage.css";
 
 function AdminResourcePage() {
@@ -28,6 +30,13 @@ function AdminResourcePage() {
   });
 
   const rowsPerPage = 10;
+
+  const sideLinks = [
+    { label: "Users" },
+    { to: "/admin/resources", label: "Resources" },
+    { to: "/admin", label: "Bookings", end: true },
+    { to: "/tickets/admin", label: "Tickets" },
+  ];
 
   const loadResources = () => {
     fetch("http://localhost:8086/resources")
@@ -263,39 +272,47 @@ function AdminResourcePage() {
   };
 
   return (
-    <div className="admin-resource-shell">
-      <aside className="admin-sidepanel" aria-label="Admin navigation">
+    <section className="admin-layout">
+      <aside className="admin-sidebar">
         <div>
-          <h2>Ivied Nexus</h2>
-          <p>CAMPUS OPERATIONS</p>
+          <p className="admin-side-kicker">Admin Panel</p>
+          <h2 className="admin-side-title">Operations</h2>
 
-          <nav>
-            <a className="active" href="#">Resources</a>
-            <a href="#">Bookings</a>
-            <a href="#">Tickets</a>
-            <a href="#">Users</a>
+          <nav className="admin-side-nav" aria-label="Admin sections">
+            {sideLinks.map((item) => (
+              item.to ? (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `admin-side-link${isActive ? " active" : ""}`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ) : (
+                <button key={item.label} type="button" className="admin-side-link admin-side-link-button">
+                  {item.label}
+                </button>
+              )
+            ))}
           </nav>
         </div>
 
-        <div className="sidepanel-footer">
-          <button type="button">Dispatch Security</button>
-          <a href="#">Support</a>
-          <a href="#">Logout</a>
+        <div className="admin-side-bottom">
+          <Link to="/tickets/create" className="admin-side-link support-link">
+            Support
+          </Link>
+          <Link to="/" className="admin-side-link logout-link">
+            Logout
+          </Link>
         </div>
       </aside>
 
       <div className="admin-main-area">
-        <div className="admin-topbar">
-          <span>Resource Management</span>
-
-          <div className="topbar-actions">
-            <button type="button" aria-label="Notifications">🔔</button>
-            <button type="button" aria-label="Settings">⚙</button>
-            <div className="admin-avatar" aria-hidden="true">👨</div>
-          </div>
-        </div>
-
-        <div className="admin-resource-page">
+        <div className="admin-resource-shell">
+          <div className="admin-resource-page">
           <header className="admin-resource-header">
             <div>
               <p className="admin-resource-tag">Resource Management</p>
@@ -408,12 +425,12 @@ function AdminResourcePage() {
                 </select>
 
                 <div className="admin-resource-form-actions">
-                  <button className="btn-primary" type="submit">
+                  <button className="resource-btn-primary" type="submit">
                     {editingId !== null ? "Update Resource" : "Add Resource"}
                   </button>
 
                   <button
-                    className="btn-light"
+                    className="resource-btn-light"
                     type="button"
                     onClick={() => {
                       resetForm();
@@ -603,13 +620,14 @@ function AdminResourcePage() {
               </div>
             </div>
           </section>
-        </div>
+          </div>
 
-        <button className="floating-support-btn" type="button" aria-label="Support agent">
-          🎧
-        </button>
+          <button className="floating-support-btn" type="button" aria-label="Support agent">
+            🎧
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
