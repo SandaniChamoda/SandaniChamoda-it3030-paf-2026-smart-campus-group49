@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
+import './AuthPages.css';
 
 /**
  * Handles the redirect from Google OAuth2 after successful login.
@@ -9,7 +10,7 @@ import authService from '../../services/authService';
  */
 function OAuth2RedirectHandler() {
   const [searchParams] = useSearchParams();
-  const { setAuthToken, setUser } = useAuth();
+  const { setAuthToken, setUser, getRoleDashboardPath } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,13 +26,13 @@ function OAuth2RedirectHandler() {
     authService.getCurrentUser()
       .then((user) => {
         setUser(user);
-        navigate('/home');
+        navigate(getRoleDashboardPath(user?.role), { replace: true });
       })
       .catch(() => {
         localStorage.removeItem('token');
         navigate('/login');
       });
-  }, []);
+  }, [searchParams, setAuthToken, setUser, getRoleDashboardPath, navigate]);
 
   return (
     <div style={styles.container}>

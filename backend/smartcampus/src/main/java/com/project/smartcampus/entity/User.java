@@ -46,6 +46,19 @@ public class User {
     @Column
     private String providerId;
 
+    @Column
+    private String passwordHash;
+
+    @Column
+    private String resetToken;
+
+    @Column
+    private LocalDateTime resetTokenExpiry;
+
+    @Column
+    @Builder.Default
+    private Boolean notificationsEnabled = true;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -59,6 +72,9 @@ public class User {
         this.updatedAt = now;
         if (this.role == null) {
             this.role = Role.USER;
+        }
+        if (this.notificationsEnabled == null) {
+            this.notificationsEnabled = true;
         }
     }
 

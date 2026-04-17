@@ -1,94 +1,113 @@
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import './AuthPages.css';
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithEmail, getRoleDashboardPath } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [form, setForm] = useState({ email: '', password: '', role: 'USER' });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const successMessage = location.state?.message || '';
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+
+    try {
+      const authData = await loginWithEmail(form);
+      navigate(getRoleDashboardPath(authData?.user?.role), { replace: true });
+    } catch (err) {
+      const fallback = 'Unable to sign in. Check your credentials and try again.';
+      setError(err.response?.data?.message || fallback);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.logo}>
-          <span style={styles.logoIcon}>🏫</span>
+    <div className="auth-shell">
+      <div className="auth-card">
+        <div className="auth-badge">SmartCampus</div>
+        <div className="auth-logo-wrap">
+          <span className="auth-logo-icon">🏫</span>
         </div>
-        <h1 style={styles.title}>Smart Campus</h1>
-        <p style={styles.subtitle}>Operations Hub</p>
-        <p style={styles.description}>
-          Manage facility bookings and maintenance requests for your campus.
-        </p>
-        <button onClick={login} style={styles.googleBtn}>
+
+        <h1 className="auth-title">Welcome Back</h1>
+        <p className="auth-subtitle">Sign in to continue to your campus workspace.</p>
+
+  {successMessage && <div className="auth-alert auth-alert-success">{successMessage}</div>}
+        {error && <div className="auth-alert auth-alert-error">{error}</div>}
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label className="auth-label" htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            className="auth-input"
+            placeholder="you@campus.edu"
+            required
+          />
+
+          <label className="auth-label" htmlFor="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            className="auth-input"
+            placeholder="Enter your password"
+            required
+          />
+
+          <label className="auth-label" htmlFor="role">Role</label>
+          <select
+            id="role"
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+            className="auth-input"
+            required
+          >
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="TECHNICIAN">TECHNICIAN</option>
+          </select>
+
+          <button className="auth-submit" type="submit" disabled={submitting}>
+            {submitting ? 'Signing In...' : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="auth-divider"><span>or continue with</span></div>
+
+        <button onClick={login} className="auth-google-btn" type="button">
           <img
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
             alt="Google"
-            style={styles.googleIcon}
+            className="auth-google-icon"
           />
           Sign in with Google
         </button>
+
+        <div className="auth-links">
+          <Link to="/forgot-password">Forgot password?</Link>
+          <Link to="/signup">Create account</Link>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-  },
-  card: {
-    background: '#fff',
-    borderRadius: '16px',
-    padding: '48px 40px',
-    textAlign: 'center',
-    maxWidth: '400px',
-    width: '100%',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-  },
-  logo: {
-    marginBottom: '16px',
-  },
-  logoIcon: {
-    fontSize: '64px',
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1a1a2e',
-    margin: '0 0 4px',
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#6c757d',
-    margin: '0 0 24px',
-    textTransform: 'uppercase',
-    letterSpacing: '1px',
-  },
-  description: {
-    fontSize: '14px',
-    color: '#495057',
-    margin: '0 0 32px',
-    lineHeight: '1.6',
-  },
-  googleBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '12px',
-    width: '100%',
-    padding: '12px 24px',
-    border: '1px solid #dadce0',
-    borderRadius: '8px',
-    background: '#fff',
-    color: '#3c4043',
-    fontSize: '15px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'background 0.2s, box-shadow 0.2s',
-  },
-  googleIcon: {
-    width: '20px',
-    height: '20px',
-  },
-};
 
 export default LoginPage;

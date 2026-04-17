@@ -1,12 +1,14 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import './AuthPages.css';
 
 /**
  * Wrapper for routes that require authentication.
  * Optionally enforces a required role (e.g. "ADMIN").
  */
-function ProtectedRoute({ children, requiredRole }) {
-  const { isAuthenticated, loading, user } = useAuth();
+function ProtectedRoute({ children, requiredRole, allowedRoles }) {
+  const { isAuthenticated, loading, user, getRoleDashboardPath } = useAuth();
+  const roleList = allowedRoles?.length ? allowedRoles : requiredRole ? [requiredRole] : null;
 
   if (loading) {
     return (
@@ -20,13 +22,8 @@ function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
-    return (
-      <div style={styles.forbidden}>
-        <h2>403 — Forbidden</h2>
-        <p>You do not have permission to view this page.</p>
-      </div>
-    );
+  if (roleList && !roleList.includes(user?.role)) {
+    return <Navigate to={getRoleDashboardPath(user?.role)} replace />;
   }
 
   return children;

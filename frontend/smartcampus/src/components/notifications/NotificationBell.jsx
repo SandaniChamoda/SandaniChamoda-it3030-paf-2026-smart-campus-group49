@@ -47,9 +47,9 @@ const styles = {
   },
   bell: {
     position: 'relative',
-    background: 'none',
-    border: 'none',
-    color: '#fff',
+    background: 'rgba(15, 118, 110, 0.08)',
+    border: '1px solid rgba(15, 118, 110, 0.18)',
+    color: 'var(--sc-primary)',
     cursor: 'pointer',
     padding: '6px',
     borderRadius: '50%',

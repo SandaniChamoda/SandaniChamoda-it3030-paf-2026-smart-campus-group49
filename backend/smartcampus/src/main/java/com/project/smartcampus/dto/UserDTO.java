@@ -24,6 +24,7 @@ public class UserDTO {
     private String profilePicture;
     private Role role;
     private String provider;
+    private Boolean notificationsEnabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -41,6 +42,7 @@ public class UserDTO {
                 .profilePicture(user.getProfilePicture())
                 .role(user.getRole())
                 .provider(user.getProvider())
+                .notificationsEnabled(Boolean.TRUE.equals(user.getNotificationsEnabled()))
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

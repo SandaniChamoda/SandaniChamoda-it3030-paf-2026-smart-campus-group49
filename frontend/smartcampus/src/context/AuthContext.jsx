@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
-import authService from '../services/authService';
+import authService, { getRoleDashboardPath } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -31,7 +32,26 @@ export function AuthProvider({ children }) {
 
   const login = () => {
     // Full window navigation to bypass iframe security restrictions
-    window.location.href = 'http://localhost:8086/oauth2/authorization/google';
+    window.location.href = authService.getGoogleLoginUrl();
+  };
+
+  const loginWithEmail = async (payload) => {
+    const authData = await authService.loginWithEmail(payload);
+    setAuthToken(authData.token);
+    setUser(authData.user);
+    return authData;
+  };
+
+  const signupWithEmail = async (payload) => {
+    return authService.signup(payload);
+  };
+
+  const requestPasswordReset = async (email) => {
+    return authService.forgotPassword({ email });
+  };
+
+  const resetPassword = async (payload) => {
+    return authService.resetPassword(payload);
   };
 
   const logout = async () => {
@@ -57,11 +77,17 @@ export function AuthProvider({ children }) {
     setUser,
     token,
     setAuthToken,
-    isAuthenticated: !!user,
+    isAuthenticated: !!token && !!user,
     isAdmin: user?.role === 'ADMIN',
     isTechnician: user?.role === 'TECHNICIAN',
+    isStudent: user?.role === 'USER',
     loading,
+    getRoleDashboardPath,
     login,
+    loginWithEmail,
+    signupWithEmail,
+    requestPasswordReset,
+    resetPassword,
     logout,
   };
 
@@ -75,5 +101,3 @@ export function useAuth() {
   }
   return context;
 }
-
-export default AuthContext;
