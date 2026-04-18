@@ -41,7 +41,8 @@ function ResourceList() {
   const categoryImageMap = {
     LECTURE_HALL: [
       "/resource-images/lec-hall-1.jpg",
-      "/resource-images/lec-hall-2.jpg"
+      "/resource-images/lec-hall-2.jpg",
+      "/resource-images/lec-hall-3.jpg"
     ],
     AUDITORIUM: [
       "/resource-images/auditorium-1.jpg",
@@ -53,7 +54,8 @@ function ResourceList() {
     ],
     LAB: [
       "/resource-images/com-lab-2.jpg",
-      "/resource-images/com-lab-1.jpg"
+      "/resource-images/com-lab-1.jpg",
+      "/resource-images/com-lab-3.jpg"
     ],
     PROJECTOR: [
       "/resource-images/projector-1.jpg",
