@@ -63,6 +63,7 @@ function CreateBooking() {
   const [resourceOptions, setResourceOptions] = useState([]);
   const [resourceLoading, setResourceLoading] = useState(true);
   const [resourceError, setResourceError] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const minEnd = resolveEndMin(booking.startTime, minNow);
   const startTimeError =
@@ -140,6 +141,18 @@ function CreateBooking() {
     fetchResources();
   }, []);
 
+  useEffect(() => {
+    if (!toast.show) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 2600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     const minNowValue = toDatetimeLocalMin();
@@ -199,10 +212,14 @@ function CreateBooking() {
         attendees: Number(booking.attendees),
       };
       await API.post("/bookings", payload);
-      alert("Booking created successfully");
-      navigate("/bookings");
+      setToast({ show: true, message: "Booking created successfully.", type: "success" });
+      window.setTimeout(() => navigate("/bookings"), 800);
     } catch (error) {
-      alert(error.response?.data?.message || "Error creating booking");
+      setToast({
+        show: true,
+        message: error.response?.data?.message || "Error creating booking",
+        type: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -359,6 +376,30 @@ function CreateBooking() {
       color: colors.textMedium,
       lineHeight: "1.7",
     },
+    toast: {
+      position: "sticky",
+      top: "14px",
+      zIndex: 1850,
+      margin: "0 0 10px auto",
+      width: "fit-content",
+      maxWidth: "min(460px, 92%)",
+      borderRadius: "14px",
+      border: "1px solid",
+      padding: "11px 14px",
+      fontSize: "0.9rem",
+      fontWeight: "600",
+      boxShadow: "0 14px 30px rgba(26, 31, 90, 0.16)",
+    },
+    toastSuccess: {
+      background: "#ECFDF3",
+      color: "#125132",
+      borderColor: "#B4ECC8",
+    },
+    toastError: {
+      background: "#FFF1F1",
+      color: "#8C1D1D",
+      borderColor: "#F8C3C3",
+    },
     actionRow: {
       display: "flex",
       justifyContent: "space-between",
@@ -443,6 +484,18 @@ function CreateBooking() {
   return (
     <div style={styles.page}>
       <div style={styles.wrapper}>
+        {toast.show ? (
+          <div
+            style={{
+              ...styles.toast,
+              ...(toast.type === "error" ? styles.toastError : styles.toastSuccess),
+            }}
+            role="status"
+            aria-live="polite"
+          >
+            {toast.message}
+          </div>
+        ) : null}
         <div style={styles.hero}>
           <h1 style={styles.heroTitle}>Reserve a Campus Resource</h1>
           <p style={styles.heroText}>

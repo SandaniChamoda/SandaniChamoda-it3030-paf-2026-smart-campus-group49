@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
+import AdminSidebar from "../../components/Admin/AdminSidebar";
 import "../Admin/AdminDashboard.css";
 
 function AdminTickets() {
@@ -30,13 +31,6 @@ function AdminTickets() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
-
-  const sideLinks = [
-    { label: "Users" },
-    { to: "/admin/resources", label: "Resources" },
-    { to: "/admin", label: "Bookings", end: true },
-    { to: "/tickets/admin", label: "Tickets", end: true },
-  ];
 
   const fetchAllTickets = async () => {
     try {
@@ -366,42 +360,7 @@ function AdminTickets() {
 
   return (
     <section className="admin-layout">
-      <aside className="admin-sidebar">
-        <div>
-          <p className="admin-side-kicker">Admin Panel</p>
-          <h2 className="admin-side-title">Operations</h2>
-
-          <nav className="admin-side-nav" aria-label="Admin sections">
-            {sideLinks.map((item) => (
-              item.to ? (
-                <NavLink
-                  key={item.label}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    `admin-side-link${isActive ? " active" : ""}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ) : (
-                <button key={item.label} type="button" className="admin-side-link admin-side-link-button">
-                  {item.label}
-                </button>
-              )
-            ))}
-          </nav>
-        </div>
-
-        <div className="admin-side-bottom">
-          <Link to="/tickets/create" className="admin-side-link support-link">
-            Support
-          </Link>
-          <Link to="/" className="admin-side-link logout-link">
-            Logout
-          </Link>
-        </div>
-      </aside>
+      <AdminSidebar />
 
       <div style={styles.page}>
         <div style={styles.container}>
