@@ -105,6 +105,56 @@ public class BookingService {
                                 .collect(Collectors.toList());
         }
 
+        public List<BookingResponse> getUserBookings(String bookedBy, BookingStatus status) {
+                boolean hasStatus = status != null;
+
+                if (hasStatus) {
+                        return repository.findByBookedByAndStatus(bookedBy, status)
+                                        .stream()
+                                        .map(this::mapToResponse)
+                                        .collect(Collectors.toList());
+                }
+
+                return repository.findByBookedBy(bookedBy)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
+        }
+
+        public List<BookingResponse> getUserBookingsFiltered(String bookedBy, String resourceName, BookingStatus status) {
+                boolean hasResource = resourceName != null && !resourceName.isBlank();
+                boolean hasStatus = status != null;
+
+                if (hasResource && hasStatus) {
+                        return repository.findByBookedByAndResourceNameContainingIgnoreCaseAndStatus(
+                                        bookedBy,
+                                        resourceName,
+                                        status)
+                                        .stream()
+                                        .map(this::mapToResponse)
+                                        .collect(Collectors.toList());
+                }
+
+                if (hasResource) {
+                        return repository.findByBookedByAndResourceNameContainingIgnoreCase(bookedBy, resourceName)
+                                        .stream()
+                                        .map(this::mapToResponse)
+                                        .collect(Collectors.toList());
+                }
+
+                if (hasStatus) {
+                        return repository.findByBookedByAndStatus(bookedBy, status)
+                                        .stream()
+                                        .map(this::mapToResponse)
+                                        .collect(Collectors.toList());
+                }
+
+                return repository.findByBookedBy(bookedBy)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
+        }
+
         public BookingResponse getBookingById(Long id) {
                 Booking booking = repository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Booking not found"));

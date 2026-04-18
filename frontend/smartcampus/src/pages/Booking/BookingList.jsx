@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 
 const getStatusBadgeClass = (status) => {
@@ -31,6 +32,25 @@ function BookingList() {
     borderLight: "#E3E9F8",
     white: "#FFFFFF",
     danger: "#DC2626",
+    pending: "#F59E0B",
+    approved: "#0D9488",
+    rejected: "#EF4444",
+    cancelled: "#6B7280",
+  };
+
+  const getCardColor = (status) => {
+    switch (status) {
+      case "PENDING":
+        return colors.pending;
+      case "APPROVED":
+        return colors.approved;
+      case "REJECTED":
+        return colors.rejected;
+      case "CANCELLED":
+        return colors.cancelled;
+      default:
+        return colors.primaryDark;
+    }
   };
 
   const styles = {
@@ -40,7 +60,7 @@ function BookingList() {
       padding: "32px 20px 60px",
     },
     wrapper: {
-      maxWidth: "1100px",
+      maxWidth: "1400px",
       margin: "0 auto",
     },
     hero: {
@@ -65,18 +85,20 @@ function BookingList() {
       lineHeight: "1.7",
       maxWidth: "760px",
     },
-    card: {
+    filterContainer: {
       backgroundColor: colors.white,
+      borderRadius: "20px",
+      padding: "24px",
+      marginBottom: "32px",
+      boxShadow: "0 8px 24px rgba(26, 31, 90, 0.08)",
       border: `1px solid ${colors.borderLight}`,
-      borderRadius: "22px",
-      padding: "28px",
-      boxShadow: "0 16px 36px rgba(17, 24, 39, 0.06)",
     },
     sectionTitle: {
       margin: 0,
       fontSize: "22px",
       fontWeight: "700",
       color: colors.textDark,
+      marginBottom: "16px",
     },
     sectionText: {
       marginTop: "8px",
@@ -90,11 +112,17 @@ function BookingList() {
       alignItems: "center",
       gap: "16px",
       flexWrap: "wrap",
-      marginTop: "18px",
+      marginTop: "0px",
+    },
+    filterGroup: {
+      display: "flex",
+      gap: "12px",
+      flexWrap: "wrap",
+      alignItems: "center",
+      flex: 1,
     },
     input: {
-      width: "100%",
-      padding: "10px 12px",
+      padding: "10px 14px",
       borderRadius: "12px",
       border: `1px solid ${colors.borderLight}`,
       backgroundColor: colors.white,
@@ -102,6 +130,7 @@ function BookingList() {
       color: colors.textDark,
       outline: "none",
       boxSizing: "border-box",
+      fontWeight: "500",
     },
     primaryButton: {
       border: "none",
@@ -110,13 +139,14 @@ function BookingList() {
       color: colors.white,
       fontSize: "13px",
       fontWeight: "800",
-      padding: "10px 16px",
+      padding: "10px 18px",
       cursor: "pointer",
       textDecoration: "none",
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
       boxShadow: "0 10px 20px rgba(245, 166, 35, 0.2)",
+      transition: "all 0.2s ease",
     },
     ghostButton: {
       border: `1px solid ${colors.borderLight}`,
@@ -131,6 +161,7 @@ function BookingList() {
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
+      transition: "all 0.2s ease",
     },
     errorBox: {
       backgroundColor: "#FEF2F2",
@@ -140,7 +171,216 @@ function BookingList() {
       borderRadius: "14px",
       fontSize: "13px",
       fontWeight: "600",
-      marginBottom: "18px",
+      marginBottom: "24px",
+    },
+    cardsGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+      gap: "18px",
+      marginTop: "24px",
+    },
+    bookingCard: (status) => {
+      const getDotColor = () => {
+        switch (status) {
+          case "PENDING":
+            return colors.pending;
+          case "APPROVED":
+            return colors.approved;
+          case "REJECTED":
+            return colors.rejected;
+          case "CANCELLED":
+            return colors.cancelled;
+          default:
+            return colors.primaryDark;
+        }
+      };
+      
+      const getBackgroundColor = () => {
+        switch (status) {
+          case "PENDING":
+            return "#FEF9E7";
+          case "APPROVED":
+            return "#E8F9F6";
+          case "REJECTED":
+            return "#FEF2F2";
+          case "CANCELLED":
+            return "#F3F4F6";
+          default:
+            return "#F7F9FF";
+        }
+      };
+
+      return {
+        backgroundColor: getBackgroundColor(),
+        borderRadius: "16px",
+        padding: "18px",
+        boxShadow: "0 8px 24px rgba(26, 31, 90, 0.06)",
+        border: `1px solid ${colors.borderLight}`,
+        transition: "all 0.3s ease",
+        cursor: "pointer",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      };
+    },
+    cardIndicator: (status) => {
+      const getDotColor = () => {
+        switch (status) {
+          case "PENDING":
+            return colors.pending;
+          case "APPROVED":
+            return colors.approved;
+          case "REJECTED":
+            return colors.rejected;
+          case "CANCELLED":
+            return colors.cancelled;
+          default:
+            return colors.primaryDark;
+        }
+      };
+
+      return {
+        width: "10px",
+        height: "10px",
+        borderRadius: "50%",
+        backgroundColor: getDotColor(),
+        marginBottom: "10px",
+        display: "block",
+      };
+    },
+    cardHeader: {
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      marginBottom: "12px",
+      paddingBottom: "0px",
+    },
+    cardTitle: {
+      margin: 0,
+      fontSize: "16px",
+      fontWeight: "700",
+      color: colors.textDark,
+      marginBottom: "6px",
+      lineHeight: "1.3",
+    },
+    cardSubtitle: {
+      margin: "0",
+      fontSize: "12px",
+      color: colors.textMedium,
+      fontWeight: "500",
+      lineHeight: "1.5",
+    },
+    cardDetails: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "6px",
+      marginBottom: "12px",
+      paddingBottom: "0px",
+      borderBottom: "none",
+      flex: 1,
+    },
+    detailRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      fontSize: "12px",
+    },
+    detailLabel: {
+      color: colors.textMedium,
+      fontWeight: "600",
+      display: "none",
+    },
+    detailValue: {
+      color: colors.textMuted,
+      fontWeight: "500",
+      fontSize: "12px",
+    },
+    cardFooter: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "10px",
+      paddingTop: "12px",
+      borderTop: `1px solid rgba(26, 31, 90, 0.08)`,
+    },
+    footerRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "10px",
+    },
+    createdBy: {
+      fontSize: "12px",
+      color: colors.textMedium,
+      fontWeight: "600",
+    },
+    arrowButton: {
+      minHeight: "34px",
+      borderRadius: "10px",
+      backgroundColor: colors.accentOrange,
+      border: "none",
+      color: colors.white,
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "12px",
+      fontWeight: "700",
+      padding: "0 16px",
+      transition: "all 0.2s ease",
+    },
+    actionGroup: {
+      display: "flex",
+      gap: "10px",
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    actionSecondary: {
+      borderRadius: "10px",
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      color: colors.textDark,
+      fontSize: "12px",
+      fontWeight: "700",
+      padding: "6px 14px",
+      cursor: "pointer",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "all 0.2s ease",
+    },
+    actionDanger: {
+      borderRadius: "10px",
+      backgroundColor: "#FDECEC",
+      border: "1px solid #F5C2C2",
+      color: colors.danger,
+      fontSize: "12px",
+      fontWeight: "700",
+      padding: "6px 14px",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    cardActions: {
+      display: "none",
+    },
+    smallBtn: {
+      display: "none",
+    },
+    smallBtnPrimary: {
+      display: "none",
+    },
+    emptyState: {
+      textAlign: "center",
+      padding: "60px 20px",
+      color: colors.textMedium,
+    },
+    emptyStateTitle: {
+      fontSize: "24px",
+      fontWeight: "700",
+      color: colors.textDark,
+      marginBottom: "12px",
     },
   };
   const [bookings, setBookings] = useState([]);
@@ -148,6 +388,7 @@ function BookingList() {
   const [error, setError] = useState("");
   const [resourceName, setResourceName] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -173,7 +414,9 @@ function BookingList() {
         params.status = status;
       }
 
-      const response = await API.get("/bookings", { params });
+      // Use my-bookings endpoint for regular users, all bookings for admin
+      const endpoint = isAdmin ? "/bookings" : "/bookings/my-bookings";
+      const response = await API.get(endpoint, { params });
       setBookings(response.data);
     } catch (e) {
       console.error("Error fetching bookings", e);
@@ -254,12 +497,12 @@ function BookingList() {
           </p>
         </div>
 
-        <div style={styles.card}>
+        <div style={styles.filterContainer}>
           <h2 style={styles.sectionTitle}>Bookings</h2>
           <p style={styles.sectionText}>View all current bookings.</p>
 
           <div style={styles.actionRow}>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <div style={styles.filterGroup}>
               <input
                 type="text"
                 placeholder="Search resource"
@@ -295,100 +538,131 @@ function BookingList() {
           </div>
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
-
-          <div className="table-responsive border rounded-4 overflow-hidden">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th style={{ width: 80 }}>ID</th>
-                  <th>Resource</th>
-                  <th>Booked By</th>
-                  <th>Purpose</th>
-                  <th style={{ width: 120 }}>Attendees</th>
-                  <th style={{ width: 200 }}>Start</th>
-                  <th style={{ width: 200 }}>End</th>
-                  <th style={{ width: 140 }}>Status</th>
-                  <th style={{ width: 230 }}>Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={9} className="text-center text-muted py-5">
-                      Loading…
-                    </td>
-                  </tr>
-                ) : filteredBookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="text-center text-muted py-5">
-                      No bookings yet.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredBookings.map((b) => (
-                    <tr key={b.id}>
-                      <td className="fw-semibold">{b.id}</td>
-                      <td>{b.resourceName}</td>
-                      <td className="text-muted">{b.bookedBy || "-"}</td>
-                      <td className="text-muted">{b.purpose}</td>
-                      <td>{b.attendees}</td>
-                      <td className="text-muted small">{b.startTime}</td>
-                      <td className="text-muted small">{b.endTime}</td>
-                      <td>
-                        <span
-                          className={`badge rounded-pill ${getStatusBadgeClass(
-                            b.status,
-                          )}`}
-                        >
-                          {b.status}
-                        </span>
-                      </td>
-                      <td>
-                        {b.status === "PENDING" ? (
-                          <div className="d-flex gap-2">
-                            <Link
-                              to={`/bookings/${b.id}/edit`}
-                              className="btn btn-sm btn-outline-primary"
-                            >
-                              Edit
-                            </Link>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleDelete(b.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        ) : b.status === "APPROVED" ? (
-                          <div className="d-flex gap-2 flex-wrap">
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-primary"
-                              onClick={() => handleViewQr(b.qrCode)}
-                            >
-                              View QR
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleCancel(b.id)}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-muted small">No actions</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
+
+        {loading ? (
+          <div style={styles.emptyState}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⏳</div>
+            <div style={styles.emptyStateTitle}>Loading Bookings...</div>
+            <p>Please wait while we fetch your bookings.</p>
+          </div>
+        ) : filteredBookings.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>📭</div>
+            <div style={styles.emptyStateTitle}>No Bookings Found</div>
+            <p>
+              {bookings.length === 0
+                ? "Create your first booking to get started!"
+                : "No bookings match your filters. Try adjusting your search."}
+            </p>
+            <Link to="/create" style={styles.primaryButton}>
+              Create Booking
+            </Link>
+          </div>
+        ) : (
+          <div style={styles.cardsGrid}>
+            {filteredBookings.map((b) => (
+              <div
+                key={b.id}
+                style={{
+                  ...styles.bookingCard(b.status),
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 16px 40px rgba(26, 31, 90, 0.12)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 24px rgba(26, 31, 90, 0.06)";
+                }}
+              >
+                <div style={styles.cardIndicator(b.status)} />
+                
+                <div style={styles.cardHeader}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={styles.cardTitle}>{b.resourceName}</h3>
+                    <p style={styles.cardSubtitle}>{b.purpose || "No Purpose"}</p>
+                  </div>
+                </div>
+
+                <div style={styles.cardDetails}>
+                  <div style={{ fontSize: "12px", color: colors.textMuted }}>
+                    <strong>Attendees:</strong> {b.attendees}
+                  </div>
+                  <div style={{ fontSize: "12px", color: colors.textMuted }}>
+                    <strong>Date:</strong> {b.startTime?.substring(0, 10) || "-"}
+                  </div>
+                  <div style={{ fontSize: "12px", color: colors.textMuted }}>
+                    <strong>Status:</strong>{" "}
+                    <span
+                      style={{
+                        color: getCardColor(b.status),
+                        fontWeight: "700",
+                      }}
+                    >
+                      {b.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={styles.cardFooter}>
+                  <div style={styles.footerRow}>
+                    <span style={styles.createdBy}>
+                      Booked by: <strong>{b.bookedBy || "-"}</strong>
+                    </span>
+                    {b.status === "PENDING" && (
+                      <div style={styles.actionGroup}>
+                        <Link
+                          to={`/bookings/${b.id}/edit`}
+                          style={styles.actionSecondary}
+                        >
+                          Update
+                        </Link>
+                        <button
+                          type="button"
+                          style={styles.actionDanger}
+                          onClick={() => handleDelete(b.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                    {b.status === "APPROVED" && (
+                      <div style={styles.actionGroup}>
+                        <button
+                          type="button"
+                          style={styles.arrowButton}
+                          onClick={() => handleViewQr(b.qrCode)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              colors.accentOrangeHover;
+                            e.currentTarget.style.transform = "scale(1.05)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              colors.accentOrange;
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                        >
+                          View QR
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.actionDanger}
+                          onClick={() => handleCancel(b.id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

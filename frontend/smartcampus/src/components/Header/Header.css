@@ -28,6 +28,44 @@
   gap: 0.45rem;
 }
 
+.header-auth-rail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-user-meta {
+  display: grid;
+  line-height: 1.1;
+}
+
+.header-user-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sc-text);
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-user-role {
+  font-size: 0.7rem;
+  color: var(--sc-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.header-logout-btn {
+  border: 1px solid var(--sc-border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.38rem 0.72rem;
+  font-size: 0.82rem;
+  color: var(--sc-text);
+  cursor: pointer;
+}
+
 .header-link {
   color: #6b7ba4;
   border-radius: 999px;
@@ -83,5 +121,13 @@
 
   .header-link {
     text-align: center;
+  }
+
+  .header-auth-rail {
+    margin-left: auto;
+  }
+
+  .header-user-meta {
+    display: none;
   }
 }
