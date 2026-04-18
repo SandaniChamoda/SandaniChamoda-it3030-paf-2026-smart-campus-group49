@@ -1,21 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import API from "../../services/api";
 
-const getStatusBadgeClass = (status) => {
-  switch (status) {
-    case "PENDING":
-      return "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
-    case "APPROVED":
-      return "bg-success-subtle text-success-emphasis border border-success-subtle";
-    case "REJECTED":
-      return "bg-danger-subtle text-danger-emphasis border border-danger-subtle";
-    case "CANCELLED":
-      return "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle";
-    default:
-      return "bg-light text-dark border";
-  }
-};
-
 const getResourceApiCandidates = () => {
   const baseURL = (API?.defaults?.baseURL ?? "").replace(/\/+$/, "");
   const nonApiBase = baseURL.replace(/\/api$/i, "");
@@ -43,13 +28,64 @@ function BookingAdmin() {
     borderLight: "#E3E9F8",
     white: "#FFFFFF",
     danger: "#DC2626",
+    approved: "#0D9488",
+  };
+
+  const statusColor = (status) => {
+    if (status === "PENDING") return "#F59E0B";
+    if (status === "APPROVED") return "#0D9488";
+    if (status === "REJECTED") return "#EF4444";
+    if (status === "CANCELLED") return "#6B7280";
+    return colors.primaryDark;
+  };
+
+  const getStatusStyles = (status) => {
+    const base = {
+      backgroundColor: "#F3F4F8",
+      borderColor: "#E0E6F0",
+      color: colors.textMedium,
+    };
+
+    if (status === "PENDING") {
+      return {
+        backgroundColor: "#FFF5D6",
+        borderColor: "#F7D58B",
+        color: "#F59E0B",
+      };
+    }
+
+    if (status === "APPROVED") {
+      return {
+        backgroundColor: "#E7FBF4",
+        borderColor: "#8FE3C9",
+        color: "#0D9488",
+      };
+    }
+
+    if (status === "REJECTED") {
+      return {
+        backgroundColor: "#FFE5E5",
+        borderColor: "#F6B6B6",
+        color: "#EF4444",
+      };
+    }
+
+    if (status === "CANCELLED") {
+      return {
+        backgroundColor: "#EDEEF2",
+        borderColor: "#D6D8E0",
+        color: "#6B7280",
+      };
+    }
+
+    return base;
   };
 
   const styles = {
     page: {
       minHeight: "100vh",
       background: `linear-gradient(180deg, ${colors.bgLight} 0%, ${colors.white} 100%)`,
-      padding: "32px 20px 60px",
+      padding: "28px 20px 60px",
     },
     wrapper: {
       maxWidth: "1200px",
@@ -57,15 +93,15 @@ function BookingAdmin() {
     },
     hero: {
       background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primaryGradientEnd} 100%)`,
-      borderRadius: "24px",
-      padding: "32px",
+      borderRadius: "22px",
+      padding: "26px 28px",
       color: colors.white,
-      marginBottom: "28px",
+      marginBottom: "22px",
       boxShadow: "0 18px 40px rgba(26, 31, 90, 0.16)",
     },
     heroTitle: {
       margin: 0,
-      fontSize: "34px",
+      fontSize: "26px",
       fontWeight: "800",
       lineHeight: "1.2",
     },
@@ -73,43 +109,45 @@ function BookingAdmin() {
       marginTop: "10px",
       marginBottom: 0,
       color: colors.textLight,
-      fontSize: "15px",
+      fontSize: "14px",
       lineHeight: "1.7",
-      maxWidth: "760px",
+      maxWidth: "640px",
+    },
+    filterContainer: {
+      backgroundColor: colors.white,
+      borderRadius: "18px",
+      padding: "14px 16px",
+      marginBottom: "22px",
+      boxShadow: "0 8px 24px rgba(26, 31, 90, 0.08)",
+      border: `1px solid ${colors.borderLight}`,
     },
     card: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
-      borderRadius: "22px",
-      padding: "28px",
+      borderRadius: "18px",
+      padding: "20px",
       boxShadow: "0 16px 36px rgba(17, 24, 39, 0.06)",
     },
     sectionTitle: {
-      margin: 0,
-      fontSize: "22px",
-      fontWeight: "700",
-      color: colors.textDark,
+      display: "none",
     },
     sectionText: {
-      marginTop: "8px",
-      color: colors.textMedium,
-      fontSize: "14px",
-      lineHeight: "1.7",
+      display: "none",
     },
     actionRow: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      gap: "16px",
+      gap: "12px",
       flexWrap: "wrap",
-      marginTop: "18px",
+      marginTop: "0px",
     },
     input: {
       width: "100%",
       padding: "10px 12px",
       borderRadius: "12px",
       border: `1px solid ${colors.borderLight}`,
-      backgroundColor: colors.white,
+      backgroundColor: "#F7F8FC",
       fontSize: "13px",
       color: colors.textDark,
       outline: "none",
@@ -129,6 +167,19 @@ function BookingAdmin() {
       alignItems: "center",
       justifyContent: "center",
     },
+    refreshButton: {
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "12px",
+      backgroundColor: colors.white,
+      width: "40px",
+      height: "40px",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: colors.textMedium,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
     errorBox: {
       backgroundColor: "#FEF2F2",
       border: "1px solid #FECACA",
@@ -138,6 +189,133 @@ function BookingAdmin() {
       fontSize: "13px",
       fontWeight: "600",
       marginBottom: "18px",
+    },
+    cardsGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+      gap: "16px",
+    },
+    bookingCard: (status) => ({
+      backgroundColor: colors.white,
+      borderRadius: "16px",
+      padding: "16px",
+      border: `1px solid ${colors.borderLight}`,
+      borderLeft: `3px solid ${statusColor(status)}`,
+      boxShadow: "0 8px 24px rgba(26, 31, 90, 0.06)",
+      display: "flex",
+      flexDirection: "column",
+      gap: "12px",
+    }),
+    cardHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: "10px",
+    },
+    cardHeaderLeft: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "6px",
+      flex: 1,
+    },
+    statusPill: (status) => ({
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "4px 10px",
+      borderRadius: "999px",
+      fontSize: "10px",
+      fontWeight: "800",
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      border: `1px solid ${getStatusStyles(status).borderColor}`,
+      backgroundColor: getStatusStyles(status).backgroundColor,
+      color: getStatusStyles(status).color,
+      width: "fit-content",
+    }),
+    cardTitle: {
+      margin: 0,
+      fontSize: "14px",
+      fontWeight: "700",
+      color: colors.textDark,
+      lineHeight: "1.4",
+    },
+    cardSubtitle: {
+      margin: 0,
+      fontSize: "11px",
+      color: colors.textMedium,
+      fontWeight: "500",
+      lineHeight: "1.6",
+    },
+    detailList: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+      color: colors.textMedium,
+      fontSize: "11px",
+    },
+    detailRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: "10px",
+      alignItems: "center",
+    },
+    detailLabel: {
+      fontWeight: "600",
+      color: colors.textMedium,
+    },
+    detailValue: {
+      fontWeight: "600",
+      color: colors.textDark,
+      textAlign: "right",
+    },
+    capacityBadge: {
+      alignSelf: "flex-start",
+      fontSize: "10px",
+      fontWeight: "700",
+      padding: "4px 8px",
+      borderRadius: "999px",
+      backgroundColor: "#FFE5E5",
+      border: "1px solid #F6B6B6",
+      color: colors.danger,
+    },
+    cardActions: {
+      display: "flex",
+      gap: "8px",
+      flexWrap: "wrap",
+      alignItems: "center",
+      marginTop: "6px",
+    },
+    actionButton: {
+      borderRadius: "10px",
+      padding: "6px 12px",
+      fontSize: "12px",
+      fontWeight: "700",
+      border: `1px solid ${colors.borderLight}`,
+      backgroundColor: colors.white,
+      cursor: "pointer",
+    },
+    approveButton: {
+      backgroundColor: "#E7FBF4",
+      borderColor: "#8FE3C9",
+      color: colors.approved,
+    },
+    rejectButton: {
+      backgroundColor: "#FFE5E5",
+      borderColor: "#F6B6B6",
+      color: colors.danger,
+    },
+    cancelButton: {
+      backgroundColor: "#F7F8FC",
+      borderColor: colors.borderLight,
+      color: colors.textMedium,
+    },
+    emptyState: {
+      textAlign: "center",
+      padding: "32px",
+      color: colors.textMedium,
+      border: `1px dashed ${colors.borderLight}`,
+      borderRadius: "16px",
     },
   };
   const [resourceName, setResourceName] = useState("");
@@ -278,6 +456,24 @@ function BookingAdmin() {
     fetchBookings(resourceName, statusFilter);
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return { date: "-", time: "-" };
+    const dateObj = new Date(value);
+    if (Number.isNaN(dateObj.getTime())) {
+      return { date: value?.substring(0, 10) || "-", time: "-" };
+    }
+    const date = dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    });
+    const time = dateObj.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return { date, time };
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.wrapper}>
@@ -289,7 +485,7 @@ function BookingAdmin() {
           </p>
         </div>
 
-        <div style={styles.card}>
+        <div style={styles.filterContainer}>
           <h2 style={styles.sectionTitle}>Admin Queue</h2>
           <p style={styles.sectionText}>
             Review bookings, filter by status, and take action quickly.
@@ -299,7 +495,7 @@ function BookingAdmin() {
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               <input
                 type="text"
-                placeholder="Search resource"
+                placeholder="Search bookings..."
                 value={resourceName}
                 onChange={(e) => setResourceName(e.target.value)}
                 style={{ ...styles.input, width: 240 }}
@@ -308,7 +504,7 @@ function BookingAdmin() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                style={{ ...styles.input, width: 200 }}
+                style={{ ...styles.input, width: 160 }}
               >
                 <option value="ALL">All Status</option>
                 <option value="PENDING">Pending</option>
@@ -319,132 +515,142 @@ function BookingAdmin() {
 
               <button
                 type="button"
-                style={styles.ghostButton}
+                style={styles.refreshButton}
                 onClick={() => {
                   fetchBookings(resourceName, statusFilter);
                   fetchResources();
                 }}
+                aria-label="Refresh"
+                title="Refresh"
               >
-                Refresh
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path
+                    d="M21 12a9 9 0 1 1-2.64-6.36"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M21 3v6h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </div>
           </div>
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
           {resourceError ? <div style={styles.errorBox}>{resourceError}</div> : null}
+        </div>
 
-          <div className="table-responsive border rounded-4 overflow-hidden">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th style={{ width: 80 }}>ID</th>
-                  <th>Resource</th>
-                  <th>Booked By</th>
-                  <th>Purpose</th>
-                  <th style={{ width: 220 }}>Attendees / Capacity</th>
-                  <th style={{ width: 200 }}>Start</th>
-                  <th style={{ width: 200 }}>End</th>
-                  <th style={{ width: 140 }}>Status</th>
-                  <th style={{ width: 280 }}>Actions</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
+        <div style={styles.card}>
+          {loading ? (
+            <div style={styles.emptyState}>Loading...</div>
+          ) : filteredBookings.length === 0 ? (
+            <div style={styles.emptyState}>No matching results.</div>
+          ) : (
+            <div style={styles.cardsGrid}>
+              {filteredBookings.map((b) => {
+                const capacity = getCapacity(b.resourceName);
+                const overLimit = exceedsCapacity(b);
+                const startTime = formatDateTime(b.startTime);
+                const endTime = formatDateTime(b.endTime);
 
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={10} className="text-center text-muted py-5">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : filteredBookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="text-center text-muted py-5">
-                      No matching results.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredBookings.map((b) => {
-                    const capacity = getCapacity(b.resourceName);
-                    const overLimit = exceedsCapacity(b);
+                return (
+                  <div key={b.id} style={styles.bookingCard(b.status)}>
+                    <div style={styles.cardHeader}>
+                      <div style={styles.cardHeaderLeft}>
+                        <span style={styles.statusPill(b.status)}>{b.status}</span>
+                        <h3 style={styles.cardTitle}>{b.resourceName}</h3>
+                        <p style={styles.cardSubtitle}>{b.purpose || "No Purpose"}</p>
+                      </div>
+                      <span style={styles.cardSubtitle}>#{b.id}</span>
+                    </div>
 
-                    return (
-                      <tr key={b.id}>
-                        <td className="fw-semibold">{b.id}</td>
-                        <td>{b.resourceName}</td>
-                        <td className="text-muted">{b.bookedBy || "-"}</td>
-                        <td className="text-muted">{b.purpose}</td>
-                        <td>
-                          <div className="d-flex flex-column gap-1">
-                            <span>
-                              {b.attendees}
-                              {capacity != null ? ` / ${capacity}` : " / N/A"}
-                            </span>
-                            {overLimit ? (
-                              <span className="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle align-self-start">
-                                Attendees limit exceeded
-                              </span>
-                            ) : null}
-                          </div>
-                        </td>
-                        <td className="text-muted small">{b.startTime}</td>
-                        <td className="text-muted small">{b.endTime}</td>
-                        <td>
-                          <span
-                            className={`badge rounded-pill ${getStatusBadgeClass(
-                              b.status,
-                            )}`}
+                    <div style={styles.detailList}>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Booked By</span>
+                        <span style={styles.detailValue}>{b.bookedBy || "-"}</span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Attendees</span>
+                        <span style={styles.detailValue}>
+                          {b.attendees}
+                          {capacity != null ? ` / ${capacity}` : " / N/A"}
+                        </span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>Start</span>
+                        <span style={styles.detailValue}>
+                          {startTime.date} · {startTime.time}
+                        </span>
+                      </div>
+                      <div style={styles.detailRow}>
+                        <span style={styles.detailLabel}>End</span>
+                        <span style={styles.detailValue}>
+                          {endTime.date} · {endTime.time}
+                        </span>
+                      </div>
+                      {b.status === "REJECTED" && (
+                        <div style={styles.detailRow}>
+                          <span style={styles.detailLabel}>Reason</span>
+                          <span style={styles.detailValue}>{b.rejectionReason || "-"}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {overLimit ? (
+                      <span style={styles.capacityBadge}>Attendees limit exceeded</span>
+                    ) : null}
+
+                    <div style={styles.cardActions}>
+                      {b.status === "PENDING" ? (
+                        <>
+                          <button
+                            type="button"
+                            style={{ ...styles.actionButton, ...styles.approveButton }}
+                            onClick={() => approveBooking(b.id)}
                           >
-                            {b.status}
-                          </span>
-                        </td>
-                        <td>
-                          {b.status === "PENDING" ? (
-                            <div className="d-flex gap-2 flex-wrap">
-                              <button
-                                className="btn btn-success btn-sm"
-                                onClick={() => approveBooking(b.id)}
-                              >
-                                Approve
-                              </button>
-
-                              <button
-                                className="btn btn-danger btn-sm"
-                                onClick={() => rejectBooking(b.id)}
-                              >
-                                Reject
-                              </button>
-
-                              {overLimit ? (
-                                <button
-                                  className="btn btn-outline-danger btn-sm"
-                                  onClick={() =>
-                                    rejectBooking(b.id, "attendees limit exceed")
-                                  }
-                                >
-                                  Reject Limit
-                                </button>
-                              ) : null}
-                            </div>
-                          ) : b.status === "APPROVED" ? (
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            style={{ ...styles.actionButton, ...styles.rejectButton }}
+                            onClick={() => rejectBooking(b.id)}
+                          >
+                            Reject
+                          </button>
+                          {overLimit ? (
                             <button
-                              className="btn btn-outline-danger btn-sm"
-                              onClick={() => cancelBooking(b.id)}
+                              type="button"
+                              style={{ ...styles.actionButton, ...styles.rejectButton }}
+                              onClick={() => rejectBooking(b.id, "attendees limit exceed")}
                             >
-                              Cancel
+                              Reject Limit
                             </button>
-                          ) : (
-                            <span className="text-muted small">No actions</span>
-                          )}
-                        </td>
-                        <td className="text-muted small">{b.rejectionReason}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          ) : null}
+                        </>
+                      ) : b.status === "APPROVED" ? (
+                        <button
+                          type="button"
+                          style={{ ...styles.actionButton, ...styles.cancelButton }}
+                          onClick={() => cancelBooking(b.id)}
+                        >
+                          Cancel
+                        </button>
+                      ) : (
+                        <span style={styles.cardSubtitle}>No actions</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
