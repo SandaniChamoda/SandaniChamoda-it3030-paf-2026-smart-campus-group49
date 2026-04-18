@@ -18,36 +18,47 @@
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
+  min-height: 100vh;
 }
 
 .admin-sidebar {
-  min-height: calc(100vh - 130px);
-  border: 1px solid var(--border-light);
+  height: 100%;
+  width: 260px;
   border-radius: 18px;
-  background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-gradient-end) 100%);
-  box-shadow: var(--sc-shadow-sm);
-  padding: 1rem;
+  background: linear-gradient(180deg, #1A1F5A 0%, #2A3080 100%);
+  box-shadow: 0 2px 16px 0 rgba(26,31,90,0.10);
+  padding: 1.5rem 1.1rem 1.1rem 1.1rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 1.2rem;
+  border: none;
 }
 
 .admin-side-kicker {
-  margin: 0;
-  color: var(--text-light);
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  margin: 0 0 2px 0;
+  color: #f5a623;
+  font-size: 1.18rem;
+  font-weight: 800;
+  text-shadow: 0 1px 8px rgba(245,166,35,0.12), 0 0 1px #fff;
+  letter-spacing: 0.01em;
 }
 
 .admin-side-title {
-  margin: 0.35rem 0 1.1rem;
-  color: var(--white);
-  font-size: 1.1rem;
+  margin: 0.18rem 0 2.1rem;
+  color: #fff;
+  font-size: 1.38rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 12px rgba(26,31,90,0.13), 0 0 1px #fff;
 }
 
 .admin-side-nav,
+.admin-side-nav {
+  display: grid;
+  gap: 1.1rem;
+}
+
 .admin-side-bottom {
   display: grid;
   gap: 0.5rem;
@@ -81,21 +92,54 @@
 }
 
 .support-link {
-  background: var(--white);
-  color: var(--text-dark);
-  border-color: transparent;
+  background: rgba(255, 255, 255, 0.18);
+  color: #f5a623;
+  border: 1.5px solid rgba(245,166,35,0.22);
+  font-weight: 700;
+  box-shadow: 0 2px 16px 0 rgba(245,166,35,0.10);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.01rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 12px;
+  opacity: 0.92;
 }
 
 .logout-link {
-  background: #dc2626;
-  color: #ffffff;
-  border-color: transparent;
+  background: rgba(255, 255, 255, 0.18);
+  color: #dc2626;
+  border: 1.5px solid rgba(220,38,38,0.22);
+  font-weight: 700;
+  box-shadow: 0 2px 16px 0 rgba(220,38,38,0.10);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.01rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 12px;
+  opacity: 0.92;
 }
 
 .logout-link:hover {
-  background: #b91c1c;
+  background: rgba(255,255,255,0.28);
+  border-color: #dc2626;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  opacity: 1;
 }
 
+.support-link:hover {
+  background: rgba(255,255,255,0.28);
+  border-color: #f5a623;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  opacity: 1;
+}
 .admin-shell {
   display: grid;
   gap: 1.1rem;

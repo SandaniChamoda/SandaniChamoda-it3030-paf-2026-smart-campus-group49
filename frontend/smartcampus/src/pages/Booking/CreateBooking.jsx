@@ -120,6 +120,9 @@ function CreateBooking() {
       }
 
       const names = resourceList
+        .filter(
+          (resource) => String(resource?.status || "").toUpperCase() === "ACTIVE",
+        )
         .map((resource) => (resource?.name ?? "").trim())
         .filter(Boolean);
 
@@ -128,6 +131,9 @@ function CreateBooking() {
       );
 
       setResourceOptions(uniqueNames);
+      if (uniqueNames.length === 0) {
+        setResourceError("No active resources available for booking right now.");
+      }
       setResourceLoading(false);
     };
 

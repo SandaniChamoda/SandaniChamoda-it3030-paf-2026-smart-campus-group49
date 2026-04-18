@@ -16,6 +16,7 @@ function AdminResourcePage() {
   const [capacityFilter, setCapacityFilter] = useState("ANY");
   const [locationFilter, setLocationFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewResource, setViewResource] = useState(null);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
@@ -32,6 +33,9 @@ function AdminResourcePage() {
     status: "ACTIVE",
   });
 
+  // Validation state
+  const [formErrors, setFormErrors] = useState({});
+
   const rowsPerPage = 10;
 
   const sideLinks = [
@@ -41,6 +45,8 @@ function AdminResourcePage() {
     { to: "/tickets/admin", label: "Tickets" },
   ];
 
+
+  // Fetch resources from backend
   const loadResources = () => {
     fetch("http://localhost:8086/resources")
       .then((res) => res.json())
@@ -82,6 +88,16 @@ function AdminResourcePage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    if (name === "name") {
+      // Only allow letters, numbers, spaces, dashes, underscores
+      const filtered = value.replace(/[^a-zA-Z0-9 _-]/g, "");
+      setForm({
+        ...form,
+        name: filtered,
+      });
+      return;
+    }
+
     if (name === "type") {
       const options = getCategoryOptionsByType(value);
       const nextType = normalizeType(value);
@@ -94,9 +110,41 @@ function AdminResourcePage() {
       return;
     }
 
+
+    if (name === "capacity") {
+      // Only allow digits
+      const filtered = value.replace(/[^0-9]/g, "");
+      setForm({
+        ...form,
+        capacity: filtered,
+      });
+      return;
+    }
+
+    if (name === "location") {
+      // Only allow letters, numbers, spaces, dashes, underscores, commas
+      const filtered = value.replace(/[^a-zA-Z0-9 _\-,]/g, "");
+      setForm({
+        ...form,
+        location: filtered,
+      });
+      return;
+    }
+
+    if (name === "availabilityStart" || name === "availabilityEnd") {
+      // Only allow times between 07:00 and 22:00
+      if (value && (value < "07:00" || value > "22:00")) {
+        setForm({
+          ...form,
+          [name]: "",
+        });
+        return;
+      }
+    }
+
     setForm({
       ...form,
-      [name]: name === "capacity" ? (value === "" ? "" : Number(value)) : value,
+      [name]: value,
     });
   };
 
@@ -126,7 +174,43 @@ function AdminResourcePage() {
   };
 
   const handleSubmit = (e) => {
+
     e.preventDefault();
+
+
+    // --- Resource Name Validation ---
+    const errors = {};
+    const name = form.name.trim();
+    // 1. Min/max length
+    if (name.length < 3 || name.length > 50) {
+      errors.name = "Resource name must be 3-50 characters.";
+    }
+    // 2. No special characters (allow letters, numbers, spaces, dashes, underscores)
+    if (!/^[a-zA-Z0-9 _-]+$/.test(name)) {
+      errors.name = "Resource name can only contain letters, numbers, spaces, dashes, and underscores.";
+    }
+    // 3. No duplicate names (case-insensitive, ignore self if editing)
+    const duplicate = resources.some(
+      (r) => r.name.trim().toLowerCase() === name.toLowerCase() && r.id !== editingId
+    );
+    if (duplicate) {
+      errors.name = "A resource with this name already exists.";
+    }
+
+    // --- Location Validation ---
+    const location = form.location.trim();
+    if (location.length < 3 || location.length > 100) {
+      errors.location = "Location must be 3-100 characters.";
+    }
+    // Allow only letters, numbers, spaces, dashes, underscores, commas
+    if (!/^[a-zA-Z0-9 _\-,]+$/.test(location)) {
+      errors.location = "Location can only contain letters, numbers, spaces, dashes, underscores, and commas.";
+    }
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
 
     const payload = {
       ...form,
@@ -166,9 +250,18 @@ function AdminResourcePage() {
         loadResources();
         resetForm();
         setShowForm(false);
+        setToast({
+          show: true,
+          message: `${editingId !== null ? "Updated" : "Added"} successfully: ${form.name}`,
+          type: "success",
+        });
       })
       .catch(() => {
-        alert("Validation error: please check inputs");
+        setToast({
+          show: true,
+          message: "Validation error: please check inputs",
+          type: "error",
+        });
       });
   };
 
@@ -242,6 +335,14 @@ function AdminResourcePage() {
       .filter(Boolean)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
+  };
+
+  const getCapacityText = (resource) => {
+    const normalizedType = normalizeType(resource?.type);
+    if (normalizedType === "EQUIPMENT" || resource?.capacity == null) {
+      return "N/A";
+    }
+    return `${resource.capacity} Seats`;
   };
 
   const capacityMatches = (capacity) => {
@@ -371,9 +472,23 @@ function AdminResourcePage() {
 
         <div className="admin-side-bottom">
           <Link to="/tickets/create" className="admin-side-link support-link">
+            <span style={{display: 'inline-flex', alignItems: 'center', marginRight: '0.5em'}}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{marginRight: '0.18em'}}>
+                <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                <path d="M10 6v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="10" cy="14" r="1" fill="currentColor" />
+              </svg>
+            </span>
             Support
           </Link>
           <Link to="/" className="admin-side-link logout-link">
+            <span style={{display: 'inline-flex', alignItems: 'center', marginRight: '0.5em'}}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{marginRight: '0.18em'}}>
+                <path d="M7 10h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M10 7l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="2.75" y="3.75" width="8.5" height="12.5" rx="2.25" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </span>
             Logout
           </Link>
         </div>
@@ -400,7 +515,14 @@ function AdminResourcePage() {
               type="button"
               onClick={openCreateForm}
             >
-              Register New Resource
+              <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: '0.6em' }}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ marginRight: '0.18em' }}>
+                  <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+                  <line x1="10" y1="6" x2="10" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="6" y1="10" x2="14" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
+              Add New Resources
             </button>
           </header>
 
@@ -424,51 +546,91 @@ function AdminResourcePage() {
             </article>
           </section>
 
-          <section className="admin-resource-toolbar" aria-label="Resource filters">
-            <div className="toolbar-search">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="16.65" y1="16.65" x2="22" y2="22" />
-              </svg>
-              <input
-                placeholder="Search resources, serial numbers, or tags..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
+          <section className="admin-resource-filter-panel" aria-label="Resource filters">
+            <div className="admin-resource-search-column">
+              <label htmlFor="admin-resource-search">Global Search</label>
+              <div className="admin-resource-search-input-wrap">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="16.65" y1="16.65" x2="22" y2="22" />
+                </svg>
+                <input
+                  id="admin-resource-search"
+                  placeholder="Search resources, serial numbers, or tags..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="toolbar-filter-row">
-              <select value={filterType} onChange={(event) => setFilterType(event.target.value)}>
-                <option value="">Type: All</option>
-                <option value="FACILITY">Type: Facility</option>
-                <option value="EQUIPMENT">Type: Equipment</option>
-              </select>
+            <div className="admin-resource-filter-controls">
+              <div className="admin-resource-select-group">
+                <label htmlFor="admin-resource-type">Type</label>
+                <select
+                  id="admin-resource-type"
+                  value={filterType}
+                  onChange={(event) => setFilterType(event.target.value)}
+                >
+                  <option value="">All Types</option>
+                  <option value="FACILITY">Facility</option>
+                  <option value="EQUIPMENT">Equipment</option>
+                </select>
+              </div>
 
-              <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)}>
-                <option value="">Category: All</option>
-                {[...FACILITY_CATEGORIES, ...EQUIPMENT_CATEGORIES].map((category) => (
-                  <option key={category} value={category}>
-                    Category: {toTitleCase(category)}
-                  </option>
-                ))}
-              </select>
+              <div className="admin-resource-select-group">
+                <label htmlFor="admin-resource-category">Category</label>
+                <select
+                  id="admin-resource-category"
+                  value={filterCategory}
+                  onChange={(event) => setFilterCategory(event.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {[...FACILITY_CATEGORIES, ...EQUIPMENT_CATEGORIES].map((category) => (
+                    <option key={category} value={category}>
+                      {toTitleCase(category)}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select value={capacityFilter} onChange={(event) => setCapacityFilter(event.target.value)}>
-                <option value="ANY">Capacity: Any</option>
-                <option value="SMALL">Capacity: 1-20</option>
-                <option value="MEDIUM">Capacity: 21-50</option>
-                <option value="LARGE">Capacity: 51-150</option>
-                <option value="XL">Capacity: 150+</option>
-              </select>
+              <div className="admin-resource-select-group">
+                <label htmlFor="admin-resource-capacity">Capacity</label>
+                <select
+                  id="admin-resource-capacity"
+                  value={capacityFilter}
+                  onChange={(event) => setCapacityFilter(event.target.value)}
+                >
+                  <option value="ANY">Any Size</option>
+                  <option value="SMALL">1 - 20 seats</option>
+                  <option value="MEDIUM">21 - 50 seats</option>
+                  <option value="LARGE">51 - 150 seats</option>
+                  <option value="XL">150+ seats</option>
+                </select>
+              </div>
 
-              <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)}>
-                <option value="ALL">Location: All Blocks</option>
-                {locationOptions.map((location) => (
-                  <option key={location} value={location}>
-                    Location: {location}
-                  </option>
-                ))}
-              </select>
+              <div className="admin-resource-select-group">
+                <label htmlFor="admin-resource-location">Location</label>
+                <select
+                  id="admin-resource-location"
+                  value={locationFilter}
+                  onChange={(event) => setLocationFilter(event.target.value)}
+                >
+                  <option value="ALL">All Blocks</option>
+                  {locationOptions.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button className="admin-resource-filter-button" type="button" aria-label="Filter controls">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <line x1="4" y1="7" x2="20" y2="7" />
+                  <line x1="7" y1="12" x2="17" y2="12" />
+                  <line x1="10" y1="17" x2="14" y2="17" />
+                </svg>
+              </button>
             </div>
           </section>
 
@@ -497,10 +659,7 @@ function AdminResourcePage() {
                   {pagedResources.map((resource) => {
                     const active = String(resource.status).toUpperCase() === "ACTIVE";
                     const normalizedType = normalizeType(resource.type);
-                    const capacityText =
-                      normalizedType === "EQUIPMENT" || resource.capacity == null
-                        ? "N/A"
-                        : `${resource.capacity} Seats`;
+                    const capacityText = getCapacityText(resource);
                     return (
                       <tr key={resource.id}>
                         <td>
@@ -530,23 +689,29 @@ function AdminResourcePage() {
                         </td>
                         <td>
                           <div className="action-buttons">
-                            <button type="button" title="View" aria-label="View">
+                            <button
+                              type="button"
+                              className="action-btn action-btn-view"
+                              title="View"
+                              aria-label="View"
+                              onClick={() => setViewResource(resource)}
+                            >
                               <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z" />
                                 <circle cx="12" cy="12" r="3" />
                               </svg>
                             </button>
-                            <button type="button" title="Edit" aria-label="Edit" onClick={() => handleEdit(resource)}>
+                            <button type="button" className="action-btn action-btn-edit" title="Edit" aria-label="Edit" onClick={() => handleEdit(resource)}>
                               <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 20h4l10-10-4-4L4 16v4Z" />
-                                <path d="m12 6 4 4" />
+                                <path d="M3 21h3.8L18.8 9 15 5.2 3 17.2V21Z" />
+                                <path d="m14.8 5.2 4 4" />
                               </svg>
                             </button>
-                            <button type="button" title="Delete" aria-label="Delete" onClick={() => openDeleteConfirm(resource)}>
+                            <button type="button" className="action-btn action-btn-delete" title="Delete" aria-label="Delete" onClick={() => openDeleteConfirm(resource)}>
                               <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M4 7h16" />
                                 <path d="M9 7V4h6v3" />
-                                <path d="M8 7v13h8V7" />
+                                <path d="M6 7l1 13h10l1-13" />
                                 <path d="M10 11v6" />
                                 <path d="M14 11v6" />
                               </svg>
@@ -605,9 +770,75 @@ function AdminResourcePage() {
           </section>
           </div>
 
-          <button className="floating-support-btn" type="button" aria-label="Support agent">
-            🎧
-          </button>
+          {viewResource && (
+            <div
+              className="admin-resource-modal-backdrop"
+              role="presentation"
+              onClick={() => setViewResource(null)}
+            >
+              <section
+                className="admin-resource-details-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Resource details"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="admin-resource-modal-head">
+                  <h3>Resource Details</h3>
+                  <button
+                    className="admin-resource-modal-close"
+                    type="button"
+                    onClick={() => setViewResource(null)}
+                    aria-label="Close details"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="resource-details-grid">
+                  <div className="resource-detail-item">
+                    <span>Name</span>
+                    <strong>{viewResource.name || "N/A"}</strong>
+                  </div>
+
+                  <div className="resource-detail-item">
+                    <span>Resource ID</span>
+                    <strong>FAC-{String(viewResource.id || "0").padStart(3, "0")}</strong>
+                  </div>
+
+                  <div className="resource-detail-item">
+                    <span>Type</span>
+                    <strong>{toTitleCase(normalizeType(viewResource.type))}</strong>
+                  </div>
+
+                  <div className="resource-detail-item">
+                    <span>Category</span>
+                    <strong>{toTitleCase(viewResource.category) || "N/A"}</strong>
+                  </div>
+
+                  <div className="resource-detail-item">
+                    <span>Capacity</span>
+                    <strong>{getCapacityText(viewResource)}</strong>
+                  </div>
+
+                  <div className="resource-detail-item">
+                    <span>Status</span>
+                    <strong>{String(viewResource.status || "").toUpperCase() === "ACTIVE" ? "ACTIVE" : "OUT OF SERVICE"}</strong>
+                  </div>
+
+                  <div className="resource-detail-item resource-detail-item-full">
+                    <span>Location</span>
+                    <strong>{viewResource.location || "N/A"}</strong>
+                  </div>
+
+                  <div className="resource-detail-item resource-detail-item-full">
+                    <span>Description</span>
+                    <strong>{viewResource.description || "No description provided."}</strong>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
 
           {showForm && (
             <div
@@ -635,78 +866,147 @@ function AdminResourcePage() {
                 </div>
 
                 <section className="admin-resource-form-wrap" aria-label="Resource form">
-                  <form className="admin-resource-form" onSubmit={handleSubmit}>
-                    <input
-                      name="name"
-                      placeholder="Resource name"
-                      value={form.name}
-                      onChange={handleChange}
-                      required
-                    />
+                  <form className="admin-resource-form creative" onSubmit={handleSubmit}>
 
-                    <select name="type" value={form.type} onChange={handleChange}>
-                      <option value="FACILITY">FACILITY</option>
-                      <option value="EQUIPMENT">EQUIPMENT</option>
-                    </select>
+                    {/* Resource Name */}
+                    <div className="form-group">
+                      <label htmlFor="resource-name">Resource Name</label>
+                      <input
+                        id="resource-name"
+                        name="name"
+                        placeholder="e.g. EEE Lab 1"
+                        value={form.name}
+                        onChange={handleChange}
+                        required
+                        minLength={3}
+                        maxLength={50}
+                        pattern="^[a-zA-Z0-9 _-]+$"
+                        autoComplete="off"
+                      />
+                      <span className="form-helper">Official campus designation only.</span>
+                      {formErrors.name && (
+                        <span className="form-helper" style={{ color: '#dc2626', fontWeight: 700 }}>{formErrors.name}</span>
+                      )}
+                    </div>
 
-                    <select name="category" value={form.category} onChange={handleChange}>
-                      {getCategoryOptionsByType(form.type).map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
+                    {/* Resource Type */}
+                    <div className="form-group">
+                      <label htmlFor="resource-type">Resource Type</label>
+                      <select id="resource-type" name="type" value={form.type} onChange={handleChange}>
+                        <option value="">Select Type...</option>
+                        <option value="FACILITY">Facility</option>
+                        <option value="EQUIPMENT">Equipment</option>
+                      </select>
+                    </div>
 
-                    <input
-                      name="capacity"
-                      placeholder="Capacity"
-                      type="number"
-                      min="1"
-                      value={form.capacity}
-                      onChange={handleChange}
-                      required={form.type === "FACILITY"}
-                    />
+                    {/* Capacity */}
+                    <div className="form-group">
+                      <label htmlFor="resource-capacity">Capacity</label>
+                      <input
+                        id="resource-capacity"
+                        name="capacity"
+                        placeholder="e.g. 40"
+                        type="text"
+                        min="1"
+                        value={form.capacity}
+                        onChange={handleChange}
+                        required={form.type === "FACILITY"}
+                        autoComplete="off"
+                      />
+                    </div>
 
-                    <input
-                      name="location"
-                      placeholder="Location"
-                      value={form.location}
-                      onChange={handleChange}
-                      required
-                    />
+                    {/* Location / Building */}
+                    <div className="form-group">
+                      <label htmlFor="resource-location">Location / Building</label>
+                      <input
+                        id="resource-location"
+                        name="location"
+                        placeholder="e.g. Main Building, 2nd Floor"
+                        value={form.location}
+                        onChange={handleChange}
+                        required
+                        minLength={3}
+                        maxLength={100}
+                        pattern="^[a-zA-Z0-9 _\-,]+$"
+                        autoComplete="off"
+                      />
+                      <span className="form-helper">Building, floor, or area (3-100 chars, no special characters).</span>
+                      {formErrors.location && (
+                        <span className="form-helper" style={{ color: '#dc2626', fontWeight: 700 }}>{formErrors.location}</span>
+                      )}
+                    </div>
 
-                    <input
-                      name="availabilityStart"
-                      type="time"
-                      value={form.availabilityStart}
-                      onChange={handleChange}
-                    />
+                    {/* Category */}
+                    <div className="form-group">
+                      <label htmlFor="resource-category">Category</label>
+                      <select id="resource-category" name="category" value={form.category} onChange={handleChange}>
+                        {getCategoryOptionsByType(form.type).map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                    <input
-                      name="availabilityEnd"
-                      type="time"
-                      value={form.availabilityEnd}
-                      onChange={handleChange}
-                    />
+                    {/* Availability Window */}
+                    <div className="form-group form-group-availability" style={{ gridColumn: '1 / -1' }}>
+                      <label>Availability Window</label>
+                      <div className="availability-window">
+                        <div className="availability-time">
+                          <input
+                            name="availabilityStart"
+                            type="time"
+                            value={form.availabilityStart}
+                            onChange={handleChange}
+                            placeholder="Start Time"
+                            min="07:00"
+                            max="22:00"
+                          />
+                          <span className="availability-label">START TIME</span>
+                        </div>
+                        <span className="availability-arrow">→</span>
+                        <div className="availability-time">
+                          <input
+                            name="availabilityEnd"
+                            type="time"
+                            value={form.availabilityEnd}
+                            onChange={handleChange}
+                            placeholder="End Time"
+                            min="07:00"
+                            max="22:00"
+                          />
+                          <span className="availability-label">END TIME</span>
+                        </div>
+                      </div>
+                    </div>
 
-                    <textarea
-                      name="description"
-                      placeholder="Description"
-                      value={form.description}
-                      onChange={handleChange}
-                      rows={3}
-                    />
+                    {/* Description */}
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                      <label htmlFor="resource-description">Description</label>
+                      <textarea
+                        id="resource-description"
+                        name="description"
+                        placeholder="Description (optional, max 300 characters)"
+                        value={form.description}
+                        onChange={handleChange}
+                        rows={3}
+                        maxLength={300}
+                      />
+                    </div>
 
-                    <select name="status" value={form.status} onChange={handleChange}>
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
-                    </select>
+                    {/* Status */}
+                    <div className="form-group">
+                      <label htmlFor="resource-status">Status</label>
+                      <select id="resource-status" name="status" value={form.status} onChange={handleChange}>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="OUT_OF_SERVICE">OUT OF SERVICE</option>
+                      </select>
+                    </div>
 
                     <div className="admin-resource-form-actions">
                       <button className="resource-btn-primary" type="submit">
                         {editingId !== null ? "Update Resource" : "Add Resource"}
                       </button>
-
                       <button
                         className="resource-btn-light"
                         type="button"
