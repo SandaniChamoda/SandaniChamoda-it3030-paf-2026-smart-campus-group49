@@ -57,7 +57,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void signup_shouldPersistRequestedNonAdminRole() {
+    void signup_shouldPersistRequestedRole() {
         SignupRequest request = new SignupRequest(
                 "Tech User",
                 "tech@example.com",
@@ -86,7 +86,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void signup_shouldRejectAdminRoleFromPublicSignup() {
+    void signup_shouldAllowAdminRoleFromPublicSignup() {
         SignupRequest request = new SignupRequest(
                 "Admin User",
                 "admin@example.com",
@@ -95,10 +95,23 @@ class AuthServiceTest {
         );
 
         when(userRepository.existsByEmail("admin@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("StrongPass@1")).thenReturn("encoded-password");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setId(21L);
+            return saved;
+        });
+        when(jwtUtil.generateToken(any(User.class))).thenReturn("jwt-token");
 
-        assertThatThrownBy(() -> authService.signup(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("cannot be created");
+        AuthResponse response = authService.signup(request);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User persisted = userCaptor.getValue();
+
+        assertThat(persisted.getRole()).isEqualTo(Role.ADMIN);
+        assertThat(response.getUser().getRole()).isEqualTo(Role.ADMIN);
+        assertThat(response.getToken()).isEqualTo("jwt-token");
     }
 
     @Test
