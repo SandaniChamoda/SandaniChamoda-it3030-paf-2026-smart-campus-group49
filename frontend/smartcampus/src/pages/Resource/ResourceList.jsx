@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 import "./ResourceList.css";
 
 function ResourceList() {
+    // Map resource names to custom images (add your own as needed)
+    const resourceImageMap = {
+      "EEE Lab 1": "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "Physics Lab": "https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      // Add more resource name to image mappings here
+    };
   const FACILITY_CATEGORIES = ["LECTURE_HALL", "LAB", "MEETING_ROOM", "AUDITORIUM"];
   const EQUIPMENT_CATEGORIES = ["PROJECTOR", "CAMERA", "LAPTOP", "MICROPHONE", "SPEAKER"];
 
@@ -14,7 +20,7 @@ function ResourceList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedResource, setSelectedResource] = useState(null);
 
-  const pageSize = 6;
+  const pageSize = 9;
   const themedImageCatalog = {
     FACILITY: [
       "https://lh3.googleusercontent.com/aida-public/AB6AXuCbOo-GZCU2kXvps21H62AxaatHNY0J05YOLyj7QEtxm9F1G4mAG4r8whc0qfcnjhRdB9noYDoOshFOU-gFGpnuj9sUr9JdSC6B5coevGa30hmxBc6ss9fGRWSanEqBDDj2U30R53QMy2gd2vNIBsSlK5loUNk2GJIH6IuDXSEz35njZSrnl7jxJm9YUOvWxfjsHosdfa2KF_ICciz3_co9JTiYHSInjU1h-Eka-dRy1xi5ON3DGKW8Dwb4ZGml2f_1oT2ix2f9DUgi",
@@ -33,60 +39,40 @@ function ResourceList() {
 
   const categoryImageMap = {
     LECTURE_HALL: [
-      themedImageCatalog.FACILITY[0],
-      themedImageCatalog.FACILITY[1],
-      themedImageCatalog.FACILITY[2],
-      "https://images.pexels.com/photos/159740/classroom-education-library-room-159740.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "/resource-images/lec-hall-1.jpg",
+      "/resource-images/lec-hall-2.jpg"
     ],
     AUDITORIUM: [
-      themedImageCatalog.FACILITY[0],
-      themedImageCatalog.FACILITY[2],
-      themedImageCatalog.DEFAULT[0],
-      "https://images.pexels.com/photos/1184572/pexels-photo-1184572.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "/resource-images/auditorium-1.jpg",
+      "/resource-images/auditorium-2.jpg"
     ],
     MEETING_ROOM: [
-      themedImageCatalog.FACILITY[1],
-      themedImageCatalog.FACILITY[2],
-      themedImageCatalog.DEFAULT[0],
-      "https://images.pexels.com/photos/1181396/pexels-photo-1181396.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/416320/pexels-photo-416320.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "/resource-images/meeting-room-1.jpg",
+      "/resource-images/meeting-room-2.jpg"
     ],
     LAB: [
-      themedImageCatalog.FACILITY[2],
-      themedImageCatalog.EQUIPMENT[0],
-      themedImageCatalog.EQUIPMENT[1],
-      "https://images.pexels.com/photos/2280571/pexels-photo-2280571.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/3825581/pexels-photo-3825581.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/3912512/pexels-photo-3912512.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      "https://images.pexels.com/photos/3938023/pexels-photo-3938023.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "/resource-images/com-lab-2.jpg",
+      "/resource-images/com-lab-1.jpg"
     ],
     PROJECTOR: [
-      themedImageCatalog.EQUIPMENT[0],
-      themedImageCatalog.EQUIPMENT[1],
-      themedImageCatalog.EQUIPMENT[2],
+      "/resource-images/projector-1.jpg",
+      "/resource-images/projector-2.jpg"
     ],
     CAMERA: [
-      themedImageCatalog.EQUIPMENT[1],
-      themedImageCatalog.EQUIPMENT[0],
-      themedImageCatalog.EQUIPMENT[2],
+      "/resource-images/camera-1.jpg",
+      "/resource-images/camera-2.jpg"
     ],
     LAPTOP: [
-      themedImageCatalog.EQUIPMENT[2],
-      themedImageCatalog.EQUIPMENT[1],
-      themedImageCatalog.EQUIPMENT[0],
+      "/resource-images/laptop-1.jpg",
+      "/resource-images/laptop-2.jpg"
     ],
     MICROPHONE: [
-      themedImageCatalog.EQUIPMENT[1],
-      themedImageCatalog.EQUIPMENT[2],
-      themedImageCatalog.EQUIPMENT[0],
+      "/resource-images/mic-1.jpg",
+      "/resource-images/mic-2.jpeg"
     ],
     SPEAKER: [
-      themedImageCatalog.EQUIPMENT[2],
-      themedImageCatalog.EQUIPMENT[0],
-      themedImageCatalog.EQUIPMENT[1],
+      "/resource-images/speaker-1.jpg",
+      "/resource-images/speaker-2.jpg"
     ],
   };
 
@@ -142,6 +128,11 @@ function ResourceList() {
   };
 
   const resolveImageGroup = (resource) => {
+    // Use custom image if resource name matches
+    if (resourceImageMap[resource.name]) {
+      return [resourceImageMap[resource.name]];
+    }
+
     const categoryKey = String(resource.category || "").toUpperCase();
     if (categoryImageMap[categoryKey]) {
       return categoryImageMap[categoryKey];
@@ -247,27 +238,30 @@ function ResourceList() {
 
     pagedResources.forEach((resource, index) => {
       const imageGroup = resolveImageGroup(resource);
-      const baseIndex = Math.abs((Number(resource.id) || resource.name?.length || 0) + weeklySalt) % imageGroup.length;
-
       let selectedUrl = "";
-      for (let offset = 0; offset < imageGroup.length; offset += 1) {
-        const candidate = imageGroup[(baseIndex + offset) % imageGroup.length];
-        if (!usedUrls.has(candidate)) {
-          selectedUrl = candidate;
-          break;
+
+      // If only one image, always use it for all resources in this group
+      if (imageGroup.length === 1) {
+        selectedUrl = imageGroup[0];
+      } else {
+        const baseIndex = Math.abs((Number(resource.id) || resource.name?.length || 0) + weeklySalt) % imageGroup.length;
+        for (let offset = 0; offset < imageGroup.length; offset += 1) {
+          const candidate = imageGroup[(baseIndex + offset) % imageGroup.length];
+          if (!usedUrls.has(candidate)) {
+            selectedUrl = candidate;
+            break;
+          }
         }
+        // If category pools are exhausted, use a deterministic seeded fallback to keep images unique.
+        if (!selectedUrl) {
+          const categoryToken = encodeURIComponent(
+            String(resource.category || resource.type || "campus").toLowerCase().replaceAll("_", " ")
+          );
+          const uniqueSeed = `${weeklySalt}-${getResourceKey(resource, index)}`;
+          selectedUrl = `https://loremflickr.com/1280/720/${categoryToken}?lock=${encodeURIComponent(uniqueSeed)}`;
+        }
+        usedUrls.add(selectedUrl);
       }
-
-      // If category pools are exhausted, use a deterministic seeded fallback to keep images unique.
-      if (!selectedUrl) {
-        const categoryToken = encodeURIComponent(
-          String(resource.category || resource.type || "campus").toLowerCase().replaceAll("_", " ")
-        );
-        const uniqueSeed = `${weeklySalt}-${getResourceKey(resource, index)}`;
-        selectedUrl = `https://loremflickr.com/1280/720/${categoryToken}?lock=${encodeURIComponent(uniqueSeed)}`;
-      }
-
-      usedUrls.add(selectedUrl);
       imageMap.set(getResourceKey(resource, index), selectedUrl);
     });
 

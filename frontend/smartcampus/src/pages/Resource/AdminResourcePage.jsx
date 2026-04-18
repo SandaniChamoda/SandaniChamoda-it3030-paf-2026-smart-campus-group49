@@ -33,6 +33,9 @@ function AdminResourcePage() {
     status: "ACTIVE",
   });
 
+  // Validation state
+  const [formErrors, setFormErrors] = useState({});
+
   const rowsPerPage = 10;
 
   const sideLinks = [
@@ -42,6 +45,8 @@ function AdminResourcePage() {
     { to: "/tickets/admin", label: "Tickets" },
   ];
 
+
+  // Fetch resources from backend
   const loadResources = () => {
     fetch("http://localhost:8086/resources")
       .then((res) => res.json())
@@ -83,6 +88,16 @@ function AdminResourcePage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    if (name === "name") {
+      // Only allow letters, numbers, spaces, dashes, underscores
+      const filtered = value.replace(/[^a-zA-Z0-9 _-]/g, "");
+      setForm({
+        ...form,
+        name: filtered,
+      });
+      return;
+    }
+
     if (name === "type") {
       const options = getCategoryOptionsByType(value);
       const nextType = normalizeType(value);
@@ -95,9 +110,41 @@ function AdminResourcePage() {
       return;
     }
 
+
+    if (name === "capacity") {
+      // Only allow digits
+      const filtered = value.replace(/[^0-9]/g, "");
+      setForm({
+        ...form,
+        capacity: filtered,
+      });
+      return;
+    }
+
+    if (name === "location") {
+      // Only allow letters, numbers, spaces, dashes, underscores, commas
+      const filtered = value.replace(/[^a-zA-Z0-9 _\-,]/g, "");
+      setForm({
+        ...form,
+        location: filtered,
+      });
+      return;
+    }
+
+    if (name === "availabilityStart" || name === "availabilityEnd") {
+      // Only allow times between 07:00 and 22:00
+      if (value && (value < "07:00" || value > "22:00")) {
+        setForm({
+          ...form,
+          [name]: "",
+        });
+        return;
+      }
+    }
+
     setForm({
       ...form,
-      [name]: name === "capacity" ? (value === "" ? "" : Number(value)) : value,
+      [name]: value,
     });
   };
 
@@ -127,7 +174,43 @@ function AdminResourcePage() {
   };
 
   const handleSubmit = (e) => {
+
     e.preventDefault();
+
+
+    // --- Resource Name Validation ---
+    const errors = {};
+    const name = form.name.trim();
+    // 1. Min/max length
+    if (name.length < 3 || name.length > 50) {
+      errors.name = "Resource name must be 3-50 characters.";
+    }
+    // 2. No special characters (allow letters, numbers, spaces, dashes, underscores)
+    if (!/^[a-zA-Z0-9 _-]+$/.test(name)) {
+      errors.name = "Resource name can only contain letters, numbers, spaces, dashes, and underscores.";
+    }
+    // 3. No duplicate names (case-insensitive, ignore self if editing)
+    const duplicate = resources.some(
+      (r) => r.name.trim().toLowerCase() === name.toLowerCase() && r.id !== editingId
+    );
+    if (duplicate) {
+      errors.name = "A resource with this name already exists.";
+    }
+
+    // --- Location Validation ---
+    const location = form.location.trim();
+    if (location.length < 3 || location.length > 100) {
+      errors.location = "Location must be 3-100 characters.";
+    }
+    // Allow only letters, numbers, spaces, dashes, underscores, commas
+    if (!/^[a-zA-Z0-9 _\-,]+$/.test(location)) {
+      errors.location = "Location can only contain letters, numbers, spaces, dashes, underscores, and commas.";
+    }
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
 
     const payload = {
       ...form,
@@ -167,9 +250,18 @@ function AdminResourcePage() {
         loadResources();
         resetForm();
         setShowForm(false);
+        setToast({
+          show: true,
+          message: `${editingId !== null ? "Updated" : "Added"} successfully: ${form.name}`,
+          type: "success",
+        });
       })
       .catch(() => {
-        alert("Validation error: please check inputs");
+        setToast({
+          show: true,
+          message: "Validation error: please check inputs",
+          type: "error",
+        });
       });
   };
 
@@ -380,9 +472,23 @@ function AdminResourcePage() {
 
         <div className="admin-side-bottom">
           <Link to="/tickets/create" className="admin-side-link support-link">
+            <span style={{display: 'inline-flex', alignItems: 'center', marginRight: '0.5em'}}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{marginRight: '0.18em'}}>
+                <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                <path d="M10 6v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="10" cy="14" r="1" fill="currentColor" />
+              </svg>
+            </span>
             Support
           </Link>
           <Link to="/" className="admin-side-link logout-link">
+            <span style={{display: 'inline-flex', alignItems: 'center', marginRight: '0.5em'}}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{marginRight: '0.18em'}}>
+                <path d="M7 10h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M10 7l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="2.75" y="3.75" width="8.5" height="12.5" rx="2.25" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </span>
             Logout
           </Link>
         </div>
@@ -772,8 +878,15 @@ function AdminResourcePage() {
                         value={form.name}
                         onChange={handleChange}
                         required
+                        minLength={3}
+                        maxLength={50}
+                        pattern="^[a-zA-Z0-9 _-]+$"
+                        autoComplete="off"
                       />
                       <span className="form-helper">Official campus designation only.</span>
+                      {formErrors.name && (
+                        <span className="form-helper" style={{ color: '#dc2626', fontWeight: 700 }}>{formErrors.name}</span>
+                      )}
                     </div>
 
                     {/* Resource Type */}
@@ -793,11 +906,12 @@ function AdminResourcePage() {
                         id="resource-capacity"
                         name="capacity"
                         placeholder="e.g. 40"
-                        type="number"
+                        type="text"
                         min="1"
                         value={form.capacity}
                         onChange={handleChange}
                         required={form.type === "FACILITY"}
+                        autoComplete="off"
                       />
                     </div>
 
@@ -811,7 +925,15 @@ function AdminResourcePage() {
                         value={form.location}
                         onChange={handleChange}
                         required
+                        minLength={3}
+                        maxLength={100}
+                        pattern="^[a-zA-Z0-9 _\-,]+$"
+                        autoComplete="off"
                       />
+                      <span className="form-helper">Building, floor, or area (3-100 chars, no special characters).</span>
+                      {formErrors.location && (
+                        <span className="form-helper" style={{ color: '#dc2626', fontWeight: 700 }}>{formErrors.location}</span>
+                      )}
                     </div>
 
                     {/* Category */}
@@ -837,6 +959,8 @@ function AdminResourcePage() {
                             value={form.availabilityStart}
                             onChange={handleChange}
                             placeholder="Start Time"
+                            min="07:00"
+                            max="22:00"
                           />
                           <span className="availability-label">START TIME</span>
                         </div>
@@ -848,6 +972,8 @@ function AdminResourcePage() {
                             value={form.availabilityEnd}
                             onChange={handleChange}
                             placeholder="End Time"
+                            min="07:00"
+                            max="22:00"
                           />
                           <span className="availability-label">END TIME</span>
                         </div>
@@ -860,10 +986,11 @@ function AdminResourcePage() {
                       <textarea
                         id="resource-description"
                         name="description"
-                        placeholder="Description"
+                        placeholder="Description (optional, max 300 characters)"
                         value={form.description}
                         onChange={handleChange}
                         rows={3}
+                        maxLength={300}
                       />
                     </div>
 

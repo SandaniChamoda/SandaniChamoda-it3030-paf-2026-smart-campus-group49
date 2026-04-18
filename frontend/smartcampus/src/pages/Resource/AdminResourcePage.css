@@ -79,7 +79,7 @@
 }
 
 .availability-time input[type="time"] {
-  width: 120px;
+  width: 150px;
   height: 38px;
   border-radius: 8px;
   border: 1px solid var(--border-light);
