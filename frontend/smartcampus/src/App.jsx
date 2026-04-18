@@ -33,6 +33,7 @@ import AssignTechnician from "./pages/Ticket/AssignTechnician";
 import UpdateTicketStatus from "./pages/Ticket/UpdateTicketStatus";
 import TicketComments from "./pages/Ticket/TicketComments";
 import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
+import EditTicket from "./pages/Ticket/EditTicket";
 import StudentDashboard from "./pages/Dashboard/StudentDashboard";
 import TechnicianDashboard from "./pages/Dashboard/TechnicianDashboard";
 import AdminRoleDashboard from "./pages/Dashboard/AdminRoleDashboard";
@@ -259,6 +260,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TicketDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tickets/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditTicket />
               </ProtectedRoute>
             }
           />

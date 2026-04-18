@@ -4,6 +4,7 @@ import com.project.smartcampus.dto.AssignTechnicianRequest;
 import com.project.smartcampus.dto.CreateTicketRequest;
 import com.project.smartcampus.dto.TicketResponse;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
+import com.project.smartcampus.dto.UpdateTicketRequest;
 import com.project.smartcampus.entity.Ticket;
 import com.project.smartcampus.enums.TicketStatus;
 import com.project.smartcampus.repository.TicketRepository;
@@ -103,6 +104,24 @@ public class TicketService {
         if (request.getStatus() == TicketStatus.RESOLVED) {
             ticket.setResolvedAt(LocalDateTime.now());
         }
+
+        Ticket updatedTicket = ticketRepository.save(ticket);
+        return mapToResponse(updatedTicket);
+    }
+
+    public TicketResponse updateTicket(Long ticketId, UpdateTicketRequest request) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
+
+        if (ticket.getStatus() == TicketStatus.RESOLVED || ticket.getStatus() == TicketStatus.CLOSED) {
+            throw new IllegalStateException("Resolved tickets cannot be edited.");
+        }
+
+        ticket.setTitle(request.getTitle());
+        ticket.setDescription(request.getDescription());
+        ticket.setCategory(request.getCategory());
+        ticket.setPriority(request.getPriority());
+        ticket.setUpdatedAt(LocalDateTime.now());
 
         Ticket updatedTicket = ticketRepository.save(ticket);
         return mapToResponse(updatedTicket);
