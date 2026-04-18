@@ -27,7 +27,7 @@ function Header() {
     <header className="header-shell">
       <div className="sc-container header-row">
         <NavLink to="/" className="header-brand" onClick={closeMenu}>
-          SmartCampus
+          VertexOne
         </NavLink>
 
         <button
@@ -42,16 +42,6 @@ function Header() {
         <nav className={`header-nav${menuOpen ? " open" : ""}`}>
           {isAuthenticated ? (
             <>
-              {showDashboard && (
-                <NavLink
-                  to={getRoleDashboardPath(user?.role)}
-                  className={navLinkClass}
-                  onClick={closeMenu}
-                >
-                  Dashboard
-                </NavLink>
-              )}
-
               <div className="header-mega">
                 <NavLink
                   to={isAdmin ? "/admin/resources" : "/resources"}

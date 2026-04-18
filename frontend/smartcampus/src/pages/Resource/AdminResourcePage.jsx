@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
+import AdminSidebar from "../../components/Admin/AdminSidebar";
 import "../Admin/AdminDashboard.css";
 import "./AdminResourcePage.css";
 
@@ -38,13 +39,6 @@ function AdminResourcePage() {
   const [formErrors, setFormErrors] = useState({});
 
   const rowsPerPage = 10;
-
-  const sideLinks = [
-    { label: "Users" },
-    { to: "/admin/resources", label: "Resources" },
-    { to: "/admin", label: "Bookings", end: true },
-    { to: "/tickets/admin", label: "Tickets" },
-  ];
 
 
   // Fetch resources from backend
@@ -424,56 +418,7 @@ function AdminResourcePage() {
 
   return (
     <section className="admin-layout">
-      <aside className="admin-sidebar">
-        <div>
-          <p className="admin-side-kicker">Admin Panel</p>
-          <h2 className="admin-side-title">Operations</h2>
-
-          <nav className="admin-side-nav" aria-label="Admin sections">
-            {sideLinks.map((item) => (
-              item.to ? (
-                <NavLink
-                  key={item.label}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    `admin-side-link${isActive ? " active" : ""}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ) : (
-                <button key={item.label} type="button" className="admin-side-link admin-side-link-button">
-                  {item.label}
-                </button>
-              )
-            ))}
-          </nav>
-        </div>
-
-        <div className="admin-side-bottom">
-          <Link to="/tickets/create" className="admin-side-link support-link">
-            <span style={{display: 'inline-flex', alignItems: 'center', marginRight: '0.5em'}}>
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{marginRight: '0.18em'}}>
-                <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                <path d="M10 6v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="10" cy="14" r="1" fill="currentColor" />
-              </svg>
-            </span>
-            Support
-          </Link>
-          <Link to="/" className="admin-side-link logout-link">
-            <span style={{display: 'inline-flex', alignItems: 'center', marginRight: '0.5em'}}>
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{marginRight: '0.18em'}}>
-                <path d="M7 10h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M10 7l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="2.75" y="3.75" width="8.5" height="12.5" rx="2.25" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </span>
-            Logout
-          </Link>
-        </div>
-      </aside>
+      <AdminSidebar />
 
       <div className="admin-main-area">
         <div className="admin-resource-shell">
