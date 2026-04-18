@@ -179,7 +179,7 @@ function SignupPage() {
           <span>Already have an account?</span>
           <Link to="/login">Sign in</Link>
         </div>
-        <p className="auth-helper">ADMIN accounts are managed by administrators and cannot be created from public signup.</p>
+        <p className="auth-helper">Choose the role that matches your access needs, including ADMIN for full management access.</p>
       </div>
     </div>
   );
