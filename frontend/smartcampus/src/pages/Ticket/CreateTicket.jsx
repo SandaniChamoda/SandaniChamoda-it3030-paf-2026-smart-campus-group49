@@ -231,8 +231,13 @@ function CreateTicket() {
     resetForm();
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    scrollToTop();
 
     const allTouched = {
       title: true,
@@ -285,6 +290,7 @@ function CreateTicket() {
       });
 
       setSubmitMessage("Ticket created successfully.");
+      scrollToTop();
 
       images.forEach((img) => URL.revokeObjectURL(img.preview));
       setImages([]);

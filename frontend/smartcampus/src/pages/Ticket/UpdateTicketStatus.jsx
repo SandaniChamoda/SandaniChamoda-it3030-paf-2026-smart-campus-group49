@@ -78,8 +78,13 @@ function UpdateTicketStatus() {
     setFieldError(validateStatus(value));
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleUpdateStatus = async (e) => {
     e.preventDefault();
+    scrollToTop();
 
     const validationMessage = validateStatus(status);
     setFieldError(validationMessage);
@@ -96,6 +101,7 @@ function UpdateTicketStatus() {
       });
 
       setSuccessMessage("Ticket status updated successfully.");
+      scrollToTop();
       fetchTicket();
 
       setTimeout(() => {

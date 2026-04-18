@@ -4,6 +4,7 @@ import com.project.smartcampus.dto.AssignTechnicianRequest;
 import com.project.smartcampus.dto.CreateTicketRequest;
 import com.project.smartcampus.dto.TicketResponse;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
+import com.project.smartcampus.dto.UpdateTicketRequest;
 import com.project.smartcampus.services.TicketService;
 import jakarta.validation.Valid;
 import com.project.smartcampus.dto.CreateCommentRequest;
@@ -67,6 +68,13 @@ public class TicketController {
             @PathVariable Long ticketId,
             @RequestBody UpdateTicketStatusRequest request) {
         return ResponseEntity.ok(ticketService.updateTicketStatus(ticketId, request));
+    }
+
+    @PutMapping("/{ticketId}")
+    public ResponseEntity<TicketResponse> updateTicket(
+            @PathVariable Long ticketId,
+            @Valid @RequestBody UpdateTicketRequest request) {
+        return ResponseEntity.ok(ticketService.updateTicket(ticketId, request));
     }
 
     @PostMapping("/{ticketId}/comments")
