@@ -4,6 +4,12 @@ import API from "../../services/api";
 import "./ResourceList.css";
 
 function ResourceList() {
+    // Map resource names to custom images (add your own as needed)
+    const resourceImageMap = {
+      "EEE Lab 1": "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      "Physics Lab": "https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      // Add more resource name to image mappings here
+    };
   const FACILITY_CATEGORIES = ["LECTURE_HALL", "LAB", "MEETING_ROOM", "AUDITORIUM"];
   const EQUIPMENT_CATEGORIES = ["PROJECTOR", "CAMERA", "LAPTOP", "MICROPHONE", "SPEAKER"];
 
@@ -13,8 +19,9 @@ function ResourceList() {
   const [capacityFilter, setCapacityFilter] = useState("ALL");
   const [locationFilter, setLocationFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedResource, setSelectedResource] = useState(null);
 
-  const pageSize = 6;
+  const pageSize = 9;
   const themedImageCatalog = {
     FACILITY: [
       "https://lh3.googleusercontent.com/aida-public/AB6AXuCbOo-GZCU2kXvps21H62AxaatHNY0J05YOLyj7QEtxm9F1G4mAG4r8whc0qfcnjhRdB9noYDoOshFOU-gFGpnuj9sUr9JdSC6B5coevGa30hmxBc6ss9fGRWSanEqBDDj2U30R53QMy2gd2vNIBsSlK5loUNk2GJIH6IuDXSEz35njZSrnl7jxJm9YUOvWxfjsHosdfa2KF_ICciz3_co9JTiYHSInjU1h-Eka-dRy1xi5ON3DGKW8Dwb4ZGml2f_1oT2ix2f9DUgi",
@@ -31,14 +38,49 @@ function ResourceList() {
     ],
   };
 
-  const loadResources = async () => {
-    try {
-      const response = await API.get("/resources");
-      setResources(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error("Failed to load resources", error);
-      setResources([]);
-    }
+  const categoryImageMap = {
+    LECTURE_HALL: [
+      "/resource-images/lec-hall-1.jpg",
+      "/resource-images/lec-hall-2.jpg"
+    ],
+    AUDITORIUM: [
+      "/resource-images/auditorium-1.jpg",
+      "/resource-images/auditorium-2.jpg"
+    ],
+    MEETING_ROOM: [
+      "/resource-images/meeting-room-1.jpg",
+      "/resource-images/meeting-room-2.jpg"
+    ],
+    LAB: [
+      "/resource-images/com-lab-2.jpg",
+      "/resource-images/com-lab-1.jpg"
+    ],
+    PROJECTOR: [
+      "/resource-images/projector-1.jpg",
+      "/resource-images/projector-2.jpg"
+    ],
+    CAMERA: [
+      "/resource-images/camera-1.jpg",
+      "/resource-images/camera-2.jpg"
+    ],
+    LAPTOP: [
+      "/resource-images/laptop-1.jpg",
+      "/resource-images/laptop-2.jpg"
+    ],
+    MICROPHONE: [
+      "/resource-images/mic-1.jpg",
+      "/resource-images/mic-2.jpeg"
+    ],
+    SPEAKER: [
+      "/resource-images/speaker-1.jpg",
+      "/resource-images/speaker-2.jpg"
+    ],
+  };
+
+  const loadResources = () => {
+    fetch("http://localhost:8086/resources")
+      .then((res) => res.json())
+      .then((data) => setResources(data));
   };
 
   useEffect(() => {
@@ -87,6 +129,16 @@ function ResourceList() {
   };
 
   const resolveImageGroup = (resource) => {
+    // Use custom image if resource name matches
+    if (resourceImageMap[resource.name]) {
+      return [resourceImageMap[resource.name]];
+    }
+
+    const categoryKey = String(resource.category || "").toUpperCase();
+    if (categoryImageMap[categoryKey]) {
+      return categoryImageMap[categoryKey];
+    }
+
     const normalizedType = normalizeType(resource.type);
     if (normalizedType === "FACILITY") {
       return themedImageCatalog.FACILITY;
@@ -99,10 +151,12 @@ function ResourceList() {
     return themedImageCatalog.DEFAULT;
   };
 
-  const getCardImage = (resource) => {
-    const imageGroup = resolveImageGroup(resource);
-    const stableIndex = Math.abs(Number(resource.id) || resource.name.length || 0) % imageGroup.length;
-    return imageGroup[stableIndex];
+  const getResourceKey = (resource, index = 0) => {
+    if (resource.id != null) {
+      return String(resource.id);
+    }
+
+    return `${String(resource.name || "resource")}-${index}`;
   };
 
   const getLastCheckText = (resource) => {
@@ -177,11 +231,56 @@ function ResourceList() {
   const pageNumbers = createPageNumbers(totalPages, currentSafePage);
   const pageStart = (currentSafePage - 1) * pageSize;
   const pagedResources = filteredResources.slice(pageStart, pageStart + pageSize);
+  const weeklySalt = Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7));
+
+  const uniqueImageByResourceKey = useMemo(() => {
+    const usedUrls = new Set();
+    const imageMap = new Map();
+
+    pagedResources.forEach((resource, index) => {
+      const imageGroup = resolveImageGroup(resource);
+      let selectedUrl = "";
+
+      // If only one image, always use it for all resources in this group
+      if (imageGroup.length === 1) {
+        selectedUrl = imageGroup[0];
+      } else {
+        const baseIndex = Math.abs((Number(resource.id) || resource.name?.length || 0) + weeklySalt) % imageGroup.length;
+        for (let offset = 0; offset < imageGroup.length; offset += 1) {
+          const candidate = imageGroup[(baseIndex + offset) % imageGroup.length];
+          if (!usedUrls.has(candidate)) {
+            selectedUrl = candidate;
+            break;
+          }
+        }
+        // If category pools are exhausted, use a deterministic seeded fallback to keep images unique.
+        if (!selectedUrl) {
+          const categoryToken = encodeURIComponent(
+            String(resource.category || resource.type || "campus").toLowerCase().replaceAll("_", " ")
+          );
+          const uniqueSeed = `${weeklySalt}-${getResourceKey(resource, index)}`;
+          selectedUrl = `https://loremflickr.com/1280/720/${categoryToken}?lock=${encodeURIComponent(uniqueSeed)}`;
+        }
+        usedUrls.add(selectedUrl);
+      }
+      imageMap.set(getResourceKey(resource, index), selectedUrl);
+    });
+
+    return imageMap;
+  }, [pagedResources, weeklySalt]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage >= 1 && nextPage <= totalPages) {
       setCurrentPage(nextPage);
     }
+  };
+
+  const openResourceDetails = (resource) => {
+    setSelectedResource(resource);
+  };
+
+  const closeResourceDetails = () => {
+    setSelectedResource(null);
   };
 
   return (
@@ -275,15 +374,21 @@ function ResourceList() {
 
       <section className="resource-grid" aria-label="Facilities">
         {pagedResources.map((r) => {
+          const resourceKey = getResourceKey(r);
+          const normalizedType = normalizeType(r.type);
           const isActive = String(r.status).toUpperCase() === "ACTIVE";
           const statusText = isActive ? "ACTIVE" : "OUT_OF_SERVICE";
+          const capacityText =
+            normalizedType === "EQUIPMENT" || r.capacity == null
+              ? "Capacity N/A"
+              : `${Number(r.capacity) || 0} seats`;
 
           return (
             <article className="resource-card" key={r.id}>
               <div className="resource-image-wrap">
                 <img
                   className="resource-image"
-                  src={getCardImage(r)}
+                  src={uniqueImageByResourceKey.get(resourceKey) || themedImageCatalog.DEFAULT[0]}
                   alt={`${r.name} overview`}
                   loading="lazy"
                 />
@@ -295,7 +400,7 @@ function ResourceList() {
 
               <div className="resource-card-body">
                 <p className="resource-type">
-                  {toTitleCase(normalizeType(r.type))}
+                  {toTitleCase(normalizedType)}
                   {r.category ? ` • ${toTitleCase(r.category)}` : ""}
                 </p>
                 <h3>{r.name}</h3>
@@ -307,14 +412,18 @@ function ResourceList() {
                     <path d="M3.5 18c0-2.5 2-4.5 4.5-4.5h0c2.5 0 4.5 2 4.5 4.5" />
                     <path d="M13.5 18c0-1.9 1.5-3.5 3.5-3.5h0c1.9 0 3.5 1.5 3.5 3.5" />
                   </svg>
-                  {r.capacity == null ? "Capacity N/A" : `${Number(r.capacity) || 0} seats`}
+                  {capacityText}
                 </p>
 
                 <div className="resource-card-footer">
                   <span>Last check: {getLastCheckText(r)}</span>
-                  <a href="#" onClick={(e) => e.preventDefault()}>
-                    {isActive ? "Manage Details" : "View Ticket"}
-                  </a>
+                  <button
+                    type="button"
+                    className="resource-details-link"
+                    onClick={() => openResourceDetails(r)}
+                  >
+                    View Details
+                  </button>
                 </div>
 
                 {!isActive && <p className="resource-warning">{getIssueText(r)}</p>}
@@ -373,6 +482,101 @@ function ResourceList() {
           &gt;
         </button>
       </nav>
+
+      {selectedResource && (
+        <div
+          className="resource-details-backdrop"
+          role="presentation"
+          onClick={closeResourceDetails}
+        >
+          <section
+            className="resource-details-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Resource details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="resource-details-head">
+              <div>
+                <p className="resource-details-kicker">Resource Profile</p>
+                <h3>{selectedResource.name}</h3>
+              </div>
+              <button
+                type="button"
+                className="resource-details-close"
+                onClick={closeResourceDetails}
+                aria-label="Close details"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="resource-details-grid">
+              <article>
+                <span>ID</span>
+                <strong>FAC-{String(selectedResource.id).padStart(3, "0")}</strong>
+              </article>
+              <article>
+                <span>Type</span>
+                <strong>{toTitleCase(normalizeType(selectedResource.type))}</strong>
+              </article>
+              <article>
+                <span>Category</span>
+                <strong>{toTitleCase(selectedResource.category)}</strong>
+              </article>
+              <article>
+                <span>Status</span>
+                <strong>{String(selectedResource.status || "").toUpperCase()}</strong>
+              </article>
+              <article>
+                <span>Capacity</span>
+                <strong>
+                  {normalizeType(selectedResource.type) === "EQUIPMENT" || selectedResource.capacity == null
+                    ? "N/A"
+                    : `${Number(selectedResource.capacity) || 0} seats`}
+                </strong>
+              </article>
+              <article>
+                <span>Location</span>
+                <strong>{selectedResource.location || "N/A"}</strong>
+              </article>
+              <article>
+                <span>Availability Start</span>
+                <strong>{selectedResource.availabilityStart || "N/A"}</strong>
+              </article>
+              <article>
+                <span>Availability End</span>
+                <strong>{selectedResource.availabilityEnd || "N/A"}</strong>
+              </article>
+            </div>
+
+            <div className="resource-details-description">
+              <p>Description</p>
+              <div>
+                {selectedResource.description?.trim()
+                  ? selectedResource.description
+                  : "No description available for this resource."}
+              </div>
+            </div>
+
+            <div className="resource-details-actions">
+              {String(selectedResource.status || "").toUpperCase() === "ACTIVE" ? (
+                <Link
+                  to="/bookings/calendar"
+                  className="resource-book-now-btn"
+                  onClick={closeResourceDetails}
+                >
+                  View Bookings
+                </Link>
+              ) : (
+                <button type="button" className="resource-book-now-btn disabled" disabled>
+                  Not Bookable
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
