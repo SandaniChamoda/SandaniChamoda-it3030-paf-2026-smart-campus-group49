@@ -73,6 +73,11 @@ public class BookingController {
         return service.approveBooking(id);
     }
 
+    @PutMapping("/{id}/qr")
+    public BookingResponse regenerateQr(@PathVariable Long id) {
+        return service.regenerateQr(id);
+    }
+
     @PutMapping("/{id}/reject")
     public BookingResponse rejectBooking(
             @PathVariable Long id,
