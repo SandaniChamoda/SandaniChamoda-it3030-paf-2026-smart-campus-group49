@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import dayjs from "dayjs";
+import { getCurrentlyBookedResources } from "../../utils/bookedNow";
 import "./ResourceList.css";
 
 function ResourceList() {
+  const [bookedNowSet, setBookedNowSet] = useState(new Set());
     // Map resource names to custom images (add your own as needed)
     const resourceImageMap = {
       "EEE Lab 1": "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -85,8 +88,16 @@ function ResourceList() {
       .then((data) => setResources(data));
   };
 
+
   useEffect(() => {
     loadResources();
+    // Fetch currently booked resources
+    getCurrentlyBookedResources().then(setBookedNowSet);
+    // Optionally, poll every minute for real-time updates
+    const interval = setInterval(() => {
+      getCurrentlyBookedResources().then(setBookedNowSet);
+    }, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -384,6 +395,8 @@ function ResourceList() {
             normalizedType === "EQUIPMENT" || r.capacity == null
               ? "Capacity N/A"
               : `${Number(r.capacity) || 0} seats`;
+          // Show BOOKED NOW badge if resource is currently booked
+          const isBookedNow = bookedNowSet.has(String(r.id)) || bookedNowSet.has(r.name);
 
           return (
             <article className="resource-card" key={r.id}>
@@ -395,9 +408,15 @@ function ResourceList() {
                   loading="lazy"
                 />
 
-                <span className={`resource-status-pill ${isActive ? "active" : "inactive"}`}>
-                  {statusText}
-                </span>
+                <div className="resource-status-stack">
+                  <span className={`resource-status-pill ${isActive ? "active" : "inactive"}`}>{statusText}</span>
+                  {isBookedNow && (
+                    <span className="resource-status-pill booked-now">
+                      <span className="status-dot booked-dot" />
+                      BOOKED NOW
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="resource-card-body">
