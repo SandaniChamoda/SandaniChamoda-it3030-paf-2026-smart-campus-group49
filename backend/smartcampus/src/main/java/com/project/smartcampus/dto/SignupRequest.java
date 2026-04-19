@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotNull;
 import com.project.smartcampus.enums.Role;
+import com.project.smartcampus.enums.TechnicianSpecialty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 /**
  * Request payload for local account signup.
@@ -31,4 +33,7 @@ public class SignupRequest {
 
     @NotNull(message = "Role is required")
     private Role role;
+
+    @JsonAlias({"specialty", "category", "technicianCategory"})
+    private TechnicianSpecialty technicianSpecialty;
 }

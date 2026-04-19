@@ -1,11 +1,25 @@
-const TECHNICIANS = new Map([
-  [5, { name: "Nethmi Perera" }],
-  [6, { name: "Kasun Silva" }],
-  [7, { name: "Dinuka Fernando" }],
-  [8, { name: "Ayesh Maduranga" }],
-  [9, { name: "Sanduni Jayasekara" }],
-  [10, { name: "Ravindu Peris" }],
-]);
+const TECHNICIANS = new Map();
+
+export const registerTechnicians = (technicians = []) => {
+  technicians.forEach((tech) => {
+    if (!tech || tech.id === null || tech.id === undefined) {
+      return;
+    }
+
+    const numericId = Number(tech.id);
+    if (Number.isNaN(numericId)) {
+      return;
+    }
+
+    const name =
+      (typeof tech.fullName === "string" && tech.fullName.trim()) ||
+      (typeof tech.name === "string" && tech.name.trim()) ||
+      (typeof tech.email === "string" && tech.email.trim()) ||
+      `Technician #${numericId}`;
+
+    TECHNICIANS.set(numericId, { name });
+  });
+};
 
 export const getTechnicianLabel = (id) => {
   if (id === null || id === undefined) return "";
