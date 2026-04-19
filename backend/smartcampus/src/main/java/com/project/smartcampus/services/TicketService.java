@@ -2,12 +2,15 @@ package com.project.smartcampus.services;
 
 import com.project.smartcampus.dto.AssignTechnicianRequest;
 import com.project.smartcampus.dto.CreateTicketRequest;
+import com.project.smartcampus.dto.TicketAssignmentHistoryResponse;
 import com.project.smartcampus.dto.TicketResponse;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
 import com.project.smartcampus.dto.UpdateCommentRequest;
 import com.project.smartcampus.dto.UpdateTicketRequest;
 import com.project.smartcampus.entity.Ticket;
+import com.project.smartcampus.entity.TicketAssignmentHistory;
 import com.project.smartcampus.entity.User;
+import com.project.smartcampus.enums.Role;
 import com.project.smartcampus.enums.TicketStatus;
 import com.project.smartcampus.exception.ResourceNotFoundException;
 import com.project.smartcampus.exception.UnauthorizedException;
@@ -18,6 +21,7 @@ import com.project.smartcampus.dto.CreateCommentRequest;
 import com.project.smartcampus.dto.TicketCommentResponse;
 import com.project.smartcampus.entity.TicketComment;
 import com.project.smartcampus.repository.TicketCommentRepository;
+import com.project.smartcampus.repository.TicketAssignmentHistoryRepository;
 import com.project.smartcampus.repository.UserRepository;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
@@ -40,13 +44,16 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository ticketCommentRepository;
+    private final TicketAssignmentHistoryRepository ticketAssignmentHistoryRepository;
     private final UserRepository userRepository;
 
     public TicketService(TicketRepository ticketRepository,
                          TicketCommentRepository ticketCommentRepository,
+                         TicketAssignmentHistoryRepository ticketAssignmentHistoryRepository,
                          UserRepository userRepository) {
         this.ticketRepository = ticketRepository;
         this.ticketCommentRepository = ticketCommentRepository;
+        this.ticketAssignmentHistoryRepository = ticketAssignmentHistoryRepository;
         this.userRepository = userRepository;
     }
 
@@ -63,45 +70,99 @@ public class TicketService {
         ticket.setStatus(TicketStatus.OPEN);
 
         Ticket savedTicket = ticketRepository.save(ticket);
-        return mapToResponse(savedTicket);
+        return mapToResponse(savedTicket, getUsersByIds(savedTicket.getCreatedBy(), savedTicket.getAssignedTo()));
     }
 
     public List<TicketResponse> getAllTickets() {
-        return ticketRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        List<Ticket> tickets = ticketRepository.findAll();
+        return mapTicketsToResponses(tickets);
     }
 
     public TicketResponse getTicketById(Long id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found with id: " + id));
-        return mapToResponse(ticket);
+        return mapToResponse(ticket, getUsersByIds(ticket.getCreatedBy(), ticket.getAssignedTo()));
     }
 
     public List<TicketResponse> getTicketsByCreatedUser(Long createdBy) {
-        return ticketRepository.findByCreatedBy(createdBy)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        List<Ticket> tickets = ticketRepository.findByCreatedBy(createdBy);
+        return mapTicketsToResponses(tickets);
     }
 
     public List<TicketResponse> getTicketsByAssignedTechnician(Long assignedTo) {
-        return ticketRepository.findByAssignedTo(assignedTo)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        List<Ticket> tickets = ticketRepository.findByAssignedTo(assignedTo);
+        return mapTicketsToResponses(tickets);
     }
 
-    public TicketResponse assignTechnician(Long ticketId, AssignTechnicianRequest request) {
+    public TicketResponse assignTechnician(Long ticketId,
+                                           AssignTechnicianRequest request,
+                                           Authentication authentication) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
+
+        Long assignedBy = extractAuthenticatedUserId(authentication);
+
+        if (request.getAssignedTo() == null) {
+            throw new IllegalArgumentException("assignedTo is required.");
+        }
+
+        User targetTechnician = userRepository.findById(request.getAssignedTo())
+                .orElseThrow(() -> new ResourceNotFoundException("Technician not found with id: " + request.getAssignedTo()));
+
+        if (targetTechnician.getRole() != Role.TECHNICIAN) {
+            throw new IllegalArgumentException("Target user is not a technician.");
+        }
+
+        Long previousTechnicianId = ticket.getAssignedTo();
+        String reason = Optional.ofNullable(request.getReason())
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .orElse("No reason provided");
 
         ticket.setAssignedTo(request.getAssignedTo());
         ticket.setUpdatedAt(LocalDateTime.now());
 
         Ticket updatedTicket = ticketRepository.save(ticket);
-        return mapToResponse(updatedTicket);
+
+        TicketAssignmentHistory history = new TicketAssignmentHistory();
+        history.setTicketId(ticketId);
+        history.setAssignedBy(assignedBy);
+        history.setFromTechnicianId(previousTechnicianId);
+        history.setToTechnicianId(request.getAssignedTo());
+        history.setReason(reason);
+        ticketAssignmentHistoryRepository.save(history);
+
+        return mapToResponse(updatedTicket, getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo()));
+    }
+
+    public List<TicketAssignmentHistoryResponse> getAssignmentHistory(Long ticketId) {
+        if (!ticketRepository.existsById(ticketId)) {
+            throw new TicketNotFoundException("Ticket not found with id: " + ticketId);
+        }
+
+        List<TicketAssignmentHistory> historyRows = ticketAssignmentHistoryRepository
+                .findByTicketIdOrderByAssignedAtDescIdDesc(ticketId);
+
+        Set<Long> userIds = new HashSet<>();
+        historyRows.forEach(row -> {
+            if (row.getAssignedBy() != null) {
+                userIds.add(row.getAssignedBy());
+            }
+            if (row.getFromTechnicianId() != null) {
+                userIds.add(row.getFromTechnicianId());
+            }
+            if (row.getToTechnicianId() != null) {
+                userIds.add(row.getToTechnicianId());
+            }
+        });
+
+        Map<Long, User> usersById = userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return historyRows.stream()
+                .map(row -> mapAssignmentHistoryToResponse(row, usersById))
+                .collect(Collectors.toList());
     }
 
     public TicketResponse updateTicketStatus(Long ticketId, UpdateTicketStatusRequest request) {
@@ -116,7 +177,7 @@ public class TicketService {
         }
 
         Ticket updatedTicket = ticketRepository.save(ticket);
-        return mapToResponse(updatedTicket);
+        return mapToResponse(updatedTicket, getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo()));
     }
 
     public TicketResponse updateTicket(Long ticketId, UpdateTicketRequest request, Authentication authentication) {
@@ -152,10 +213,10 @@ public class TicketService {
         ticket.setUpdatedAt(LocalDateTime.now());
 
         Ticket updatedTicket = ticketRepository.save(ticket);
-        return mapToResponse(updatedTicket);
+        return mapToResponse(updatedTicket, getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo()));
     }
 
-    private TicketResponse mapToResponse(Ticket ticket) {
+    private TicketResponse mapToResponse(Ticket ticket, Map<Long, User> usersById) {
         TicketResponse response = new TicketResponse();
         response.setId(ticket.getId());
         response.setTitle(ticket.getTitle());
@@ -165,12 +226,43 @@ public class TicketService {
         response.setPriority(ticket.getPriority());
         response.setStatus(ticket.getStatus());
         response.setCreatedBy(ticket.getCreatedBy());
+        response.setCreatedByName(resolveUserName(ticket.getCreatedBy(), usersById, "N/A"));
         response.setAssignedTo(ticket.getAssignedTo());
+        response.setAssignedToName(resolveUserName(ticket.getAssignedTo(), usersById, "Not assigned yet"));
         response.setCreatedAt(ticket.getCreatedAt());
         response.setUpdatedAt(ticket.getUpdatedAt());
         response.setResolvedAt(ticket.getResolvedAt());
         return response;
     }
+
+        private List<TicketResponse> mapTicketsToResponses(List<Ticket> tickets) {
+        Set<Long> userIds = tickets.stream()
+            .flatMap(ticket -> Arrays.stream(new Long[]{ticket.getCreatedBy(), ticket.getAssignedTo()}))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        Map<Long, User> usersById = userRepository.findAllById(userIds)
+            .stream()
+            .collect(Collectors.toMap(User::getId, user -> user));
+
+        return tickets.stream()
+            .map(ticket -> mapToResponse(ticket, usersById))
+            .collect(Collectors.toList());
+        }
+
+        private Map<Long, User> getUsersByIds(Long... userIds) {
+        Set<Long> ids = Arrays.stream(userIds)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        if (ids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return userRepository.findAllById(ids)
+            .stream()
+            .collect(Collectors.toMap(User::getId, user -> user));
+        }
 
     public TicketCommentResponse addComment(Long ticketId, CreateCommentRequest request, Authentication authentication) {
         Ticket ticket = ticketRepository.findById(ticketId)
@@ -330,6 +422,60 @@ public class TicketService {
         response.setEdited(edited);
 
         return response;
+    }
+
+    private TicketAssignmentHistoryResponse mapAssignmentHistoryToResponse(TicketAssignmentHistory history,
+                                                                           Map<Long, User> usersById) {
+        TicketAssignmentHistoryResponse response = new TicketAssignmentHistoryResponse();
+        response.setId(history.getId());
+        response.setTicketId(history.getTicketId());
+        response.setAssignedBy(history.getAssignedBy());
+        response.setFromTechnicianId(history.getFromTechnicianId());
+        response.setToTechnicianId(history.getToTechnicianId());
+        response.setReason(history.getReason());
+        response.setAssignedAt(history.getAssignedAt());
+
+        response.setAssignedByName(resolveUserName(history.getAssignedBy(), usersById));
+        response.setFromTechnicianName(resolveUserName(history.getFromTechnicianId(), usersById));
+        response.setToTechnicianName(resolveUserName(history.getToTechnicianId(), usersById));
+
+        return response;
+    }
+
+    private String resolveUserName(Long userId, Map<Long, User> usersById) {
+        if (userId == null) {
+            return "Unassigned";
+        }
+
+        User user = usersById.get(userId);
+        if (user == null) {
+            return "User #" + userId;
+        }
+
+        String name = Optional.ofNullable(user.getName()).map(String::trim).orElse("");
+        if (!name.isEmpty()) {
+            return name;
+        }
+
+        return "User #" + userId;
+    }
+
+    private String resolveUserName(Long userId, Map<Long, User> usersById, String nullLabel) {
+        if (userId == null) {
+            return nullLabel;
+        }
+
+        User user = usersById.get(userId);
+        if (user == null) {
+            return "User #" + userId;
+        }
+
+        String name = Optional.ofNullable(user.getName()).map(String::trim).orElse("");
+        if (!name.isEmpty()) {
+            return name;
+        }
+
+        return "User #" + userId;
     }
 
     private Long extractAuthenticatedUserId(Authentication authentication) {

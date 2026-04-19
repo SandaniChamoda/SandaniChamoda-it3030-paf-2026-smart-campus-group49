@@ -17,7 +17,9 @@ public class TicketResponse {
     private TicketPriority priority;
     private TicketStatus status;
     private Long createdBy;
+    private String createdByName;
     private Long assignedTo;
+    private String assignedToName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
@@ -61,9 +63,17 @@ public class TicketResponse {
 
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
+    public String getCreatedByName() { return createdByName; }
+
+    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
+
     public Long getAssignedTo() { return assignedTo; }
 
     public void setAssignedTo(Long assignedTo) { this.assignedTo = assignedTo; }
+
+    public String getAssignedToName() { return assignedToName; }
+
+    public void setAssignedToName(String assignedToName) { this.assignedToName = assignedToName; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 
