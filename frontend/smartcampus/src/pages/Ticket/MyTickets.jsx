@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function MyTickets() {
-  // TEMP USER ID - replace later with auth user id
-  const DEMO_USER_ID = 1;
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -57,7 +58,7 @@ function MyTickets() {
         return colors.danger;
       case "MEDIUM":
         return colors.warning;
-      case "LOW":``
+      case "LOW":
         return colors.success;
       default:
         return colors.textMedium;
@@ -70,11 +71,18 @@ function MyTickets() {
   };
 
   const fetchMyTickets = async () => {
+    if (!user?.id) {
+      setTickets([]);
+      setLoading(false);
+      setError("Unable to determine current user.");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
 
-      const response = await API.get(`/tickets/user/${DEMO_USER_ID}`);
+      const response = await API.get(`/tickets/user/${user.id}`);
       setTickets(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch tickets:", err);
@@ -86,7 +94,7 @@ function MyTickets() {
 
   useEffect(() => {
     fetchMyTickets();
-  }, []);
+  }, [user?.id]);
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((ticket) => {
@@ -412,6 +420,22 @@ function MyTickets() {
       fontSize: "14px",
       fontWeight: "800",
     },
+    editLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      fontSize: "13px",
+      fontWeight: "800",
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "8px 12px",
+      backgroundColor: colors.white,
+    },
+    footerActions: {
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      flexWrap: "wrap",
+    },
     loadingBox: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
@@ -643,7 +667,7 @@ function MyTickets() {
                     <div style={styles.metaLabel}>Assigned Technician</div>
                     <div style={styles.metaValue}>
                       {ticket.assignedTo
-                        ? `Technician #${ticket.assignedTo}`
+                        ? getTechnicianLabel(ticket.assignedTo)
                         : "Not assigned yet"}
                     </div>
                   </div>
@@ -677,9 +701,21 @@ function MyTickets() {
                     Keep checking this page for new updates.
                   </p>
 
-                  <Link to={`/tickets/details/${ticket.id}`} style={styles.detailsLink}>
-  View Details →
-</Link>
+                  <div style={styles.footerActions}>
+                    {ticket.status !== "RESOLVED" && ticket.status !== "CLOSED" && (
+                    user?.role !== "TECHNICIAN" &&
+                      <Link
+                        to={`/tickets/edit/${ticket.id}`}
+                        style={styles.editLink}
+                      >
+                        Edit Ticket
+                      </Link>
+                    )}
+
+                    <Link to={`/tickets/details/${ticket.id}`} style={styles.detailsLink}>
+                      View Details →
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

@@ -17,12 +17,29 @@ public class TicketComment {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
     @ManyToOne
     @JoinColumn(name = "ticket_id")
     private Ticket ticket;
 
+    @ManyToOne
+    @JoinColumn(name = "parent_comment_id")
+    private TicketComment parentComment;
+
     public TicketComment() {
-        this.createdAt = LocalDateTime.now();
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -49,11 +66,23 @@ public class TicketComment {
         return createdAt;
     }
 
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
     public Ticket getTicket() {
         return ticket;
     }
 
     public void setTicket(Ticket ticket) {
         this.ticket = ticket;
+    }
+
+    public TicketComment getParentComment() {
+        return parentComment;
+    }
+
+    public void setParentComment(TicketComment parentComment) {
+        this.parentComment = parentComment;
     }
 }

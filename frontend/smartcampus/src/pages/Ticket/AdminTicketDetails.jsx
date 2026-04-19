@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function AdminTicketDetails() {
   const { id } = useParams();
@@ -50,6 +51,25 @@ function AdminTicketDetails() {
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     return new Date(dateValue).toLocaleString();
+  };
+
+  const apiBaseUrl = API.defaults.baseURL?.replace(/\/api\/?$/, "") || "";
+
+  const buildImageUrl = (path) => {
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path)) return path;
+    let normalized = String(path)
+      .trim()
+      .replace(/\\/g, "/")
+      .replace(/^\.\//, "")
+      .replace(/^\/+/, "");
+    if (!normalized.includes("/")) {
+      normalized = `uploads/tickets/${normalized}`;
+    }
+    if (normalized.startsWith("uploads/")) {
+      normalized = normalized.replace(/^uploads\//, "");
+    }
+    return `${apiBaseUrl}/${normalized}`;
   };
 
   const getStatusStyles = (status) => {
@@ -235,6 +255,29 @@ function AdminTicketDetails() {
       color: colors.textDark,
       lineHeight: "1.6",
       wordBreak: "break-word",
+    },
+    imageBox: {
+      gridColumn: "1 / -1",
+    },
+    imageGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+      gap: "12px",
+      marginTop: "8px",
+    },
+    imageItem: {
+      display: "block",
+      borderRadius: "12px",
+      overflow: "hidden",
+      border: `1px solid ${colors.borderLight}`,
+      backgroundColor: "#FBFCFF",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.08)",
+    },
+    image: {
+      width: "100%",
+      height: "140px",
+      objectFit: "cover",
+      display: "block",
     },
     sideStack: {
       display: "flex",
@@ -439,7 +482,7 @@ function AdminTicketDetails() {
                 <div style={styles.infoLabel}>Assigned Technician</div>
                 <div style={styles.infoValue}>
                   {ticket.assignedTo
-                    ? `Technician #${ticket.assignedTo}`
+                    ? getTechnicianLabel(ticket.assignedTo)
                     : "Not assigned yet"}
                 </div>
               </div>
@@ -463,11 +506,32 @@ function AdminTicketDetails() {
                 </div>
               </div>
 
-              <div style={styles.infoBox}>
-                <div style={styles.infoLabel}>Image</div>
-                <div style={styles.infoValue}>
-                  {ticket.image ? ticket.image : "No image attached"}
-                </div>
+              <div style={{ ...styles.infoBox, ...styles.imageBox }}>
+                <div style={styles.infoLabel}>Images</div>
+                {Array.isArray(ticket.images) && ticket.images.length > 0 ? (
+                  <div style={styles.imageGrid}>
+                    {ticket.images.map((imagePath, index) => {
+                      const imageUrl = buildImageUrl(imagePath);
+                      return (
+                        <a
+                          key={`${ticket.id}-image-${index}`}
+                          href={imageUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={styles.imageItem}
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`Ticket ${ticket.id} image ${index + 1}`}
+                            style={styles.image}
+                          />
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={styles.infoValue}>No image attached</div>
+                )}
               </div>
             </div>
           </div>
@@ -492,7 +556,7 @@ function AdminTicketDetails() {
                   <p style={styles.timelineTitle}>Current Assignment</p>
                   <p style={styles.timelineText}>
                     {ticket.assignedTo
-                      ? `This ticket is assigned to technician #${ticket.assignedTo}.`
+                      ? `This ticket is assigned to ${getTechnicianLabel(ticket.assignedTo)}.`
                       : "This ticket has not been assigned yet."}
                   </p>
                 </div>

@@ -75,7 +75,10 @@ public class securityConfig {
                         "/v3/api-docs/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/resources/**", "/api/resources/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/tickets/**", "/uploads/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/qr/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/bookings/*").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/bookings/checkin/**").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception

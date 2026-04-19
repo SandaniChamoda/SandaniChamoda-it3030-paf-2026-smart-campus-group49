@@ -14,12 +14,22 @@ const getPasswordChecks = (password) => ({
 function SignupPage() {
   const { signupWithEmail } = useAuth();
   const navigate = useNavigate();
+  const TECHNICIAN_SPECIALTIES = [
+    'GENERAL',
+    'ELECTRICAL',
+    'NETWORK',
+    'EQUIPMENT',
+    'CLEANING',
+    'FURNITURE',
+    'OTHER',
+  ];
   const [form, setForm] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     role: 'USER',
+    technicianSpecialty: 'GENERAL',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +38,18 @@ function SignupPage() {
     if (error) {
       setError('');
     }
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((prev) => {
+      if (name === 'role') {
+        return {
+          ...prev,
+          role: value,
+          technicianSpecialty: value === 'TECHNICIAN' ? prev.technicianSpecialty : 'GENERAL',
+        };
+      }
+
+      return { ...prev, [name]: value };
+    });
   };
 
   const passwordChecks = getPasswordChecks(form.password);
@@ -54,7 +75,14 @@ function SignupPage() {
     setSubmitting(true);
 
     try {
-      const { confirmPassword: _confirmPassword, ...payload } = form;
+      const { confirmPassword: _confirmPassword, ...rest } = form;
+      const payload = {
+        ...rest,
+        technicianSpecialty:
+          form.role === 'TECHNICIAN' ? form.technicianSpecialty : undefined,
+        category:
+          form.role === 'TECHNICIAN' ? form.technicianSpecialty : undefined,
+      };
       await signupWithEmail(payload);
       navigate('/login', {
         replace: true,
@@ -115,6 +143,24 @@ function SignupPage() {
             <option value="ADMIN">ADMIN</option>
             <option value="TECHNICIAN">TECHNICIAN</option>
           </select>
+
+          {form.role === 'TECHNICIAN' && (
+            <>
+              <label className="auth-label" htmlFor="technicianSpecialty">Technician category</label>
+              <select
+                id="technicianSpecialty"
+                name="technicianSpecialty"
+                value={form.technicianSpecialty}
+                onChange={handleChange}
+                className="auth-input"
+                required
+              >
+                {TECHNICIAN_SPECIALTIES.map((specialty) => (
+                  <option key={specialty} value={specialty}>{specialty}</option>
+                ))}
+              </select>
+            </>
+          )}
 
           <label className="auth-label" htmlFor="password">Password</label>
           <input
@@ -179,7 +225,7 @@ function SignupPage() {
           <span>Already have an account?</span>
           <Link to="/login">Sign in</Link>
         </div>
-        <p className="auth-helper">Choose the role that matches your access needs, including ADMIN for full management access.</p>
+        <p className="auth-helper">If you register as TECHNICIAN, choose your support category (electrical, furniture, network, etc.).</p>
       </div>
     </div>
   );

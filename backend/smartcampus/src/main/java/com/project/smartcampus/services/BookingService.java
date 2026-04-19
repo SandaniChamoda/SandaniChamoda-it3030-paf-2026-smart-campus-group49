@@ -263,6 +263,22 @@ public class BookingService {
                 return mapToResponse(repository.save(booking));
         }
 
+        public BookingResponse regenerateQr(Long id) {
+
+                Booking booking = repository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+                if (booking.getStatus() != BookingStatus.APPROVED) {
+                        throw new BookingConflictException(
+                                        "Only APPROVED bookings can regenerate QR");
+                }
+
+                String qrPath = qrCodeService.generateQRCode(booking);
+                booking.setQrCode(qrPath);
+
+                return mapToResponse(repository.save(booking));
+        }
+
         public void deleteBooking(Long id) {
 
                 Booking booking = repository.findById(id)

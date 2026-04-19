@@ -163,7 +163,7 @@ function Home() {
         <div className="story-container">
           <div className="story-image-placeholder">
             <div className="placeholder-content">
-             <img src="/public/malabe-library4.png" alt="Smart Campus" />
+             <img src="/malabe-library4.png" alt="Smart Campus" />
             </div>
           </div>
           <div className="story-content">

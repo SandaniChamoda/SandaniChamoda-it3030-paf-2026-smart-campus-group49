@@ -1,9 +1,22 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+
+const getResourceApiCandidates = () => {
+  const baseURL = (API?.defaults?.baseURL ?? "").replace(/\/+$/, "");
+  const nonApiBase = baseURL.replace(/\/api$/i, "");
+  const candidates = ["/resources"];
+
+  if (nonApiBase) {
+    candidates.push(`${nonApiBase}/resources`);
+  }
+
+  return [...new Set(candidates)];
+};
 
 function CreateTicket() {
-  const DEMO_USER_ID = 1;
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -62,8 +75,59 @@ function CreateTicket() {
   const [submitError, setSubmitError] = useState("");
 
   const [createdTicket, setCreatedTicket] = useState(null);
+  const [resourceOptions, setResourceOptions] = useState([]);
+  const [resourceLoading, setResourceLoading] = useState(true);
+  const [resourceError, setResourceError] = useState("");
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      setResourceLoading(true);
+      setResourceError("");
+
+      const endpoints = getResourceApiCandidates();
+      let resourceList = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await API.get(endpoint);
+          if (Array.isArray(response.data)) {
+            resourceList = response.data;
+            break;
+          }
+        } catch {
+          // Try next endpoint candidate.
+        }
+      }
+
+      if (!resourceList) {
+        setResourceOptions([]);
+        setResourceError("Couldn't load resources. Please try again.");
+        setResourceLoading(false);
+        return;
+      }
+
+      const names = resourceList
+        .filter(
+          (resource) => String(resource?.status || "").toUpperCase() === "ACTIVE",
+        )
+        .map((resource) => (resource?.name ?? "").trim())
+        .filter(Boolean);
+
+      const uniqueNames = [...new Set(names)].sort((a, b) =>
+        a.localeCompare(b),
+      );
+
+      setResourceOptions(uniqueNames);
+      if (uniqueNames.length === 0) {
+        setResourceError("No active resources available right now.");
+      }
+      setResourceLoading(false);
+    };
+
+    fetchResources();
+  }, []);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -231,8 +295,13 @@ function CreateTicket() {
     resetForm();
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    scrollToTop();
 
     const allTouched = {
       title: true,
@@ -257,6 +326,11 @@ function CreateTicket() {
       return;
     }
 
+    if (!user?.id) {
+      setSubmitError("Unable to determine current user. Please log in again.");
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -265,7 +339,7 @@ function CreateTicket() {
       formData.append("description", form.description.trim());
       formData.append("category", form.category);
       formData.append("priority", form.priority);
-      formData.append("createdBy", DEMO_USER_ID);
+      formData.append("createdBy", user.id);
       formData.append("location", form.location.trim());
       formData.append("preferredContact", form.preferredContact.trim());
       formData.append("resourceHint", form.resourceHint.trim());
@@ -285,6 +359,7 @@ function CreateTicket() {
       });
 
       setSubmitMessage("Ticket created successfully.");
+      scrollToTop();
 
       images.forEach((img) => URL.revokeObjectURL(img.preview));
       setImages([]);
@@ -891,19 +966,35 @@ function CreateTicket() {
                 </div>
 
                 <div style={styles.group}>
-                  <label style={styles.label} htmlFor="resourceHint">
-                    Resource Hint
-                  </label>
-                  <input
+                  <div style={styles.labelRow}>
+                    <label style={styles.label} htmlFor="resourceHint">
+                      Related Resource
+                    </label>
+                    <span style={styles.helper}>
+                      {resourceLoading ? "Loading" : `${resourceOptions.length} available`}
+                    </span>
+                  </div>
+                  <select
                     id="resourceHint"
                     name="resourceHint"
-                    type="text"
-                    placeholder="Example: Epson projector / PC-12"
                     value={form.resourceHint}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     style={fieldStyle("resourceHint")}
-                  />
+                    disabled={resourceLoading || submitting}
+                  >
+                    <option value="">
+                      {resourceLoading ? "Loading resources..." : "Select a resource (optional)"}
+                    </option>
+                    {resourceOptions.map((resourceName) => (
+                      <option key={resourceName} value={resourceName}>
+                        {resourceName}
+                      </option>
+                    ))}
+                  </select>
+                  {resourceError ? (
+                    <span style={styles.errorText}>{resourceError}</span>
+                  ) : null}
                   {touched.resourceHint && errors.resourceHint && (
                     <span style={styles.errorText}>{errors.resourceHint}</span>
                   )}
@@ -969,10 +1060,9 @@ function CreateTicket() {
               <div style={styles.noteBox}>
                 <h3 style={styles.noteTitle}>Current Integration Note</h3>
                 <p style={styles.noteText}>
-                  Location, preferred contact, and resource hint are collected in
-                  the UI now for better usability. Your current backend create
-                  endpoint does not store all of these yet, so later you can map
-                  them when the full resource and auth modules are ready.
+                  Related Resource now loads dynamically from the Resources
+                  module, similar to the Booking flow, so ticket creation is
+                  no longer using a hardcoded resource field.
                 </p>
               </div>
 
@@ -1033,6 +1123,12 @@ function CreateTicket() {
                   <div style={styles.statLabel}>Location</div>
                   <div style={styles.statValue}>
                     {form.location.trim() || "Not entered"}
+                  </div>
+                </div>
+                <div style={styles.statItem}>
+                  <div style={styles.statLabel}>Related Resource</div>
+                  <div style={styles.statValue}>
+                    {form.resourceHint || "Not selected"}
                   </div>
                 </div>
                 <div style={styles.statItem}>

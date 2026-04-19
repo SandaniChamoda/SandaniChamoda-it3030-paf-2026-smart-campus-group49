@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function UpdateTicketStatus() {
   const { id } = useParams();
@@ -78,8 +79,13 @@ function UpdateTicketStatus() {
     setFieldError(validateStatus(value));
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleUpdateStatus = async (e) => {
     e.preventDefault();
+    scrollToTop();
 
     const validationMessage = validateStatus(status);
     setFieldError(validationMessage);
@@ -96,6 +102,7 @@ function UpdateTicketStatus() {
       });
 
       setSuccessMessage("Ticket status updated successfully.");
+      scrollToTop();
       fetchTicket();
 
       setTimeout(() => {
@@ -394,7 +401,7 @@ function UpdateTicketStatus() {
                 <div style={styles.infoLabel}>Assigned Technician</div>
                 <div style={styles.infoValue}>
                   {ticket?.assignedTo
-                    ? `Technician #${ticket.assignedTo}`
+                    ? getTechnicianLabel(ticket.assignedTo)
                     : "Not assigned"}
                 </div>
               </div>
