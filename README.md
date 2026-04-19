@@ -35,4 +35,3 @@ Smart Campus Operations Hub – PAF Assignment 2026 (Group 57)
 
 ---
 
-> For a detailed breakdown of team member contributions, see the TEAM_CONTRIBUTIONS.md file (if available).
