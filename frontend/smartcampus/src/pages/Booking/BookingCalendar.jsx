@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
 import "./BookingCalendar.css";
 
@@ -83,6 +84,15 @@ function BookingCalendar() {
       color: colors.white,
       marginBottom: "28px",
       boxShadow: "0 18px 40px rgba(26, 31, 90, 0.16)",
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: "14px",
+      flexWrap: "wrap",
+    },
+    heroContent: {
+      minWidth: "260px",
+      flex: "1 1 620px",
     },
     heroTitle: {
       margin: 0,
@@ -212,11 +222,17 @@ function BookingCalendar() {
     <div style={styles.page}>
       <div style={styles.wrapper}>
         <div style={styles.hero}>
-          <h1 style={styles.heroTitle}>Booking Calendar</h1>
-          <p style={styles.heroText}>
-            Explore active bookings across the month. Hover to preview or click
-            events to view more details.
-          </p>
+          <div style={styles.heroContent}>
+            <h1 style={styles.heroTitle}>Booking Calendar</h1>
+            <p style={styles.heroText}>
+              Explore active bookings across the month. Hover to preview or click
+              events to view more details.
+            </p>
+          </div>
+
+          <Link to="/create" className="calendar-book-now-btn">
+            Book Now
+          </Link>
         </div>
 
         <div style={styles.card} className="booking-calendar">
@@ -228,7 +244,7 @@ function BookingCalendar() {
               </p>
             </div>
 
-            <div className="d-flex align-items-center gap-2">
+            <div className="calendar-top-actions">
               <button
                 className="btn btn-outline-primary btn-sm"
                 onClick={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}

@@ -3,9 +3,9 @@ import axiosInstance from '../utils/axiosInstance';
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:8086';
 
 export const getRoleDashboardPath = (role) => {
-  if (role === 'ADMIN') return '/dashboard/admin';
+  if (role === 'ADMIN') return '/admin';
   if (role === 'TECHNICIAN') return '/dashboard/technician';
-  return '/dashboard/student';
+  return '/home';
 };
 
 const authService = {

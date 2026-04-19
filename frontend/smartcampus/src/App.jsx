@@ -33,6 +33,7 @@ import AssignTechnician from "./pages/Ticket/AssignTechnician";
 import UpdateTicketStatus from "./pages/Ticket/UpdateTicketStatus";
 import TicketComments from "./pages/Ticket/TicketComments";
 import AdminTicketDetails from "./pages/Ticket/AdminTicketDetails";
+import EditTicket from "./pages/Ticket/EditTicket";
 import StudentDashboard from "./pages/Dashboard/StudentDashboard";
 import TechnicianDashboard from "./pages/Dashboard/TechnicianDashboard";
 import AdminRoleDashboard from "./pages/Dashboard/AdminRoleDashboard";
@@ -68,250 +69,261 @@ function App() {
 
           <Route
             path="/login"
-            element={(
+            element={
               <GuestRoute>
                 <LoginPage />
               </GuestRoute>
-            )}
+            }
           />
           <Route
             path="/signup"
-            element={(
+            element={
               <GuestRoute>
                 <SignupPage />
               </GuestRoute>
-            )}
+            }
           />
           <Route
             path="/forgot-password"
-            element={(
+            element={
               <GuestRoute>
                 <ForgotPasswordPage />
               </GuestRoute>
-            )}
+            }
           />
           <Route
             path="/reset-password"
-            element={(
+            element={
               <GuestRoute>
                 <ResetPasswordPage />
               </GuestRoute>
-            )}
+            }
           />
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
           <Route path="/dashboard" element={<RoleHomeRedirect />} />
           <Route
             path="/dashboard/student"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["USER"]}>
                 <StudentDashboard />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/dashboard/technician"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["TECHNICIAN"]}>
                 <TechnicianDashboard />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/dashboard/admin"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminRoleDashboard />
               </ProtectedRoute>
-            )}
+            }
           />
 
           <Route
             path="/account/settings"
-            element={(
+            element={
               <ProtectedRoute>
                 <AccountSettingsPage />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/notifications"
-            element={(
+            element={
               <ProtectedRoute>
                 <NotificationList />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/admin/users"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <UserManagement />
               </ProtectedRoute>
-            )}
+            }
           />
 
           <Route
             path="/resources"
-            element={(
+            element={
               <ProtectedRoute>
                 <ResourceList />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/admin/resources"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminResourcePage />
               </ProtectedRoute>
-            )}
+            }
           />
 
           <Route
             path="/bookings"
-            element={(
+            element={
               <ProtectedRoute>
                 <BookingList />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/bookings/calendar"
-            element={(
+            element={
               <ProtectedRoute>
                 <BookingCalendar />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/create"
-            element={(
+            element={
               <ProtectedRoute>
                 <CreateBooking />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/bookings/:id/edit"
-            element={(
+            element={
               <ProtectedRoute>
                 <UpdateBooking />
               </ProtectedRoute>
-            )}
+            }
           />
 
           <Route
             path="/admin"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminDashboard />
               </ProtectedRoute>
-            )}
+            }
           />
-          <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+          <Route
+            path="/admin/dashboard"
+            element={<Navigate to="/admin" replace />}
+          />
           <Route
             path="/admin/bookings"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <BookingAdmin />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/scanner-mock"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <MockScannerPage />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/mock-verify/:id"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <MockVerifyPage />
               </ProtectedRoute>
-            )}
+            }
           />
 
           <Route
             path="/tickets/create"
-            element={(
+            element={
               <ProtectedRoute>
                 <CreateTicket />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/my"
-            element={(
+            element={
               <ProtectedRoute>
                 <MyTickets />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/details/:id"
-            element={(
+            element={
               <ProtectedRoute>
                 <TicketDetails />
               </ProtectedRoute>
-            )}
+            }
+          />
+          <Route
+            path="/tickets/edit/:id"
+            element={
+              <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
+                <EditTicket />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/tickets/admin"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminTickets />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/technician"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["TECHNICIAN", "ADMIN"]}>
                 <TechnicianTickets />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/assign/:id"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AssignTechnician />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/update-status/:id"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["TECHNICIAN", "ADMIN"]}>
                 <UpdateTicketStatus />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/comments/:id"
-            element={(
+            element={
               <ProtectedRoute>
                 <TicketComments />
               </ProtectedRoute>
-            )}
+            }
           />
           <Route
             path="/tickets/admin/details/:id"
-            element={(
+            element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminTicketDetails />
               </ProtectedRoute>
-            )}
+            }
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-    <Footer />
+      <Footer />
     </div>
   );
 }

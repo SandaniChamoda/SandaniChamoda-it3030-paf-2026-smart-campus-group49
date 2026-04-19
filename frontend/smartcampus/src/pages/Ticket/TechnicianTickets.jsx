@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { getTechnicianLabel, registerTechnicians } from "../../utils/technicianLabels";
 
 function TechnicianTickets() {
-  const DEMO_TECHNICIAN_ID = 5;
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -33,11 +35,18 @@ function TechnicianTickets() {
   const [priorityFilter, setPriorityFilter] = useState("ALL");
 
   const fetchTechnicianTickets = async () => {
+    if (!user?.id) {
+      setError("Unable to determine technician account.");
+      setTickets([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
 
-      const response = await API.get(`/tickets/technician/${DEMO_TECHNICIAN_ID}`);
+      const response = await API.get(`/tickets/technician/${user.id}`);
       setTickets(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch technician tickets:", err);
@@ -49,6 +58,20 @@ function TechnicianTickets() {
 
   useEffect(() => {
     fetchTechnicianTickets();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      try {
+        const res = await API.get("/users/role/TECHNICIAN");
+        const technicians = Array.isArray(res.data) ? res.data : [];
+        registerTechnicians(technicians);
+      } catch (err) {
+        console.error("Failed to fetch technicians for labels:", err);
+      }
+    };
+
+    fetchTechnicians();
   }, []);
 
   const filteredTickets = useMemo(() => {
@@ -525,7 +548,7 @@ function TechnicianTickets() {
                         </td>
                         <td style={styles.td}>
                           {ticket.assignedTo
-                            ? `Technician #${ticket.assignedTo}`
+                            ? getTechnicianLabel(ticket.assignedTo)
                             : "Not assigned"}
                         </td>
                         <td style={styles.td}>{formatDate(ticket.createdAt)}</td>
