@@ -56,10 +56,13 @@ function QRCheckInPage() {
       
       await API.put(`/bookings/checkin/${id}`);
       setSuccess("✓ Check-in successful!");
-      
-      setTimeout(() => {
-        navigate("/bookings");
-      }, 2000);
+
+      const token = localStorage.getItem("token");
+      if (token) {
+        setTimeout(() => {
+          navigate("/bookings");
+        }, 2000);
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Check-in failed. Make sure you have internet connection.");
       setChecking(false);

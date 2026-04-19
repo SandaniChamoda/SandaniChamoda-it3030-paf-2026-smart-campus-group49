@@ -20,7 +20,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/bookings")
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://crucial-storewide-domestic.ngrok-free.dev"
+})
 
 public class BookingController {
     private final BookingService service;
