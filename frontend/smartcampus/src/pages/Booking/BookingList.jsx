@@ -614,6 +614,19 @@ function BookingList() {
     openConfirm("cancel", id);
   };
 
+  const handleRegenerateQr = async (bookingId) => {
+    try {
+      const response = await API.put(`/bookings/${bookingId}/qr`);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? response.data : b))
+      );
+      setToast({ show: true, message: "QR regenerated.", type: "success" });
+    } catch (e) {
+      console.error("Error regenerating QR", e);
+      setToast({ show: true, message: "Couldn't regenerate QR.", type: "error" });
+    }
+  };
+
   const buildQrUrl = (qrCode) => {
     const value = (qrCode ?? "").trim();
     if (!value) return "";
@@ -623,7 +636,8 @@ function BookingList() {
     }
 
     const apiBase = (API.defaults.baseURL ?? "").replace(/\/api\/?$/, "");
-    return `${apiBase}/${value.replace(/^\/+/, "")}`;
+    const origin = apiBase || window.location.origin;
+    return `${origin}/${value.replace(/^\/+/, "")}`;
   };
 
   const handleViewQr = (qrCode) => {
@@ -859,6 +873,13 @@ function BookingList() {
                           }}
                         >
                           View QR
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.actionGhost}
+                          onClick={() => handleRegenerateQr(b.id)}
+                        >
+                          Regenerate QR
                         </button>
                         <button
                           type="button"

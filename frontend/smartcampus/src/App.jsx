@@ -16,6 +16,7 @@ import CreateBooking from "./pages/Booking/CreateBooking";
 import UpdateBooking from "./pages/Booking/UpdateBooking";
 import BookingAdmin from "./pages/Booking/BookingAdmin";
 import BookingCalendar from "./pages/Booking/BookingCalendar";
+import QRCheckInPage from "./pages/Booking/QRCheckInPage";
 import NotificationList from "./pages/Notification/NotificationList";
 import UserManagement from "./pages/Admin/UserManagement";
 import ResourceList from "./pages/Resource/ResourceList";
@@ -67,6 +68,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
 
+
+          <Route path="/qr-verify/:id" element={<QRCheckInPage />} />
           <Route
             path="/login"
             element={
