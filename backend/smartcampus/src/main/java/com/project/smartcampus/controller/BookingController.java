@@ -82,7 +82,7 @@ public class BookingController {
         return service.approveBooking(id);
     }
 
-    // Regenerate QR code for a booking - accessible to admins only
+    // Regenerate QR code for a booking
     @PutMapping("/{id}/qr")
     public BookingResponse regenerateQr(@PathVariable Long id) {
         return service.regenerateQr(id);
