@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function MyTickets() {
-  // TEMP USER ID - replace later with auth user id
-  const DEMO_USER_ID = 1;
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -71,11 +71,18 @@ function MyTickets() {
   };
 
   const fetchMyTickets = async () => {
+    if (!user?.id) {
+      setTickets([]);
+      setLoading(false);
+      setError("Unable to determine current user.");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
 
-      const response = await API.get(`/tickets/user/${DEMO_USER_ID}`);
+      const response = await API.get(`/tickets/user/${user.id}`);
       setTickets(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to fetch tickets:", err);
@@ -87,7 +94,7 @@ function MyTickets() {
 
   useEffect(() => {
     fetchMyTickets();
-  }, []);
+  }, [user?.id]);
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((ticket) => {
@@ -696,6 +703,7 @@ function MyTickets() {
 
                   <div style={styles.footerActions}>
                     {ticket.status !== "RESOLVED" && ticket.status !== "CLOSED" && (
+                    user?.role !== "TECHNICIAN" &&
                       <Link
                         to={`/tickets/edit/${ticket.id}`}
                         style={styles.editLink}
