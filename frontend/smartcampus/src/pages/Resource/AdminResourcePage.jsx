@@ -293,12 +293,6 @@ function AdminResourcePage() {
       errors.location = "Location can only contain letters, numbers, spaces, dashes, underscores, and commas.";
     }
 
-    const normalizedType = normalizeType(form.type || "FACILITY");
-    const capacityValue = Number(form.capacity || 0);
-    if (normalizedType === "FACILITY" && capacityValue < 1) {
-      errors.capacity = "Capacity must be at least 1 for facilities.";
-    }
-
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) {
       return;
@@ -306,11 +300,13 @@ function AdminResourcePage() {
 
     const payload = {
       ...form,
-      type: normalizedType,
+      type: normalizeType(form.type),
       capacity:
-        normalizedType === "EQUIPMENT"
-          ? null
-          : Number(form.capacity),
+        normalizeType(form.type) === "EQUIPMENT"
+          ? 0
+          : form.capacity === ""
+            ? 0
+            : Number(form.capacity),
       availabilityStart: form.availabilityStart || null,
       availabilityEnd: form.availabilityEnd || null,
       description: form.description || null,
