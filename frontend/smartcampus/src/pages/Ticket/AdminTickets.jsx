@@ -111,6 +111,34 @@ function AdminTickets() {
   const resolvedCount = tickets.filter(
     (t) => t.status === "RESOLVED" || t.status === "CLOSED"
   ).length;
+  const focusTicketId = filteredTickets[0]?.id || tickets[0]?.id;
+  const navSections = [
+    {
+      to: focusTicketId ? `/tickets/admin/details/${focusTicketId}` : "/tickets/admin",
+      label: "Ticket Details",
+      active: false,
+    },
+    {
+      to: focusTicketId ? `/tickets/comments/${focusTicketId}` : "/tickets/admin",
+      label: "Comments",
+      active: false,
+    },
+    {
+      to: focusTicketId ? `/tickets/assign/${focusTicketId}` : "/tickets/admin",
+      label: "Assign Technician",
+      active: false,
+    },
+    {
+      to: focusTicketId ? `/tickets/update-status/${focusTicketId}` : "/tickets/admin",
+      label: "Status Update",
+      active: false,
+    },
+    {
+      to: "/tickets/admin",
+      label: "All Tickets",
+      active: true,
+    },
+  ];
 
   const styles = {
     page: {
@@ -154,6 +182,41 @@ function AdminTickets() {
       gap: "12px",
       flexWrap: "wrap",
       marginTop: "18px",
+    },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "18px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
     },
     primaryButton: {
       backgroundColor: colors.accentOrange,
@@ -379,6 +442,23 @@ function AdminTickets() {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div
+            style={{
+              ...styles.subNav,
+              gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {navSections.map((section) => (
+              <Link
+                key={section.label}
+                to={section.to}
+                style={section.active ? styles.subNavActive : styles.subNavLink}
+              >
+                {section.label}
+              </Link>
+            ))}
           </div>
 
           <div style={styles.statsGrid}>

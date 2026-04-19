@@ -2,10 +2,26 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function UpdateTicketStatus() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "ADMIN";
+  const isTechnician = user?.role === "TECHNICIAN";
+  const showAssignTab = isAdmin;
+  const ticketsListPath = isAdmin
+    ? "/tickets/admin"
+    : isTechnician
+      ? "/tickets/technician"
+      : "/tickets/my";
+  const ticketsListLabel = isAdmin
+    ? "All Tickets"
+    : isTechnician
+      ? "Assigned Tickets"
+      : "My Tickets";
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -106,7 +122,7 @@ function UpdateTicketStatus() {
       fetchTicket();
 
       setTimeout(() => {
-        navigate("/tickets/admin");
+        navigate(ticketsListPath);
       }, 1200);
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -176,6 +192,41 @@ function UpdateTicketStatus() {
       fontSize: "15px",
       lineHeight: "1.8",
       maxWidth: "760px",
+    },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "18px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
     },
     contentGrid: {
       display: "grid",
@@ -336,20 +387,30 @@ function UpdateTicketStatus() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{pageError}</div>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
       </div>
     );
   }
 
+  const navSections = [
+    { to: `/tickets/details/${id}`, label: "Ticket Details", active: false },
+    { to: `/tickets/comments/${id}`, label: "Comments", active: false },
+    ...(showAssignTab
+      ? [{ to: `/tickets/assign/${id}`, label: "Assign Technician", active: false }]
+      : []),
+    { to: `/tickets/update-status/${id}`, label: "Status Update", active: true },
+    { to: ticketsListPath, label: ticketsListLabel, active: false },
+  ];
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
 
@@ -360,6 +421,23 @@ function UpdateTicketStatus() {
             Change the current state of this ticket so the workflow accurately
             reflects progress, resolution, or closure.
           </p>
+        </div>
+
+        <div
+          style={{
+            ...styles.subNav,
+            gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {navSections.map((section) => (
+            <Link
+              key={section.to}
+              to={section.to}
+              style={section.active ? styles.subNavActive : styles.subNavLink}
+            >
+              {section.label}
+            </Link>
+          ))}
         </div>
 
         {pageError && <div style={styles.errorBox}>{pageError}</div>}
