@@ -19,4 +19,9 @@ public class RoleUpdateRequest {
     private Role role;
 
     private TechnicianSpecialty technicianSpecialty;
+
+    public RoleUpdateRequest(Role role) {
+        this.role = role;
+        this.technicianSpecialty = null;
+    }
 }
