@@ -266,7 +266,7 @@ function App() {
           <Route
             path="/tickets/edit/:id"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
                 <EditTicket />
               </ProtectedRoute>
             }

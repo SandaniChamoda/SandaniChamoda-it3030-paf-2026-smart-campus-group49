@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
-import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { getTechnicianLabel, registerTechnicians } from "../../utils/technicianLabels";
 
 function AssignTechnician() {
   const { id } = useParams();
@@ -32,72 +32,28 @@ function AssignTechnician() {
   const [pageError, setPageError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [technicians, setTechnicians] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("ALL");
   const [availabilityFilter, setAvailabilityFilter] = useState("ALL");
 
-  // TEMP DEMO DATA
-  // Later replace this with Krishanth's real auth/profile API response
-  const technicians = [
-    {
-      id: 5,
-      fullName: "Nethmi Perera",
-      email: "nethmi@campus.lk",
-      specialty: "ELECTRICAL",
-      availability: "AVAILABLE",
-      role: "Technician",
-      avatar: "NP",
-    },
-    {
-      id: 6,
-      fullName: "Kasun Silva",
-      email: "kasun@campus.lk",
-      specialty: "NETWORK",
-      availability: "BUSY",
-      role: "Technician",
-      avatar: "KS",
-    },
-    {
-      id: 7,
-      fullName: "Dinuka Fernando",
-      email: "dinuka@campus.lk",
-      specialty: "EQUIPMENT",
-      availability: "AVAILABLE",
-      role: "Technician",
-      avatar: "DF",
-    },
-    {
-      id: 8,
-      fullName: "Ayesh Maduranga",
-      email: "ayesh@campus.lk",
-      specialty: "FURNITURE",
-      availability: "AVAILABLE",
-      role: "Technician",
-      avatar: "AM",
-    },
-    {
-      id: 9,
-      fullName: "Sanduni Jayasekara",
-      email: "sanduni@campus.lk",
-      specialty: "CLEANING",
-      availability: "OFFLINE",
-      role: "Technician",
-      avatar: "SJ",
-    },
-    {
-      id: 10,
-      fullName: "Ravindu Peris",
-      email: "ravindu@campus.lk",
-      specialty: "OTHER",
-      availability: "AVAILABLE",
-      role: "Technician",
-      avatar: "RP",
-    },
+  const ALL_SPECIALTY_OPTIONS = [
+    "ALL",
+    "GENERAL",
+    "ELECTRICAL",
+    "NETWORK",
+    "EQUIPMENT",
+    "CLEANING",
+    "FURNITURE",
+    "OTHER",
   ];
+
+  const ALL_AVAILABILITY_OPTIONS = ["ALL", "AVAILABLE", "BUSY", "OFFLINE"];
 
   useEffect(() => {
     fetchTicket();
+    fetchTechnicians();
   }, [id]);
 
   const fetchTicket = async () => {
@@ -115,7 +71,110 @@ function AssignTechnician() {
     }
   };
 
-  const uniqueSpecialties = ["ALL", ...new Set(technicians.map((t) => t.specialty))];
+  const toInitials = (name, email) => {
+    const value = String(name || "").trim();
+    if (value) {
+      const parts = value.split(/\s+/).filter(Boolean);
+      if (parts.length === 1) {
+        return parts[0].slice(0, 2).toUpperCase();
+      }
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    const emailValue = String(email || "").trim();
+    if (emailValue) {
+      return emailValue.slice(0, 2).toUpperCase();
+    }
+
+    return "TC";
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const [userRes, ticketRes] = await Promise.allSettled([
+        API.get("/users/role/TECHNICIAN"),
+        API.get("/tickets"),
+      ]);
+
+      const users =
+        userRes.status === "fulfilled" && Array.isArray(userRes.value.data)
+          ? userRes.value.data
+          : [];
+
+      const tickets =
+        ticketRes.status === "fulfilled" && Array.isArray(ticketRes.value.data)
+          ? ticketRes.value.data
+          : [];
+
+      const inferredSpecialtyByTechnician = new Map();
+      const countsByTechnician = new Map();
+
+      tickets.forEach((ticketItem) => {
+        const technicianId = Number(ticketItem?.assignedTo);
+        const category = String(ticketItem?.category || "").toUpperCase();
+
+        if (Number.isNaN(technicianId) || !category) {
+          return;
+        }
+
+        if (!countsByTechnician.has(technicianId)) {
+          countsByTechnician.set(technicianId, new Map());
+        }
+
+        const categoryCount = countsByTechnician.get(technicianId);
+        categoryCount.set(category, (categoryCount.get(category) || 0) + 1);
+      });
+
+      countsByTechnician.forEach((categoryCount, technicianId) => {
+        let bestCategory = "GENERAL";
+        let bestCount = 0;
+
+        categoryCount.forEach((count, category) => {
+          if (count > bestCount) {
+            bestCategory = category;
+            bestCount = count;
+          }
+        });
+
+        inferredSpecialtyByTechnician.set(technicianId, bestCategory);
+      });
+
+      const normalizeSpecialty = (value) => {
+        const raw = String(value || "").trim().toUpperCase();
+        const mapped = {
+          ELECTRIC: "ELECTRICAL",
+          NETWORKING: "NETWORK",
+          FACILITIES: "FURNITURE",
+        };
+
+        return mapped[raw] || raw;
+      };
+
+      const mapped = users.map((user) => {
+        const fullName = String(user.name || user.email || `Technician #${user.id}`).trim();
+        const storedSpecialty = normalizeSpecialty(
+          user.technicianSpecialty || user.specialty || user.category,
+        );
+        const inferredSpecialty = inferredSpecialtyByTechnician.get(Number(user.id));
+        const specialty = storedSpecialty || inferredSpecialty || "GENERAL";
+        return {
+          id: user.id,
+          fullName,
+          email: String(user.email || ""),
+          specialty,
+          availability: "AVAILABLE",
+          role: "Technician",
+          avatar: toInitials(fullName, user.email),
+        };
+      });
+      setTechnicians(mapped);
+      registerTechnicians(mapped);
+    } catch (err) {
+      console.error("Failed to fetch technicians:", err);
+      setPageError((prev) => prev || "Unable to load technician list.");
+      setTechnicians([]);
+    }
+  };
 
   const filteredTechnicians = useMemo(() => {
     let result = [...technicians];
@@ -150,8 +209,6 @@ function AssignTechnician() {
 
       const availabilityRank = {
         AVAILABLE: 3,
-        BUSY: 2,
-        OFFLINE: 1,
       };
 
       return availabilityRank[b.availability] - availabilityRank[a.availability];
@@ -638,7 +695,7 @@ function AssignTechnician() {
                   onChange={(e) => setSpecialtyFilter(e.target.value)}
                   style={styles.select}
                 >
-                  {uniqueSpecialties.map((item) => (
+                  {ALL_SPECIALTY_OPTIONS.map((item) => (
                     <option key={item} value={item}>
                       {item === "ALL" ? "All Specialties" : formatSpecialty(item)}
                     </option>
@@ -653,10 +710,11 @@ function AssignTechnician() {
                   onChange={(e) => setAvailabilityFilter(e.target.value)}
                   style={styles.select}
                 >
-                  <option value="ALL">All Availability</option>
-                  <option value="AVAILABLE">Available</option>
-                  <option value="BUSY">Busy</option>
-                  <option value="OFFLINE">Offline</option>
+                  {ALL_AVAILABILITY_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item === "ALL" ? "All Availability" : formatSpecialty(item)}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

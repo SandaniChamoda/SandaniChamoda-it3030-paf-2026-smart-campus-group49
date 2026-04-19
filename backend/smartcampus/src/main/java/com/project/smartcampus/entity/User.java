@@ -1,6 +1,7 @@
 package com.project.smartcampus.entity;
 
 import com.project.smartcampus.enums.Role;
+import com.project.smartcampus.enums.TechnicianSpecialty;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,10 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private Role role = Role.USER;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private TechnicianSpecialty technicianSpecialty;
 
     @Column
     private String provider;

@@ -1,6 +1,7 @@
 package com.project.smartcampus.dto;
 
 import com.project.smartcampus.enums.Role;
+import com.project.smartcampus.enums.TechnicianSpecialty;
 import com.project.smartcampus.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +24,7 @@ public class UserDTO {
     private String name;
     private String profilePicture;
     private Role role;
+    private TechnicianSpecialty technicianSpecialty;
     private String provider;
     private Boolean notificationsEnabled;
     private LocalDateTime createdAt;
@@ -41,6 +43,7 @@ public class UserDTO {
                 .name(user.getName())
                 .profilePicture(user.getProfilePicture())
                 .role(user.getRole())
+                .technicianSpecialty(user.getTechnicianSpecialty())
                 .provider(user.getProvider())
                 .notificationsEnabled(Boolean.TRUE.equals(user.getNotificationsEnabled()))
                 .createdAt(user.getCreatedAt())

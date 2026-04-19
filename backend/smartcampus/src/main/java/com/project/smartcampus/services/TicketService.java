@@ -7,6 +7,7 @@ import com.project.smartcampus.dto.UpdateTicketStatusRequest;
 import com.project.smartcampus.dto.UpdateTicketRequest;
 import com.project.smartcampus.entity.Ticket;
 import com.project.smartcampus.enums.TicketStatus;
+import com.project.smartcampus.exception.UnauthorizedException;
 import com.project.smartcampus.repository.TicketRepository;
 import org.springframework.stereotype.Service;
 import com.project.smartcampus.exception.TicketNotFoundException;
@@ -15,6 +16,7 @@ import com.project.smartcampus.dto.TicketCommentResponse;
 import com.project.smartcampus.entity.TicketComment;
 import com.project.smartcampus.repository.TicketCommentRepository;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -109,9 +111,27 @@ public class TicketService {
         return mapToResponse(updatedTicket);
     }
 
-    public TicketResponse updateTicket(Long ticketId, UpdateTicketRequest request) {
+    public TicketResponse updateTicket(Long ticketId, UpdateTicketRequest request, Authentication authentication) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
+
+        Long userId = null;
+        boolean isAdmin = false;
+
+        if (authentication != null) {
+            try {
+                userId = Long.parseLong(authentication.getName());
+            } catch (NumberFormatException ignored) {
+                userId = null;
+            }
+            isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+        }
+
+        boolean isOwner = userId != null && Objects.equals(ticket.getCreatedBy(), userId);
+        if (!isAdmin && !isOwner) {
+            throw new UnauthorizedException("You are not allowed to edit this ticket.");
+        }
 
         if (ticket.getStatus() == TicketStatus.RESOLVED || ticket.getStatus() == TicketStatus.CLOSED) {
             throw new IllegalStateException("Resolved tickets cannot be edited.");

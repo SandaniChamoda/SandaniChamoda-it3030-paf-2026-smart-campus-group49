@@ -12,6 +12,7 @@ import com.project.smartcampus.dto.TicketCommentResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -73,8 +74,9 @@ public class TicketController {
     @PutMapping("/{ticketId}")
     public ResponseEntity<TicketResponse> updateTicket(
             @PathVariable Long ticketId,
-            @Valid @RequestBody UpdateTicketRequest request) {
-        return ResponseEntity.ok(ticketService.updateTicket(ticketId, request));
+            @Valid @RequestBody UpdateTicketRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.updateTicket(ticketId, request, authentication));
     }
 
     @PostMapping("/{ticketId}/comments")
