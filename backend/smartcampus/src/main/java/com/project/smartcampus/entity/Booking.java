@@ -12,8 +12,6 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //private Long userId;
-
     private String resourceName;
 
     private String purpose;
@@ -35,14 +33,15 @@ public class Booking {
 
     private LocalDateTime checkedInTime;
 
-    public Booking() {}
+    public Booking() {
+    }
 
     public Booking(String resourceName,
-                   String purpose,
-                   int attendees,
-                   LocalDateTime startTime,
-                   LocalDateTime endTime,
-                   BookingStatus status) {
+            String purpose,
+            int attendees,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            BookingStatus status) {
         this.resourceName = resourceName;
         this.purpose = purpose;
         this.attendees = attendees;
@@ -51,14 +50,6 @@ public class Booking {
         this.status = status;
     }
 
-
-//     public Long getUserId() {
-//     return userId;
-// }
-
-// public void setUserId(Long userId) {
-//     this.userId = userId;
-// }
     public Long getId() {
         return id;
     }
@@ -120,26 +111,26 @@ public class Booking {
     }
 
     public String getRejectionReason() {
-    return rejectionReason;
-}
+        return rejectionReason;
+    }
 
-public void setRejectionReason(String rejectionReason) {
-    this.rejectionReason = rejectionReason;
-}
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
 
-public String getQrCode() {
-    return qrCode;
-}
+    public String getQrCode() {
+        return qrCode;
+    }
 
-public void setQrCode(String qrCode) {
-    this.qrCode = qrCode;
-}
+    public void setQrCode(String qrCode) {
+        this.qrCode = qrCode;
+    }
 
-public LocalDateTime getCheckedInTime() {
-    return checkedInTime;
-}
+    public LocalDateTime getCheckedInTime() {
+        return checkedInTime;
+    }
 
-public void setCheckedInTime(LocalDateTime checkedInTime) {
-    this.checkedInTime = checkedInTime;
-}
+    public void setCheckedInTime(LocalDateTime checkedInTime) {
+        this.checkedInTime = checkedInTime;
+    }
 }

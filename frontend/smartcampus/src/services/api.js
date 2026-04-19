@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8086/api",
+  baseURL: "/api",
 });
 
 const PUBLIC_AUTH_ENDPOINTS = [
@@ -32,8 +32,9 @@ API.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const requestUrl = error.config?.url || "";
+    const isQrVerifyPage = window.location.pathname.startsWith("/qr-verify/");
 
-    if (status === 401 && !isPublicAuthEndpoint(requestUrl)) {
+    if (status === 401 && !isPublicAuthEndpoint(requestUrl) && !isQrVerifyPage) {
       localStorage.removeItem("token");
 
       if (window.location.pathname !== "/login") {
