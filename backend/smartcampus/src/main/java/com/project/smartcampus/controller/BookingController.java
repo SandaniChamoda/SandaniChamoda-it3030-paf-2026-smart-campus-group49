@@ -61,7 +61,7 @@ public class BookingController {
         return service.getUserBookingsFiltered(userEmail, resourceName, status);
     }
 
-    // Get booking by ID - accessible to both users and admins
+    // Get booking by ID - accessible to users
     @GetMapping("/{id}")
     public BookingResponse getBookingById(@PathVariable Long id) {
         return service.getBookingById(id);
@@ -82,7 +82,7 @@ public class BookingController {
         return service.approveBooking(id);
     }
 
-    // Regenerate QR code for a booking - accessible to admins only
+    // Regenerate QR code for a booking
     @PutMapping("/{id}/qr")
     public BookingResponse regenerateQr(@PathVariable Long id) {
         return service.regenerateQr(id);
