@@ -217,11 +217,19 @@
   filter: saturate(1.35) contrast(1.12) brightness(1.1);
 }
 
-.resource-status-pill {
+
+.resource-status-stack {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.resource-status-pill {
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 9px;
@@ -229,6 +237,9 @@
   text-transform: uppercase;
   font-weight: 600;
   line-height: 1;
+  box-shadow: 0 2px 8px rgba(17,28,78,0.07);
+  display: inline-flex;
+  align-items: center;
 }
 
 .resource-status-pill.active {
@@ -239,6 +250,29 @@
 .resource-status-pill.inactive {
   background: #fff0f0;
   color: #9d2438;
+}
+
+.resource-status-pill.booked-now {
+  background: var(--accent-orange);
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  padding: 5px 13px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(17,28,78,0.07);
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-dot.booked-dot {
+  background: var(--primary-dark);
+  margin-right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .resource-card-body {
@@ -529,7 +563,6 @@
 .pagination-dots {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
 }
 
 @media (max-width: 1060px) {
