@@ -7,8 +7,6 @@ public class CreateCommentRequest {
     @NotBlank(message = "Comment is required")
     private String comment;
 
-    private Long commentedBy;
-
     public CreateCommentRequest() {
     }
 
@@ -18,13 +16,5 @@ public class CreateCommentRequest {
 
     public void setComment(String comment) {
         this.comment = comment;
-    }
-
-    public Long getCommentedBy() {
-        return commentedBy;
-    }
-
-    public void setCommentedBy(Long commentedBy) {
-        this.commentedBy = commentedBy;
     }
 }

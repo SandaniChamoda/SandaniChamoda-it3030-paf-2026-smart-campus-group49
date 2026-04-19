@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -20,172 +20,432 @@ function TicketComments() {
     borderLight: "#E3E9F8",
     white: "#FFFFFF",
     success: "#16A34A",
-    warning: "#F59E0B",
     danger: "#DC2626",
     info: "#2563EB",
   };
 
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [fieldError, setFieldError] = useState("");
+  const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [showForm, setShowForm] = useState(true);
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingText, setEditingText] = useState("");
-  const [editingError, setEditingError] = useState("");
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [flash, setFlash] = useState({ type: "", message: "" });
 
-  const fetchComments = async () => {
+  const [newComment, setNewComment] = useState("");
+  const [newCommentError, setNewCommentError] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [editError, setEditError] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyError, setReplyError] = useState("");
+  const [savingReply, setSavingReply] = useState(false);
+
+  const [deletingId, setDeletingId] = useState(null);
+
+  const isAdmin = user?.role === "ADMIN";
+  const canAssign = user?.role === "ADMIN" || user?.role === "TECHNICIAN";
+
+  const validateComment = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "Comment cannot be empty.";
+    if (trimmed.length < 3) return "Comment must be at least 3 characters.";
+    if (trimmed.length > 500) return "Comment must be 500 characters or less.";
+    return "";
+  };
+
+  const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
       setPageError("");
 
       const response = await API.get(`/tickets/${id}/comments`);
       setComments(Array.isArray(response.data) ? response.data : []);
-    } catch (err) {
-      console.error("Failed to fetch comments:", err);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
       setPageError("Unable to load comments for this ticket.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  const fetchTicket = useCallback(async () => {
+    try {
+      const response = await API.get(`/tickets/${id}`);
+      setTicket(response.data || null);
+    } catch (error) {
+      console.error("Failed to fetch ticket details:", error);
+      setTicket(null);
+    }
+  }, [id]);
 
   useEffect(() => {
     fetchComments();
-  }, [id]);
+    fetchTicket();
+  }, [fetchComments, fetchTicket]);
 
-  const validateComment = (value) => {
-    if (!value.trim()) {
-      return "Comment cannot be empty.";
-    }
+  useEffect(() => {
+    // Keep comments synced between user/admin views without manual refresh.
+    const intervalId = window.setInterval(() => {
+      fetchComments();
+    }, 5000);
 
-    if (value.trim().length < 3) {
-      return "Comment must be at least 3 characters.";
-    }
+    const handleFocus = () => {
+      fetchComments();
+    };
 
-    if (value.length > 500) {
-      return "Comment must be 500 characters or less.";
-    }
+    window.addEventListener("focus", handleFocus);
 
-    return "";
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [fetchComments]);
+
+  useEffect(() => {
+    if (!flash.message) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setFlash({ type: "", message: "" });
+    }, 2600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [flash]);
+
+  const commentsByParent = useMemo(() => {
+    const map = new Map();
+
+    comments.forEach((comment) => {
+      const parentKey = comment.parentCommentId ?? "ROOT";
+      if (!map.has(parentKey)) {
+        map.set(parentKey, []);
+      }
+      map.get(parentKey).push(comment);
+    });
+
+    return map;
+  }, [comments]);
+
+  const totalComments = comments.length;
+  const totalReplies = comments.filter((item) => item.parentCommentId != null).length;
+  const topLevelCount = totalComments - totalReplies;
+
+  const formatDate = (value) => {
+    if (!value) return "No date";
+    return new Date(value).toLocaleString();
   };
 
-  const handleCommentChange = (e) => {
-    const value = e.target.value;
-    setNewComment(value);
-    setFieldError(validateComment(value));
+  const canModify = (comment) => {
+    if (!user?.id) return false;
+    return Number(comment.commentedBy) === Number(user.id);
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const clearEditors = () => {
+    setEditingId(null);
+    setEditText("");
+    setEditError("");
+
+    setReplyingTo(null);
+    setReplyText("");
+    setReplyError("");
   };
 
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    scrollToTop();
+  const handleCreateComment = async (event) => {
+    event.preventDefault();
+
+    if (!user?.id) {
+      setPageError("Unable to determine current user. Please log in again.");
+      return;
+    }
 
     const validationMessage = validateComment(newComment);
-    setFieldError(validationMessage);
-
+    setNewCommentError(validationMessage);
     if (validationMessage) return;
 
     try {
-      setSubmitting(true);
+      setCreating(true);
       setPageError("");
-      setSuccessMessage("");
 
       await API.post(`/tickets/${id}/comments`, {
         comment: newComment.trim(),
-        commentedBy: user?.id,
+        commentedBy: user.id,
       });
 
-      setSuccessMessage("Comment added successfully.");
-      scrollToTop();
       setNewComment("");
-      setFieldError("");
-      setShowForm(false);
-      fetchComments();
-    } catch (err) {
-      console.error("Failed to add comment:", err);
-      console.error("Server response:", err.response?.data);
-
-      setPageError(
-        err.response?.data?.message || "Failed to add comment."
-      );
+      setNewCommentError("");
+      setFlash({ type: "success", message: "Comment added successfully." });
+      await fetchComments();
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+      setPageError(error?.response?.data?.message || "Failed to add comment.");
     } finally {
-      setSubmitting(false);
+      setCreating(false);
     }
   };
 
-  const handleAddAnother = () => {
-    setSuccessMessage("");
-    setShowForm(true);
+  const startEdit = (comment) => {
+    setReplyingTo(null);
+    setReplyText("");
+    setReplyError("");
+
+    setEditingId(comment.id);
+    setEditText(comment.comment || "");
+    setEditError("");
   };
 
-  const handleEditStart = (commentItem) => {
-    setEditingCommentId(commentItem.id);
-    setEditingText(commentItem.comment || "");
-    setEditingError("");
-  };
-
-  const handleEditCancel = () => {
-    setEditingCommentId(null);
-    setEditingText("");
-    setEditingError("");
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
+    setEditError("");
   };
 
   const handleSaveEdit = async (commentId) => {
-    const validationMessage = validateComment(editingText);
-    if (validationMessage) {
-      setEditingError(validationMessage);
-      return;
-    }
+    const validationMessage = validateComment(editText);
+    setEditError(validationMessage);
+    if (validationMessage) return;
 
     try {
       setSavingEdit(true);
       setPageError("");
-      setSuccessMessage("");
+
       await API.put(`/tickets/${id}/comments/${commentId}`, {
-        comment: editingText.trim(),
+        comment: editText.trim(),
       });
-      setSuccessMessage("Comment updated successfully.");
-      handleEditCancel();
-      fetchComments();
-    } catch (err) {
-      console.error("Failed to update comment:", err);
-      setPageError(err.response?.data?.message || "Failed to update comment.");
+
+      setFlash({ type: "success", message: "Comment updated." });
+      cancelEdit();
+      await fetchComments();
+    } catch (error) {
+      console.error("Failed to update comment:", error);
+      setEditError(error?.response?.data?.message || "Failed to update comment.");
     } finally {
       setSavingEdit(false);
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Delete this comment permanently?")) {
+  const startReply = (commentId) => {
+    setEditingId(null);
+    setEditText("");
+    setEditError("");
+
+    setReplyingTo(commentId);
+    setReplyText("");
+    setReplyError("");
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setReplyText("");
+    setReplyError("");
+  };
+
+  const handleSaveReply = async (commentId) => {
+    if (!user?.id) {
+      setPageError("Unable to determine current user. Please log in again.");
       return;
     }
 
+    const validationMessage = validateComment(replyText);
+    setReplyError(validationMessage);
+    if (validationMessage) return;
+
     try {
-      setDeletingCommentId(commentId);
+      setSavingReply(true);
       setPageError("");
-      setSuccessMessage("");
-      await API.delete(`/tickets/${id}/comments/${commentId}`);
-      setSuccessMessage("Comment deleted successfully.");
-      fetchComments();
-    } catch (err) {
-      console.error("Failed to delete comment:", err);
-      setPageError(err.response?.data?.message || "Failed to delete comment.");
+
+      await API.post(`/tickets/${id}/comments/${commentId}/reply`, {
+        comment: replyText.trim(),
+        commentedBy: user.id,
+      });
+
+      setFlash({ type: "success", message: "Reply added." });
+      cancelReply();
+      await fetchComments();
+    } catch (error) {
+      console.error("Failed to reply:", error);
+      setReplyError(error?.response?.data?.message || "Failed to add reply.");
     } finally {
-      setDeletingCommentId(null);
+      setSavingReply(false);
     }
   };
 
-  const formatDate = (dateValue) => {
-    if (!dateValue) return "No date";
-    return new Date(dateValue).toLocaleString();
+  const handleDeleteComment = async (comment) => {
+    try {
+      setDeletingId(comment.id);
+      setPageError("");
+
+      await API.delete(`/tickets/${id}/comments/${comment.id}`);
+
+      if (editingId === comment.id || replyingTo === comment.id) {
+        clearEditors();
+      }
+
+      setFlash({ type: "success", message: "Comment deleted." });
+      await fetchComments();
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      setPageError(error?.response?.data?.message || "Failed to delete comment.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const renderComment = (comment, depth = 0) => {
+    const replies = commentsByParent.get(comment.id) || [];
+    const isOwnComment = Number(comment.commentedBy) === Number(user?.id);
+    const displayName =
+      comment.commentedByName ||
+      (isOwnComment && user?.name ? user.name : null) ||
+      `User #${comment.commentedBy}`;
+    const roleLabel = String(comment.commentedByRole || (isOwnComment ? user?.role : "USER") || "USER").toUpperCase();
+    const isReply = depth > 0;
+    const isAdminReply = isReply && roleLabel === "ADMIN";
+
+    const tagColor =
+      roleLabel === "ADMIN"
+        ? colors.info
+        : roleLabel === "TECHNICIAN"
+          ? colors.success
+          : colors.primaryDark;
+
+    const isEditing = editingId === comment.id;
+    const isReplying = replyingTo === comment.id;
+
+    return (
+      <div
+        key={comment.id}
+        style={{
+          ...styles.commentCard,
+          backgroundColor: isAdminReply ? "#F4F8FF" : styles.commentCard.backgroundColor,
+          marginLeft: isReply ? `${Math.min(depth, 3) * 20}px` : 0,
+          borderLeft: isReply ? `3px solid ${colors.borderLight}` : styles.commentCard.border,
+        }}
+      >
+        <div style={styles.commentAvatar}>
+          {(displayName || "U")
+            .split(" ")
+            .map((part) => part[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase()}
+        </div>
+
+        <div style={styles.commentBody}>
+          <div style={styles.commentTop}>
+            <div style={styles.commentMeta}>
+              <div style={styles.commentUser}>{isOwnComment ? `${displayName} (You)` : displayName}</div>
+              <div style={styles.commentTagRow}>
+                <span style={{ ...styles.rolePill, backgroundColor: tagColor }}>{roleLabel}</span>
+                {isAdminReply ? <span style={styles.adminReplyPill}>Admin Reply</span> : null}
+                {comment.edited ? <span style={styles.editedPill}>Edited</span> : null}
+              </div>
+            </div>
+
+            <div style={styles.commentTime}>{formatDate(comment.updatedAt || comment.createdAt)}</div>
+          </div>
+
+          {isEditing ? (
+            <div style={styles.editorWrap}>
+              <textarea
+                value={editText}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setEditText(value);
+                  setEditError(validateComment(value));
+                }}
+                style={styles.inlineTextarea}
+                placeholder="Update your comment"
+              />
+              <div style={styles.inlineMetaRow}>
+                <span style={styles.charCount}>{editText.length}/500</span>
+                {editError ? <span style={styles.fieldErrorText}>{editError}</span> : null}
+              </div>
+              <div style={styles.inlineActions}>
+                <button
+                  type="button"
+                  style={styles.primaryButton}
+                  disabled={savingEdit}
+                  onClick={() => handleSaveEdit(comment.id)}
+                >
+                  {savingEdit ? "Saving..." : "Save"}
+                </button>
+                <button type="button" style={styles.secondaryButton} onClick={cancelEdit}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p style={styles.commentText}>{comment.comment || "No comment text."}</p>
+          )}
+
+          <div style={styles.commentActions}>
+            {canModify(comment) ? (
+              <button type="button" style={styles.ghostButton} onClick={() => startEdit(comment)}>
+                Edit
+              </button>
+            ) : null}
+
+            {canModify(comment) ? (
+              <button
+                type="button"
+                style={{ ...styles.ghostButton, color: colors.danger }}
+                disabled={deletingId === comment.id}
+                onClick={() => handleDeleteComment(comment)}
+              >
+                {deletingId === comment.id ? "Deleting..." : "Delete"}
+              </button>
+            ) : null}
+
+            {isAdmin ? (
+              <button type="button" style={styles.ghostButton} onClick={() => startReply(comment.id)}>
+                Reply
+              </button>
+            ) : null}
+          </div>
+
+          {isReplying ? (
+            <div style={styles.replyBox}>
+              <textarea
+                value={replyText}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setReplyText(value);
+                  setReplyError(validateComment(value));
+                }}
+                style={styles.inlineTextarea}
+                placeholder="Write admin reply"
+              />
+
+              <div style={styles.inlineMetaRow}>
+                <span style={styles.charCount}>{replyText.length}/500</span>
+                {replyError ? <span style={styles.fieldErrorText}>{replyError}</span> : null}
+              </div>
+
+              <div style={styles.inlineActions}>
+                <button
+                  type="button"
+                  style={styles.primaryButton}
+                  disabled={savingReply}
+                  onClick={() => handleSaveReply(comment.id)}
+                >
+                  {savingReply ? "Replying..." : "Post Reply"}
+                </button>
+                <button type="button" style={styles.secondaryButton} onClick={cancelReply}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {replies.length ? (
+            <div style={styles.replyThread}>{replies.map((reply) => renderComment(reply, depth + 1))}</div>
+          ) : null}
+        </div>
+      </div>
+    );
   };
 
   const styles = {
@@ -195,11 +455,42 @@ function TicketComments() {
       padding: "40px 22px 60px",
     },
     container: {
-      maxWidth: "980px",
+      maxWidth: "1040px",
       margin: "0 auto",
     },
     topBar: {
       marginBottom: "20px",
+    },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "14px",
+      padding: "10px",
+      display: "flex",
+      gap: "10px",
+      flexWrap: "wrap",
+      marginBottom: "16px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "9px 14px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "9px 14px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
     },
     backLink: {
       textDecoration: "none",
@@ -213,7 +504,7 @@ function TicketComments() {
       padding: "28px",
       color: colors.white,
       boxShadow: "0 20px 50px rgba(26, 31, 90, 0.18)",
-      marginBottom: "24px",
+      marginBottom: "22px",
     },
     eyebrow: {
       display: "inline-block",
@@ -241,6 +532,49 @@ function TicketComments() {
       lineHeight: "1.8",
       maxWidth: "760px",
     },
+    heroMetaRow: {
+      marginTop: "14px",
+      display: "flex",
+      gap: "8px",
+      flexWrap: "wrap",
+    },
+    heroMetaPill: {
+      backgroundColor: "rgba(255,255,255,0.16)",
+      border: "1px solid rgba(255,255,255,0.22)",
+      color: colors.white,
+      borderRadius: "999px",
+      padding: "4px 10px",
+      fontSize: "11px",
+      fontWeight: "700",
+      letterSpacing: "0.3px",
+      textTransform: "uppercase",
+    },
+    statsRow: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: "12px",
+      marginBottom: "20px",
+    },
+    statCard: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "14px",
+      boxShadow: "0 10px 20px rgba(26, 31, 90, 0.04)",
+    },
+    statLabel: {
+      fontSize: "11px",
+      fontWeight: "700",
+      color: colors.textMedium,
+      textTransform: "uppercase",
+      letterSpacing: "0.6px",
+      marginBottom: "5px",
+    },
+    statValue: {
+      fontSize: "20px",
+      fontWeight: "800",
+      color: colors.textDark,
+    },
     card: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
@@ -254,23 +588,22 @@ function TicketComments() {
       fontSize: "22px",
       fontWeight: "800",
       color: colors.textDark,
-      marginBottom: "16px",
+      marginBottom: "14px",
     },
-    formGroup: {
-      marginBottom: "16px",
-    },
-    label: {
-      display: "block",
-      fontSize: "13px",
-      fontWeight: "800",
+    composerIdentity: {
+      marginBottom: "10px",
+      padding: "8px 10px",
+      borderRadius: "10px",
+      border: `1px solid ${colors.borderLight}`,
+      backgroundColor: colors.bgStats,
       color: colors.textDark,
-      marginBottom: "8px",
+      fontSize: "13px",
     },
     textarea: {
       width: "100%",
-      minHeight: "120px",
+      minHeight: "124px",
       borderRadius: "16px",
-      border: `1px solid ${fieldError ? colors.danger : colors.borderLight}`,
+      border: `1px solid ${newCommentError ? colors.danger : colors.borderLight}`,
       backgroundColor: colors.white,
       padding: "14px 16px",
       fontSize: "14px",
@@ -307,12 +640,32 @@ function TicketComments() {
       backgroundColor: colors.accentOrange,
       color: colors.white,
       border: "none",
-      borderRadius: "14px",
-      padding: "12px 18px",
-      fontSize: "14px",
+      borderRadius: "12px",
+      padding: "10px 16px",
+      fontSize: "13px",
       fontWeight: "800",
-      cursor: submitting ? "not-allowed" : "pointer",
-      opacity: submitting ? 0.75 : 1,
+      cursor: "pointer",
+    },
+    secondaryButton: {
+      backgroundColor: colors.white,
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "12px",
+      padding: "10px 16px",
+      fontSize: "13px",
+      fontWeight: "800",
+      cursor: "pointer",
+      textDecoration: "none",
+    },
+    ghostButton: {
+      border: `1px solid ${colors.borderLight}`,
+      backgroundColor: colors.white,
+      color: colors.primaryDark,
+      borderRadius: "10px",
+      padding: "8px 12px",
+      fontSize: "12px",
+      fontWeight: "700",
+      cursor: "pointer",
     },
     loadingBox: {
       backgroundColor: colors.white,
@@ -360,80 +713,24 @@ function TicketComments() {
       lineHeight: "1.8",
       margin: 0,
     },
-    actionPanel: {
-      backgroundColor: "#F8FAFF",
-      border: `1px dashed ${colors.borderLight}`,
-      borderRadius: "18px",
-      padding: "18px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "12px",
-      flexWrap: "wrap",
-      marginBottom: "18px",
-    },
-    actionText: {
-      fontSize: "14px",
-      color: colors.textMedium,
-      fontWeight: "600",
-      margin: 0,
-    },
-    actionRow: {
-      display: "flex",
-      gap: "10px",
-      flexWrap: "wrap",
-    },
-    secondaryButton: {
-      backgroundColor: colors.white,
-      color: colors.primaryDark,
-      border: `1px solid ${colors.borderLight}`,
-      borderRadius: "12px",
-      padding: "12px 18px",
-      fontSize: "14px",
-      fontWeight: "800",
-      cursor: "pointer",
-      textDecoration: "none",
-    },
-    summaryRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "12px",
-      marginBottom: "16px",
-      flexWrap: "wrap",
-    },
-    summaryText: {
-      fontSize: "14px",
-      color: colors.textMedium,
-      fontWeight: "700",
-      margin: 0,
-    },
-    countBadge: {
-      backgroundColor: colors.bgStats,
-      color: colors.primaryDark,
-      borderRadius: "999px",
-      padding: "6px 12px",
-      fontSize: "12px",
-      fontWeight: "800",
-    },
     commentsList: {
       display: "flex",
       flexDirection: "column",
-      gap: "16px",
+      gap: "14px",
     },
     commentCard: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
-      borderRadius: "20px",
-      padding: "20px",
+      borderRadius: "18px",
+      padding: "16px",
       boxShadow: "0 10px 24px rgba(26, 31, 90, 0.05)",
       display: "grid",
-      gridTemplateColumns: "48px 1fr",
-      gap: "14px",
+      gridTemplateColumns: "44px 1fr",
+      gap: "12px",
     },
     commentAvatar: {
-      width: "48px",
-      height: "48px",
+      width: "44px",
+      height: "44px",
       borderRadius: "50%",
       backgroundColor: "#EEF2FF",
       color: colors.primaryDark,
@@ -441,12 +738,12 @@ function TicketComments() {
       alignItems: "center",
       justifyContent: "center",
       fontWeight: "800",
-      fontSize: "14px",
+      fontSize: "13px",
     },
     commentBody: {
       display: "flex",
       flexDirection: "column",
-      gap: "8px",
+      gap: "10px",
     },
     commentTop: {
       display: "flex",
@@ -465,12 +762,38 @@ function TicketComments() {
       fontWeight: "800",
       color: colors.primaryDark,
     },
-    commentTag: {
-      fontSize: "11px",
-      color: colors.textMedium,
+    commentTagRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      flexWrap: "wrap",
+    },
+    rolePill: {
+      color: colors.white,
+      borderRadius: "999px",
+      padding: "3px 10px",
+      fontSize: "10px",
+      fontWeight: "800",
+      letterSpacing: "0.5px",
+      textTransform: "uppercase",
+    },
+    editedPill: {
+      backgroundColor: colors.bgStats,
+      color: colors.primaryDark,
+      borderRadius: "999px",
+      padding: "3px 10px",
+      fontSize: "10px",
+      fontWeight: "700",
+    },
+    adminReplyPill: {
+      backgroundColor: "#DBEAFE",
+      color: colors.info,
+      borderRadius: "999px",
+      padding: "3px 10px",
+      fontSize: "10px",
       fontWeight: "700",
       textTransform: "uppercase",
-      letterSpacing: "0.6px",
+      letterSpacing: "0.4px",
     },
     commentTime: {
       fontSize: "12px",
@@ -478,28 +801,64 @@ function TicketComments() {
       fontWeight: "600",
     },
     commentText: {
-      fontSize: "15px",
-      color: colors.textDark,
-      lineHeight: "1.8",
       margin: 0,
+      fontSize: "14px",
+      color: colors.textDark,
+      lineHeight: "1.75",
       whiteSpace: "pre-wrap",
       wordBreak: "break-word",
     },
     commentActions: {
       display: "flex",
-      gap: "8px",
       alignItems: "center",
+      gap: "8px",
       flexWrap: "wrap",
     },
-    miniButton: {
+    editorWrap: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+    },
+    replyBox: {
       border: `1px solid ${colors.borderLight}`,
-      borderRadius: "8px",
+      backgroundColor: "#F9FBFF",
+      borderRadius: "14px",
+      padding: "12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+    },
+    inlineTextarea: {
+      width: "100%",
+      minHeight: "90px",
+      borderRadius: "12px",
+      border: `1px solid ${colors.borderLight}`,
       backgroundColor: colors.white,
-      color: colors.primaryDark,
-      fontSize: "12px",
-      fontWeight: "700",
-      padding: "6px 10px",
-      cursor: "pointer",
+      padding: "12px",
+      fontSize: "13px",
+      color: colors.textDark,
+      outline: "none",
+      resize: "vertical",
+      boxSizing: "border-box",
+      lineHeight: "1.6",
+    },
+    inlineMetaRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "10px",
+      flexWrap: "wrap",
+    },
+    inlineActions: {
+      display: "flex",
+      gap: "8px",
+      flexWrap: "wrap",
+    },
+    replyThread: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+      marginTop: "4px",
     },
   };
 
@@ -508,170 +867,109 @@ function TicketComments() {
       <div style={styles.container}>
         <div style={styles.topBar}>
           <Link to={`/tickets/details/${id}`} style={styles.backLink}>
-            ← Back to Ticket Details
+            &larr; Back to Ticket Details
           </Link>
+        </div>
+
+        <div style={styles.subNav}>
+          <Link to={`/tickets/details/${id}`} style={styles.subNavLink}>
+            Ticket Details
+          </Link>
+          <Link to={`/tickets/comments/${id}`} style={styles.subNavActive}>
+            Comments
+          </Link>
+          {canAssign ? (
+            <Link to={`/tickets/assign/${id}`} style={styles.subNavLink}>
+              Assign Technician
+            </Link>
+          ) : null}
         </div>
 
         <div style={styles.heroCard}>
           <div style={styles.eyebrow}>Ticket Discussion</div>
-          <h1 style={styles.title}>Comments and updates</h1>
+          <h1 style={styles.title}>Comments for Ticket #{id}</h1>
           <p style={styles.subtitle}>
-            Use this space to add follow-up notes, updates, and communication
-            related to the selected maintenance ticket.
+            {ticket?.title ? `${ticket.title}. ` : ""}
+            This conversation belongs only to this ticket and does not mix with other tickets.
           </p>
+          <div style={styles.heroMetaRow}>
+            <span style={styles.heroMetaPill}>Status: {ticket?.status || "UNKNOWN"}</span>
+            <span style={styles.heroMetaPill}>Category: {ticket?.category || "N/A"}</span>
+            <span style={styles.heroMetaPill}>Priority: {ticket?.priority || "N/A"}</span>
+          </div>
         </div>
 
-        {pageError && <div style={styles.errorBox}>{pageError}</div>}
-        {successMessage && showForm && (
-          <div style={styles.successBox}>{successMessage}</div>
-        )}
-
-        {!showForm && successMessage && (
-          <div style={styles.actionPanel}>
-            <p style={styles.actionText}>{successMessage}</p>
-            <div style={styles.actionRow}>
-              <button type="button" style={styles.primaryButton} onClick={handleAddAnother}>
-                Add another comment
-              </button>
-              <Link to={`/tickets/details/${id}`} style={styles.secondaryButton}>
-                Back to ticket
-              </Link>
-            </div>
+        <div style={styles.statsRow}>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>Total Items</div>
+            <div style={styles.statValue}>{totalComments}</div>
           </div>
-        )}
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>Top-Level Comments</div>
+            <div style={styles.statValue}>{topLevelCount}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>Replies</div>
+            <div style={styles.statValue}>{totalReplies}</div>
+          </div>
+        </div>
 
-        {showForm && (
-          <div style={styles.card}>
-            <div style={styles.summaryRow}>
-              <h2 style={styles.sectionTitle}>Add New Comment</h2>
-              <span style={styles.countBadge}>{comments.length} total</span>
-            </div>
+        {pageError ? <div style={styles.errorBox}>{pageError}</div> : null}
+        {flash.message ? (
+          <div style={flash.type === "success" ? styles.successBox : styles.errorBox}>
+            {flash.message}
+          </div>
+        ) : null}
 
-            <form onSubmit={handleAddComment}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Comment</label>
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>Add Comment to Ticket #{id}</h2>
+          <div style={styles.composerIdentity}>
+            Commenting as: <strong>{user?.name || `User #${user?.id || "-"}`}</strong>
+          </div>
 
-                <textarea
-                  value={newComment}
-                  onChange={handleCommentChange}
-                  placeholder="Write your update or message here..."
-                  style={styles.textarea}
-                />
+          <form onSubmit={handleCreateComment}>
+            <textarea
+              value={newComment}
+              onChange={(event) => {
+                const value = event.target.value;
+                setNewComment(value);
+                setNewCommentError(validateComment(value));
+              }}
+              placeholder="Write your update or message here..."
+              style={styles.textarea}
+            />
 
-                <div style={styles.helperRow}>
-                  <div>
-                    {fieldError ? (
-                      <div style={styles.fieldErrorText}>{fieldError}</div>
-                    ) : (
-                      <div style={styles.helperText}>
-                        Keep your comment clear and relevant to this ticket.
-                      </div>
-                    )}
+            <div style={styles.helperRow}>
+              <div>
+                {newCommentError ? (
+                  <div style={styles.fieldErrorText}>{newCommentError}</div>
+                ) : (
+                  <div style={styles.helperText}>
+                    Keep your comment focused and relevant to this ticket.
                   </div>
-
-                  <div style={styles.charCount}>{newComment.length}/500</div>
-                </div>
+                )}
               </div>
+              <div style={styles.charCount}>{newComment.length}/500</div>
+            </div>
 
-              <button type="submit" style={styles.primaryButton} disabled={submitting}>
-                {submitting ? "Adding..." : "Add Comment"}
-              </button>
-            </form>
-          </div>
-        )}
+            <button type="submit" style={styles.primaryButton} disabled={creating}>
+              {creating ? "Posting..." : "Post Comment"}
+            </button>
+          </form>
+        </div>
 
         {loading ? (
           <div style={styles.loadingBox}>Loading comments...</div>
-        ) : comments.length === 0 ? (
+        ) : (commentsByParent.get("ROOT") || []).length === 0 ? (
           <div style={styles.emptyBox}>
             <div style={styles.emptyTitle}>No comments yet</div>
             <p style={styles.emptyText}>
-              Start the conversation by adding the first comment for this ticket.
+              Start this thread by adding the first comment for this ticket.
             </p>
           </div>
         ) : (
           <div style={styles.commentsList}>
-            {comments.map((commentItem) => {
-              const avatarLabel = `U${commentItem.commentedBy || "?"}`;
-              const isOwner = user?.id === commentItem.commentedBy;
-              return (
-                <div key={commentItem.id} style={styles.commentCard}>
-                  <div style={styles.commentAvatar}>{avatarLabel}</div>
-                  <div style={styles.commentBody}>
-                    <div style={styles.commentTop}>
-                      <div style={styles.commentMeta}>
-                        <div style={styles.commentUser}>
-                          {commentItem.commentedByName || `User #${commentItem.commentedBy}`}
-                        </div>
-                        <div style={styles.commentTag}>
-                          Ticket update {commentItem.edited ? "(edited)" : ""}
-                        </div>
-                      </div>
-                      <div style={styles.commentTime}>
-                        {formatDate(commentItem.updatedAt || commentItem.createdAt)}
-                      </div>
-                    </div>
-
-                    {editingCommentId === commentItem.id ? (
-                      <>
-                        <textarea
-                          value={editingText}
-                          onChange={(e) => {
-                            setEditingText(e.target.value);
-                            setEditingError(validateComment(e.target.value));
-                          }}
-                          style={styles.textarea}
-                        />
-                        {editingError && (
-                          <div style={styles.fieldErrorText}>{editingError}</div>
-                        )}
-                        <div style={styles.commentActions}>
-                          <button
-                            type="button"
-                            style={styles.miniButton}
-                            disabled={savingEdit}
-                            onClick={() => handleSaveEdit(commentItem.id)}
-                          >
-                            {savingEdit ? "Saving..." : "Save"}
-                          </button>
-                          <button
-                            type="button"
-                            style={styles.miniButton}
-                            onClick={handleEditCancel}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <p style={styles.commentText}>
-                        {commentItem.comment || "No comment text."}
-                      </p>
-                    )}
-
-                    {isOwner && editingCommentId !== commentItem.id && (
-                      <div style={styles.commentActions}>
-                        <button
-                          type="button"
-                          style={styles.miniButton}
-                          onClick={() => handleEditStart(commentItem)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...styles.miniButton, color: colors.danger }}
-                          disabled={deletingCommentId === commentItem.id}
-                          onClick={() => handleDeleteComment(commentItem.id)}
-                        >
-                          {deletingCommentId === commentItem.id ? "Deleting..." : "Delete"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {(commentsByParent.get("ROOT") || []).map((comment) => renderComment(comment))}
           </div>
         )}
       </div>

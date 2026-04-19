@@ -19,24 +19,27 @@ public class TicketComment {
 
     private LocalDateTime updatedAt;
 
-    private boolean edited;
-
     @ManyToOne
     @JoinColumn(name = "ticket_id")
     private Ticket ticket;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_comment_id")
+    private TicketComment parentComment;
 
     public TicketComment() {
     }
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -63,6 +66,10 @@ public class TicketComment {
         return createdAt;
     }
 
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
     public Ticket getTicket() {
         return ticket;
     }
@@ -71,19 +78,11 @@ public class TicketComment {
         this.ticket = ticket;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public TicketComment getParentComment() {
+        return parentComment;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public boolean isEdited() {
-        return edited;
-    }
-
-    public void setEdited(boolean edited) {
-        this.edited = edited;
+    public void setParentComment(TicketComment parentComment) {
+        this.parentComment = parentComment;
     }
 }

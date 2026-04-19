@@ -8,6 +8,8 @@ public class TicketCommentResponse {
     private String comment;
     private Long commentedBy;
     private String commentedByName;
+    private String commentedByRole;
+    private Long parentCommentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean edited;
@@ -45,6 +47,22 @@ public class TicketCommentResponse {
 
     public void setCommentedByName(String commentedByName) {
         this.commentedByName = commentedByName;
+    }
+
+    public String getCommentedByRole() {
+        return commentedByRole;
+    }
+
+    public void setCommentedByRole(String commentedByRole) {
+        this.commentedByRole = commentedByRole;
+    }
+
+    public Long getParentCommentId() {
+        return parentCommentId;
+    }
+
+    public void setParentCommentId(Long parentCommentId) {
+        this.parentCommentId = parentCommentId;
     }
 
     public LocalDateTime getCreatedAt() {
