@@ -28,6 +28,7 @@ import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,6 +41,8 @@ public class TicketService {
     private static final Set<String> ALLOWED_TYPES = Set.of(
             "image/jpeg", "image/jpg", "image/png", "image/webp"
     );
+        private static final long FIRST_RESPONSE_SLA_MINUTES = 120;
+        private static final long RESOLUTION_SLA_MINUTES = 24 * 60;
     private static final Path UPLOAD_DIR = Paths.get("uploads", "tickets");
 
     private final TicketRepository ticketRepository;
@@ -70,7 +73,8 @@ public class TicketService {
         ticket.setStatus(TicketStatus.OPEN);
 
         Ticket savedTicket = ticketRepository.save(ticket);
-        return mapToResponse(savedTicket, getUsersByIds(savedTicket.getCreatedBy(), savedTicket.getAssignedTo()));
+        Map<Long, User> usersById = getUsersByIds(savedTicket.getCreatedBy(), savedTicket.getAssignedTo());
+        return mapToResponse(savedTicket, usersById, Collections.emptyList());
     }
 
     public List<TicketResponse> getAllTickets() {
@@ -81,7 +85,18 @@ public class TicketService {
     public TicketResponse getTicketById(Long id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found with id: " + id));
-        return mapToResponse(ticket, getUsersByIds(ticket.getCreatedBy(), ticket.getAssignedTo()));
+
+        List<TicketComment> comments = ticketCommentRepository.findByTicketIdOrderByCreatedAtAscIdAsc(ticket.getId());
+        Set<Long> userIds = new HashSet<>();
+        userIds.add(ticket.getCreatedBy());
+        userIds.add(ticket.getAssignedTo());
+        comments.stream().map(TicketComment::getCommentedBy).forEach(userIds::add);
+
+        Map<Long, User> usersById = userRepository.findAllById(userIds.stream().filter(Objects::nonNull).collect(Collectors.toSet()))
+            .stream()
+            .collect(Collectors.toMap(User::getId, user -> user));
+
+        return mapToResponse(ticket, usersById, comments);
     }
 
     public List<TicketResponse> getTicketsByCreatedUser(Long createdBy) {
@@ -132,7 +147,9 @@ public class TicketService {
         history.setReason(reason);
         ticketAssignmentHistoryRepository.save(history);
 
-        return mapToResponse(updatedTicket, getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo()));
+        Map<Long, User> usersById = getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo(), request.getAssignedTo());
+        List<TicketComment> comments = ticketCommentRepository.findByTicketIdOrderByCreatedAtAscIdAsc(updatedTicket.getId());
+        return mapToResponse(updatedTicket, usersById, comments);
     }
 
     public List<TicketAssignmentHistoryResponse> getAssignmentHistory(Long ticketId) {
@@ -177,7 +194,9 @@ public class TicketService {
         }
 
         Ticket updatedTicket = ticketRepository.save(ticket);
-        return mapToResponse(updatedTicket, getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo()));
+        Map<Long, User> usersById = getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo());
+        List<TicketComment> comments = ticketCommentRepository.findByTicketIdOrderByCreatedAtAscIdAsc(updatedTicket.getId());
+        return mapToResponse(updatedTicket, usersById, comments);
     }
 
     public TicketResponse updateTicket(Long ticketId, UpdateTicketRequest request, Authentication authentication) {
@@ -213,10 +232,12 @@ public class TicketService {
         ticket.setUpdatedAt(LocalDateTime.now());
 
         Ticket updatedTicket = ticketRepository.save(ticket);
-        return mapToResponse(updatedTicket, getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo()));
+        Map<Long, User> usersById = getUsersByIds(updatedTicket.getCreatedBy(), updatedTicket.getAssignedTo());
+        List<TicketComment> comments = ticketCommentRepository.findByTicketIdOrderByCreatedAtAscIdAsc(updatedTicket.getId());
+        return mapToResponse(updatedTicket, usersById, comments);
     }
 
-    private TicketResponse mapToResponse(Ticket ticket, Map<Long, User> usersById) {
+    private TicketResponse mapToResponse(Ticket ticket, Map<Long, User> usersById, List<TicketComment> comments) {
         TicketResponse response = new TicketResponse();
         response.setId(ticket.getId());
         response.setTitle(ticket.getTitle());
@@ -232,25 +253,57 @@ public class TicketService {
         response.setCreatedAt(ticket.getCreatedAt());
         response.setUpdatedAt(ticket.getUpdatedAt());
         response.setResolvedAt(ticket.getResolvedAt());
+
+        LocalDateTime firstResponseAt = findFirstStaffResponseAt(comments, usersById);
+        response.setFirstResponseAt(firstResponseAt);
+
+        Long firstResponseMinutes = computeDurationMinutes(ticket.getCreatedAt(), firstResponseAt);
+        response.setTimeToFirstResponseMinutes(firstResponseMinutes);
+        response.setFirstResponseSlaBreached(firstResponseMinutes != null
+                ? firstResponseMinutes > FIRST_RESPONSE_SLA_MINUTES
+                : null);
+
+        Long resolutionMinutes = computeDurationMinutes(ticket.getCreatedAt(), ticket.getResolvedAt());
+        response.setTimeToResolutionMinutes(resolutionMinutes);
+        response.setResolutionSlaBreached(resolutionMinutes != null
+                ? resolutionMinutes > RESOLUTION_SLA_MINUTES
+                : null);
+
         return response;
     }
 
-        private List<TicketResponse> mapTicketsToResponses(List<Ticket> tickets) {
+    private List<TicketResponse> mapTicketsToResponses(List<Ticket> tickets) {
+        if (tickets.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         Set<Long> userIds = tickets.stream()
             .flatMap(ticket -> Arrays.stream(new Long[]{ticket.getCreatedBy(), ticket.getAssignedTo()}))
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
 
+        List<Long> ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toList());
+        List<TicketComment> comments = ticketCommentRepository.findByTicketIdInOrderByCreatedAtAscIdAsc(ticketIds);
+        comments.stream()
+                .map(TicketComment::getCommentedBy)
+                .filter(Objects::nonNull)
+                .forEach(userIds::add);
+
         Map<Long, User> usersById = userRepository.findAllById(userIds)
             .stream()
             .collect(Collectors.toMap(User::getId, user -> user));
 
-        return tickets.stream()
-            .map(ticket -> mapToResponse(ticket, usersById))
-            .collect(Collectors.toList());
-        }
+        Map<Long, List<TicketComment>> commentsByTicketId = comments.stream()
+                .filter(comment -> comment.getTicket() != null && comment.getTicket().getId() != null)
+                .collect(Collectors.groupingBy(comment -> comment.getTicket().getId()));
 
-        private Map<Long, User> getUsersByIds(Long... userIds) {
+        return tickets.stream()
+            .map(ticket -> mapToResponse(ticket, usersById,
+                    commentsByTicketId.getOrDefault(ticket.getId(), Collections.emptyList())))
+            .collect(Collectors.toList());
+    }
+
+    private Map<Long, User> getUsersByIds(Long... userIds) {
         Set<Long> ids = Arrays.stream(userIds)
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
@@ -262,7 +315,29 @@ public class TicketService {
         return userRepository.findAllById(ids)
             .stream()
             .collect(Collectors.toMap(User::getId, user -> user));
+    }
+
+    private LocalDateTime findFirstStaffResponseAt(List<TicketComment> comments, Map<Long, User> usersById) {
+        return comments.stream()
+                .filter(comment -> comment.getCreatedAt() != null)
+                .filter(comment -> {
+                    User commenter = usersById.get(comment.getCommentedBy());
+                    Role role = commenter != null ? commenter.getRole() : null;
+                    return role == Role.ADMIN || role == Role.TECHNICIAN;
+                })
+                .map(TicketComment::getCreatedAt)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+    }
+
+    private Long computeDurationMinutes(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) {
+            return null;
         }
+
+        long minutes = Duration.between(start, end).toMinutes();
+        return Math.max(minutes, 0);
+    }
 
     public TicketCommentResponse addComment(Long ticketId, CreateCommentRequest request, Authentication authentication) {
         Ticket ticket = ticketRepository.findById(ticketId)

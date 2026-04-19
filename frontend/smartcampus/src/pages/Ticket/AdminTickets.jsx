@@ -105,12 +105,44 @@ function AdminTickets() {
     return new Date(dateValue).toLocaleString();
   };
 
+  const formatDuration = (minutes) => {
+    if (minutes == null) return "N/A";
+
+    const safeMinutes = Math.max(Number(minutes) || 0, 0);
+    const days = Math.floor(safeMinutes / 1440);
+    const hours = Math.floor((safeMinutes % 1440) / 60);
+    const mins = safeMinutes % 60;
+
+    const parts = [];
+    if (days) parts.push(`${days}d`);
+    if (hours || days) parts.push(`${hours}h`);
+    parts.push(`${mins}m`);
+
+    return parts.join(" ");
+  };
+
+  const getAverageMinutes = (values) => {
+    if (!values.length) return null;
+    const sum = values.reduce((acc, value) => acc + value, 0);
+    return Math.round(sum / values.length);
+  };
+
   const totalTickets = tickets.length;
   const openCount = tickets.filter((t) => t.status === "OPEN").length;
   const inProgressCount = tickets.filter((t) => t.status === "IN_PROGRESS").length;
   const resolvedCount = tickets.filter(
     (t) => t.status === "RESOLVED" || t.status === "CLOSED"
   ).length;
+  const firstResponseValues = tickets
+    .map((ticket) => ticket.timeToFirstResponseMinutes)
+    .filter((value) => value != null);
+  const resolutionValues = tickets
+    .map((ticket) => ticket.timeToResolutionMinutes)
+    .filter((value) => value != null);
+  const avgFirstResponseMinutes = getAverageMinutes(firstResponseValues);
+  const avgResolutionMinutes = getAverageMinutes(resolutionValues);
+  const firstResponseBreaches = tickets.filter((ticket) => ticket.firstResponseSlaBreached).length;
+  const resolutionBreaches = tickets.filter((ticket) => ticket.resolutionSlaBreached).length;
   const focusTicketId = filteredTickets[0]?.id || tickets[0]?.id;
   const navSections = [
     {
@@ -481,6 +513,26 @@ function AdminTickets() {
               <div style={styles.statLabel}>Resolved / Closed</div>
               <div style={styles.statValue}>{resolvedCount}</div>
             </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Avg First Response</div>
+              <div style={styles.statValue}>{formatDuration(avgFirstResponseMinutes)}</div>
+            </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Avg Resolution Time</div>
+              <div style={styles.statValue}>{formatDuration(avgResolutionMinutes)}</div>
+            </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>First Response SLA Breaches</div>
+              <div style={styles.statValue}>{firstResponseBreaches}</div>
+            </div>
+
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Resolution SLA Breaches</div>
+              <div style={styles.statValue}>{resolutionBreaches}</div>
+            </div>
           </div>
 
           <div style={styles.filterCard}>
@@ -558,6 +610,8 @@ function AdminTickets() {
                       <th style={styles.th}>Status</th>
                       <th style={styles.th}>Created By</th>
                       <th style={styles.th}>Assigned To</th>
+                      <th style={styles.th}>First Response</th>
+                      <th style={styles.th}>Resolution Time</th>
                       <th style={styles.th}>Created At</th>
                       <th style={styles.th}>Actions</th>
                     </tr>
@@ -605,12 +659,22 @@ function AdminTickets() {
                           </span>
                         </td>
                         <td style={styles.td}>
-                          {ticket.createdBy ? `User #${ticket.createdBy}` : "N/A"}
+                          {ticket.createdByName
+                            || (ticket.createdBy ? `User #${ticket.createdBy}` : "N/A")}
                         </td>
                         <td style={styles.td}>
-                          {ticket.assignedTo
-                            ? getTechnicianLabel(ticket.assignedTo)
-                            : "Not assigned"}
+                          {ticket.assignedToName
+                            || (ticket.assignedTo ? getTechnicianLabel(ticket.assignedTo) : "Not assigned")}
+                        </td>
+                        <td style={styles.td}>
+                          {ticket.timeToFirstResponseMinutes != null
+                            ? formatDuration(ticket.timeToFirstResponseMinutes)
+                            : "Pending"}
+                        </td>
+                        <td style={styles.td}>
+                          {ticket.timeToResolutionMinutes != null
+                            ? formatDuration(ticket.timeToResolutionMinutes)
+                            : "Pending"}
                         </td>
                         <td style={styles.td}>{formatDate(ticket.createdAt)}</td>
                         <td style={styles.td}>

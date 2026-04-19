@@ -301,6 +301,7 @@ function AssignTechnician() {
     { to: `/tickets/update-status/${id}`, label: "Status Update", active: false },
     { to: ticketsListPath, label: ticketsListLabel, active: false },
   ];
+  const bannerTitle = ticket?.title?.trim() || `Ticket #${id}`;
 
   const styles = {
     page: {
@@ -712,11 +713,10 @@ function AssignTechnician() {
         </div>
 
         <div style={styles.heroCard}>
-          <div style={styles.eyebrow}>Ticket Assignment</div>
-          <h1 style={styles.title}>Assign the right technician for this issue</h1>
+          <div style={styles.eyebrow}>Task: Assign Technician</div>
+          <h1 style={styles.title}>{bannerTitle}</h1>
           <p style={styles.subtitle}>
-            Search, filter, and review technicians before assigning the most
-            suitable person to handle this maintenance ticket.
+            Ticket #{id}. Search, filter, and review technicians before assigning the most suitable person.
           </p>
         </div>
 

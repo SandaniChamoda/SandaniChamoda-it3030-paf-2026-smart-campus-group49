@@ -156,6 +156,7 @@ function TicketComments() {
       : []),
     { to: ticketsListPath, label: ticketsListLabel, active: false },
   ];
+  const bannerTitle = ticket?.title?.trim() || `Ticket #${id}`;
 
   const formatDate = (value) => {
     if (!value) return "No date";
@@ -900,11 +901,10 @@ function TicketComments() {
         </div>
 
         <div style={styles.heroCard}>
-          <div style={styles.eyebrow}>Ticket Discussion</div>
-          <h1 style={styles.title}>Comments for Ticket #{id}</h1>
+          <div style={styles.eyebrow}>Task: Comments</div>
+          <h1 style={styles.title}>{bannerTitle}</h1>
           <p style={styles.subtitle}>
-            {ticket?.title ? `${ticket.title}. ` : ""}
-            This conversation belongs only to this ticket and does not mix with other tickets.
+            Ticket #{id}. This conversation belongs only to this ticket and does not mix with other tickets.
           </p>
           <div style={styles.heroMetaRow}>
             <span style={styles.heroMetaPill}>Status: {ticket?.status || "UNKNOWN"}</span>

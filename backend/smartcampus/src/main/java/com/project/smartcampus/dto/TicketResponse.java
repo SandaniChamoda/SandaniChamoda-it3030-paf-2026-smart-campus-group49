@@ -20,6 +20,11 @@ public class TicketResponse {
     private String createdByName;
     private Long assignedTo;
     private String assignedToName;
+    private LocalDateTime firstResponseAt;
+    private Long timeToFirstResponseMinutes;
+    private Long timeToResolutionMinutes;
+    private Boolean firstResponseSlaBreached;
+    private Boolean resolutionSlaBreached;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
@@ -74,6 +79,34 @@ public class TicketResponse {
     public String getAssignedToName() { return assignedToName; }
 
     public void setAssignedToName(String assignedToName) { this.assignedToName = assignedToName; }
+
+    public LocalDateTime getFirstResponseAt() { return firstResponseAt; }
+
+    public void setFirstResponseAt(LocalDateTime firstResponseAt) { this.firstResponseAt = firstResponseAt; }
+
+    public Long getTimeToFirstResponseMinutes() { return timeToFirstResponseMinutes; }
+
+    public void setTimeToFirstResponseMinutes(Long timeToFirstResponseMinutes) {
+        this.timeToFirstResponseMinutes = timeToFirstResponseMinutes;
+    }
+
+    public Long getTimeToResolutionMinutes() { return timeToResolutionMinutes; }
+
+    public void setTimeToResolutionMinutes(Long timeToResolutionMinutes) {
+        this.timeToResolutionMinutes = timeToResolutionMinutes;
+    }
+
+    public Boolean getFirstResponseSlaBreached() { return firstResponseSlaBreached; }
+
+    public void setFirstResponseSlaBreached(Boolean firstResponseSlaBreached) {
+        this.firstResponseSlaBreached = firstResponseSlaBreached;
+    }
+
+    public Boolean getResolutionSlaBreached() { return resolutionSlaBreached; }
+
+    public void setResolutionSlaBreached(Boolean resolutionSlaBreached) {
+        this.resolutionSlaBreached = resolutionSlaBreached;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 

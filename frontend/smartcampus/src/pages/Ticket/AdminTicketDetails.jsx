@@ -74,6 +74,22 @@ function AdminTicketDetails() {
     return new Date(dateValue).toLocaleString();
   };
 
+  const formatDuration = (minutes) => {
+    if (minutes == null) return "Not available yet";
+
+    const safeMinutes = Math.max(Number(minutes) || 0, 0);
+    const days = Math.floor(safeMinutes / 1440);
+    const hours = Math.floor((safeMinutes % 1440) / 60);
+    const mins = safeMinutes % 60;
+
+    const parts = [];
+    if (days) parts.push(`${days}d`);
+    if (hours || days) parts.push(`${hours}h`);
+    parts.push(`${mins}m`);
+
+    return parts.join(" ");
+  };
+
   const apiBaseUrl = API.defaults.baseURL?.replace(/\/api\/?$/, "") || "";
 
   const buildImageUrl = (path) => {
@@ -657,6 +673,18 @@ function AdminTicketDetails() {
               <div style={styles.timelineItem}>
                 <div style={styles.timelineDot}></div>
                 <div style={styles.timelineContent}>
+                  <p style={styles.timelineTitle}>First Response Time</p>
+                  <p style={styles.timelineText}>
+                    {ticket.timeToFirstResponseMinutes != null
+                      ? `First staff response in ${formatDuration(ticket.timeToFirstResponseMinutes)} (${formatDate(ticket.firstResponseAt)}).`
+                      : "No staff response recorded yet."}
+                  </p>
+                </div>
+              </div>
+
+              <div style={styles.timelineItem}>
+                <div style={styles.timelineDot}></div>
+                <div style={styles.timelineContent}>
                   <p style={styles.timelineTitle}>Current Assignment</p>
                   <p style={styles.timelineText}>
                     {ticket.assignedTo
@@ -680,6 +708,11 @@ function AdminTicketDetails() {
                   <p style={styles.timelineText}>
                     The ticket is currently marked as{" "}
                     <strong>{ticket.status?.replace("_", " ") || "N/A"}</strong>.
+                  </p>
+                  <p style={{ ...styles.timelineText, marginTop: "8px" }}>
+                    Resolution timer: {ticket.timeToResolutionMinutes != null
+                      ? formatDuration(ticket.timeToResolutionMinutes)
+                      : "Not resolved yet"}
                   </p>
                 </div>
               </div>

@@ -404,6 +404,7 @@ function UpdateTicketStatus() {
     { to: `/tickets/update-status/${id}`, label: "Status Update", active: true },
     { to: ticketsListPath, label: ticketsListLabel, active: false },
   ];
+  const bannerTitle = ticket?.title?.trim() || `Ticket #${id}`;
 
   return (
     <div style={styles.page}>
@@ -415,11 +416,10 @@ function UpdateTicketStatus() {
         </div>
 
         <div style={styles.heroCard}>
-          <div style={styles.eyebrow}>Ticket Status Update</div>
-          <h1 style={styles.title}>Update the workflow status</h1>
+          <div style={styles.eyebrow}>Task: Status Update</div>
+          <h1 style={styles.title}>{bannerTitle}</h1>
           <p style={styles.subtitle}>
-            Change the current state of this ticket so the workflow accurately
-            reflects progress, resolution, or closure.
+            Ticket #{id}. Change the workflow state so progress, resolution, or closure is accurately tracked.
           </p>
         </div>
 

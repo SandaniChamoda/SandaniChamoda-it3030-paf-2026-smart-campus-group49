@@ -11,6 +11,14 @@ export default defineConfig({
         target: "http://localhost:8086",
         changeOrigin: true,
       },
+      "^/tickets/": {
+        target: "http://localhost:8086",
+        changeOrigin: true,
+      },
+      "^/uploads/": {
+        target: "http://localhost:8086",
+        changeOrigin: true,
+      },
       "^/qr/": {
         target: "http://localhost:8086",
         changeOrigin: true,
