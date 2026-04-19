@@ -5,6 +5,7 @@ import com.project.smartcampus.dto.CreateTicketRequest;
 import com.project.smartcampus.dto.TicketResponse;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
 import com.project.smartcampus.dto.UpdateTicketRequest;
+import com.project.smartcampus.dto.UpdateCommentRequest;
 import com.project.smartcampus.services.TicketService;
 import jakarta.validation.Valid;
 import com.project.smartcampus.dto.CreateCommentRequest;
@@ -82,9 +83,38 @@ public class TicketController {
     @PostMapping("/{ticketId}/comments")
     public ResponseEntity<TicketCommentResponse> addComment(
             @PathVariable Long ticketId,
-            @Valid @RequestBody CreateCommentRequest request) {
-        TicketCommentResponse response = ticketService.addComment(ticketId, request);
+            @Valid @RequestBody CreateCommentRequest request,
+            Authentication authentication) {
+        TicketCommentResponse response = ticketService.addComment(ticketId, request, authentication);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{ticketId}/comments/{commentId}/reply")
+    public ResponseEntity<TicketCommentResponse> addReplyToComment(
+            @PathVariable Long ticketId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody CreateCommentRequest request,
+            Authentication authentication) {
+        TicketCommentResponse response = ticketService.addReply(ticketId, commentId, request, authentication);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{ticketId}/comments/{commentId}")
+    public ResponseEntity<TicketCommentResponse> updateComment(
+            @PathVariable Long ticketId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody UpdateCommentRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.updateComment(ticketId, commentId, request, authentication));
+    }
+
+    @DeleteMapping("/{ticketId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long ticketId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        ticketService.deleteComment(ticketId, commentId, authentication);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{ticketId}/comments")

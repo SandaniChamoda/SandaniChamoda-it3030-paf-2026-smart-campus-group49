@@ -2,12 +2,12 @@ package com.project.smartcampus.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public class CreateCommentRequest {
+public class UpdateCommentRequest {
 
     @NotBlank(message = "Comment is required")
     private String comment;
 
-    public CreateCommentRequest() {
+    public UpdateCommentRequest() {
     }
 
     public String getComment() {
