@@ -32,6 +32,7 @@ function TicketComments() {
   const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [showForm, setShowForm] = useState(true);
 
   const fetchComments = async () => {
     try {
@@ -74,8 +75,13 @@ function TicketComments() {
     setFieldError(validateComment(value));
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
+    scrollToTop();
 
     const validationMessage = validateComment(newComment);
     setFieldError(validationMessage);
@@ -93,8 +99,10 @@ function TicketComments() {
       });
 
       setSuccessMessage("Comment added successfully.");
+      scrollToTop();
       setNewComment("");
       setFieldError("");
+      setShowForm(false);
       fetchComments();
     } catch (err) {
       console.error("Failed to add comment:", err);
@@ -106,6 +114,11 @@ function TicketComments() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAddAnother = () => {
+    setSuccessMessage("");
+    setShowForm(true);
   };
 
   const formatDate = (dateValue) => {
@@ -285,6 +298,62 @@ function TicketComments() {
       lineHeight: "1.8",
       margin: 0,
     },
+    actionPanel: {
+      backgroundColor: "#F8FAFF",
+      border: `1px dashed ${colors.borderLight}`,
+      borderRadius: "18px",
+      padding: "18px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "12px",
+      flexWrap: "wrap",
+      marginBottom: "18px",
+    },
+    actionText: {
+      fontSize: "14px",
+      color: colors.textMedium,
+      fontWeight: "600",
+      margin: 0,
+    },
+    actionRow: {
+      display: "flex",
+      gap: "10px",
+      flexWrap: "wrap",
+    },
+    secondaryButton: {
+      backgroundColor: colors.white,
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "12px",
+      padding: "12px 18px",
+      fontSize: "14px",
+      fontWeight: "800",
+      cursor: "pointer",
+      textDecoration: "none",
+    },
+    summaryRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "12px",
+      marginBottom: "16px",
+      flexWrap: "wrap",
+    },
+    summaryText: {
+      fontSize: "14px",
+      color: colors.textMedium,
+      fontWeight: "700",
+      margin: 0,
+    },
+    countBadge: {
+      backgroundColor: colors.bgStats,
+      color: colors.primaryDark,
+      borderRadius: "999px",
+      padding: "6px 12px",
+      fontSize: "12px",
+      fontWeight: "800",
+    },
     commentsList: {
       display: "flex",
       flexDirection: "column",
@@ -296,6 +365,26 @@ function TicketComments() {
       borderRadius: "20px",
       padding: "20px",
       boxShadow: "0 10px 24px rgba(26, 31, 90, 0.05)",
+      display: "grid",
+      gridTemplateColumns: "48px 1fr",
+      gap: "14px",
+    },
+    commentAvatar: {
+      width: "48px",
+      height: "48px",
+      borderRadius: "50%",
+      backgroundColor: "#EEF2FF",
+      color: colors.primaryDark,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: "800",
+      fontSize: "14px",
+    },
+    commentBody: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
     },
     commentTop: {
       display: "flex",
@@ -303,12 +392,23 @@ function TicketComments() {
       alignItems: "flex-start",
       gap: "12px",
       flexWrap: "wrap",
-      marginBottom: "12px",
+    },
+    commentMeta: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
     },
     commentUser: {
       fontSize: "14px",
       fontWeight: "800",
       color: colors.primaryDark,
+    },
+    commentTag: {
+      fontSize: "11px",
+      color: colors.textMedium,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: "0.6px",
     },
     commentTime: {
       fontSize: "12px",
@@ -344,42 +444,63 @@ function TicketComments() {
         </div>
 
         {pageError && <div style={styles.errorBox}>{pageError}</div>}
-        {successMessage && <div style={styles.successBox}>{successMessage}</div>}
+        {successMessage && showForm && (
+          <div style={styles.successBox}>{successMessage}</div>
+        )}
 
-        <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>Add New Comment</h2>
+        {!showForm && successMessage && (
+          <div style={styles.actionPanel}>
+            <p style={styles.actionText}>{successMessage}</p>
+            <div style={styles.actionRow}>
+              <button type="button" style={styles.primaryButton} onClick={handleAddAnother}>
+                Add another comment
+              </button>
+              <Link to={`/tickets/details/${id}`} style={styles.secondaryButton}>
+                Back to ticket
+              </Link>
+            </div>
+          </div>
+        )}
 
-          <form onSubmit={handleAddComment}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Comment</label>
-
-              <textarea
-                value={newComment}
-                onChange={handleCommentChange}
-                placeholder="Write your update or message here..."
-                style={styles.textarea}
-              />
-
-              <div style={styles.helperRow}>
-                <div>
-                  {fieldError ? (
-                    <div style={styles.fieldErrorText}>{fieldError}</div>
-                  ) : (
-                    <div style={styles.helperText}>
-                      Keep your comment clear and relevant to this ticket.
-                    </div>
-                  )}
-                </div>
-
-                <div style={styles.charCount}>{newComment.length}/500</div>
-              </div>
+        {showForm && (
+          <div style={styles.card}>
+            <div style={styles.summaryRow}>
+              <h2 style={styles.sectionTitle}>Add New Comment</h2>
+              <span style={styles.countBadge}>{comments.length} total</span>
             </div>
 
-            <button type="submit" style={styles.primaryButton} disabled={submitting}>
-              {submitting ? "Adding..." : "Add Comment"}
-            </button>
-          </form>
-        </div>
+            <form onSubmit={handleAddComment}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Comment</label>
+
+                <textarea
+                  value={newComment}
+                  onChange={handleCommentChange}
+                  placeholder="Write your update or message here..."
+                  style={styles.textarea}
+                />
+
+                <div style={styles.helperRow}>
+                  <div>
+                    {fieldError ? (
+                      <div style={styles.fieldErrorText}>{fieldError}</div>
+                    ) : (
+                      <div style={styles.helperText}>
+                        Keep your comment clear and relevant to this ticket.
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={styles.charCount}>{newComment.length}/500</div>
+                </div>
+              </div>
+
+              <button type="submit" style={styles.primaryButton} disabled={submitting}>
+                {submitting ? "Adding..." : "Add Comment"}
+              </button>
+            </form>
+          </div>
+        )}
 
         {loading ? (
           <div style={styles.loadingBox}>Loading comments...</div>
@@ -392,22 +513,31 @@ function TicketComments() {
           </div>
         ) : (
           <div style={styles.commentsList}>
-            {comments.map((commentItem) => (
-              <div key={commentItem.id} style={styles.commentCard}>
-                <div style={styles.commentTop}>
-                  <div style={styles.commentUser}>
-                    User #{commentItem.commentedBy}
-                  </div>
-                  <div style={styles.commentTime}>
-                    {formatDate(commentItem.createdAt)}
+            {comments.map((commentItem) => {
+              const avatarLabel = `U${commentItem.commentedBy || "?"}`;
+              return (
+                <div key={commentItem.id} style={styles.commentCard}>
+                  <div style={styles.commentAvatar}>{avatarLabel}</div>
+                  <div style={styles.commentBody}>
+                    <div style={styles.commentTop}>
+                      <div style={styles.commentMeta}>
+                        <div style={styles.commentUser}>
+                          User #{commentItem.commentedBy}
+                        </div>
+                        <div style={styles.commentTag}>Ticket update</div>
+                      </div>
+                      <div style={styles.commentTime}>
+                        {formatDate(commentItem.createdAt)}
+                      </div>
+                    </div>
+
+                    <p style={styles.commentText}>
+                      {commentItem.comment || "No comment text."}
+                    </p>
                   </div>
                 </div>
-
-                <p style={styles.commentText}>
-                  {commentItem.comment || "No comment text."}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

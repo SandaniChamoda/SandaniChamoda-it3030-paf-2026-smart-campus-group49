@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function AssignTechnician() {
   const { id } = useParams();
@@ -162,6 +163,7 @@ function AssignTechnician() {
   const handleAssign = async () => {
     if (!selectedTech) {
       setPageError("Please select a technician first.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -169,12 +171,14 @@ function AssignTechnician() {
       setSubmitting(true);
       setPageError("");
       setSuccessMessage("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       await API.put(`/tickets/${id}/assign`, {
         assignedTo: selectedTech.id,
       });
 
       setSuccessMessage(`Technician ${selectedTech.fullName} assigned successfully.`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       setTimeout(() => {
         navigate("/tickets/admin");
@@ -598,7 +602,7 @@ function AssignTechnician() {
                 <div style={styles.infoLabel}>Current Technician</div>
                 <div style={styles.infoValue}>
                   {ticket?.assignedTo
-                    ? `Technician #${ticket.assignedTo}`
+                    ? getTechnicianLabel(ticket.assignedTo)
                     : "Not assigned"}
                 </div>
               </div>

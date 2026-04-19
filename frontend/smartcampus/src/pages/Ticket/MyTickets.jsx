@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function MyTickets() {
   // TEMP USER ID - replace later with auth user id
@@ -57,7 +58,7 @@ function MyTickets() {
         return colors.danger;
       case "MEDIUM":
         return colors.warning;
-      case "LOW":``
+      case "LOW":
         return colors.success;
       default:
         return colors.textMedium;
@@ -412,6 +413,22 @@ function MyTickets() {
       fontSize: "14px",
       fontWeight: "800",
     },
+    editLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      fontSize: "13px",
+      fontWeight: "800",
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "8px 12px",
+      backgroundColor: colors.white,
+    },
+    footerActions: {
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      flexWrap: "wrap",
+    },
     loadingBox: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
@@ -643,7 +660,7 @@ function MyTickets() {
                     <div style={styles.metaLabel}>Assigned Technician</div>
                     <div style={styles.metaValue}>
                       {ticket.assignedTo
-                        ? `Technician #${ticket.assignedTo}`
+                        ? getTechnicianLabel(ticket.assignedTo)
                         : "Not assigned yet"}
                     </div>
                   </div>
@@ -677,9 +694,20 @@ function MyTickets() {
                     Keep checking this page for new updates.
                   </p>
 
-                  <Link to={`/tickets/details/${ticket.id}`} style={styles.detailsLink}>
-  View Details →
-</Link>
+                  <div style={styles.footerActions}>
+                    {ticket.status !== "RESOLVED" && ticket.status !== "CLOSED" && (
+                      <Link
+                        to={`/tickets/edit/${ticket.id}`}
+                        style={styles.editLink}
+                      >
+                        Edit Ticket
+                      </Link>
+                    )}
+
+                    <Link to={`/tickets/details/${ticket.id}`} style={styles.detailsLink}>
+                      View Details →
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

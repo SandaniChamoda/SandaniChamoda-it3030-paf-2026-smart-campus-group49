@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function TechnicianTickets() {
   const DEMO_TECHNICIAN_ID = 5;
@@ -525,7 +526,7 @@ function TechnicianTickets() {
                         </td>
                         <td style={styles.td}>
                           {ticket.assignedTo
-                            ? `Technician #${ticket.assignedTo}`
+                            ? getTechnicianLabel(ticket.assignedTo)
                             : "Not assigned"}
                         </td>
                         <td style={styles.td}>{formatDate(ticket.createdAt)}</td>
