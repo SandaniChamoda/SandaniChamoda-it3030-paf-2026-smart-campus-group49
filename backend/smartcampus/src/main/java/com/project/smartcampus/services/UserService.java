@@ -7,6 +7,7 @@ import com.project.smartcampus.dto.UserDTO;
 import com.project.smartcampus.entity.User;
 import com.project.smartcampus.enums.NotificationType;
 import com.project.smartcampus.enums.Role;
+import com.project.smartcampus.enums.TechnicianSpecialty;
 import com.project.smartcampus.exception.ResourceNotFoundException;
 import com.project.smartcampus.exception.UnauthorizedException;
 import com.project.smartcampus.repository.UserRepository;
@@ -112,6 +113,19 @@ public class UserService {
 
         Role oldRole = user.getRole();
         user.setRole(request.getRole());
+
+        if (request.getRole() == Role.TECHNICIAN) {
+            TechnicianSpecialty specialty = request.getTechnicianSpecialty();
+            if (specialty == null) {
+                specialty = user.getTechnicianSpecialty() != null
+                        ? user.getTechnicianSpecialty()
+                        : TechnicianSpecialty.GENERAL;
+            }
+            user.setTechnicianSpecialty(specialty);
+        } else {
+            user.setTechnicianSpecialty(null);
+        }
+
         User updated = userRepository.save(user);
 
         log.info("Role changed for user {}: {} → {}", userId, oldRole, request.getRole());

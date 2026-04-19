@@ -173,6 +173,7 @@
 }
 
 
+
 .admin-resource-create-btn {
   margin-top: 0;
   border: 0;
@@ -190,6 +191,7 @@
   transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 
+
 .admin-resource-create-btn:hover {
   background: var(--accent-orange-hover);
   transform: translateY(-1px);
@@ -198,7 +200,7 @@
 .admin-resource-metrics {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -231,13 +233,13 @@
 .metric-card-primary {
   background: var(--white);
   color: var(--text-dark);
-  border-top: 4px solid var(--primary-dark);
+  border-top: 6px solid var(--primary-dark);
 }
 
 .metric-card-warning {
   background: var(--white);
   color: var(--text-dark);
-  border-top: 4px solid var(--accent-orange);
+  border-top: 6px solid var(--accent-orange);
 }
 
 .metric-card-neutral {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
@@ -10,6 +11,7 @@ function AdminResourcePage() {
   const EQUIPMENT_CATEGORIES = ["PROJECTOR", "CAMERA", "LAPTOP", "MICROPHONE", "SPEAKER"];
 
   const [resources, setResources] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
@@ -48,8 +50,13 @@ function AdminResourcePage() {
       .catch(() => setResources([]));
   };
 
+
+  // Fetch resources and bookings
   useEffect(() => {
     loadResources();
+    API.get("/bookings").then((res) => {
+      setAllBookings(Array.isArray(res.data) ? res.data : []);
+    }).catch(() => setAllBookings([]));
   }, []);
 
   useEffect(() => {
@@ -379,11 +386,53 @@ function AdminResourcePage() {
   const pageStart = (currentPage - 1) * rowsPerPage;
   const pagedResources = filteredResources.slice(pageStart, pageStart + rowsPerPage);
 
+  // Helper: is resource currently booked?
+  const isResourceBookedNow = (resource) => {
+    const now = dayjs();
+    return allBookings.some((b) => {
+      // Accept both resourceId and resourceName match
+      if (b.resourceId !== resource.id && b.resourceName !== resource.name) return false;
+      // Booking must have start and end
+      if (!b.startTime || !b.endTime) return false;
+      const start = dayjs(b.startTime);
+      const end = dayjs(b.endTime);
+      return now.isAfter(start) && now.isBefore(end);
+    });
+  };
+
   const activeCount = resources.filter((resource) => String(resource.status).toUpperCase() === "ACTIVE").length;
   const inactiveCount = resources.length - activeCount;
   const availabilityPercent = resources.length === 0
     ? 0
     : Math.round((activeCount / resources.length) * 100);
+
+  // Top 3 resources by booking count
+  const [topResources, setTopResources] = useState([]);
+  useEffect(() => {
+    if (!resources.length) {
+      setTopResources([]);
+      return;
+    }
+    API.get("/bookings").then((res) => {
+      const bookings = Array.isArray(res.data) ? res.data : [];
+      const totalBookings = bookings.length;
+      const usage = {};
+      bookings.forEach((b) => {
+        const resource = resources.find((r) => r.id === b.resourceId || r.name === b.resourceName);
+        if (!resource) return;
+        const key = resource.name;
+        usage[key] = (usage[key] || 0) + 1;
+      });
+      const sorted = Object.entries(usage)
+        .map(([name, count]) => {
+          const percent = totalBookings > 0 ? Math.round((count / totalBookings) * 100) : 0;
+          return { name, percent, count };
+        })
+        .sort((a, b) => b.percent - a.percent)
+        .slice(0, 3);
+      setTopResources(sorted);
+    });
+  }, [resources]);
 
   const pageNumbers =
     totalPages <= 5
@@ -453,6 +502,7 @@ function AdminResourcePage() {
           </header>
 
           <section className="admin-resource-metrics" aria-label="Resource metrics">
+
             <article className="metric-card metric-card-primary">
               <p>Current Availability</p>
               <h2>{availabilityPercent}%</h2>
@@ -465,10 +515,91 @@ function AdminResourcePage() {
               <span>Maintenance required</span>
             </article>
 
-            <article className="metric-card metric-card-neutral">
-              <p>Next Inspection</p>
-              <h2>Oct 24, 2026</h2>
-              <span>Science District Audit</span>
+            <article className="metric-card metric-card-topresources" style={{
+              gridColumn: 'span 2',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              background: '#fff',
+              color: '#232a5a',
+              border: '1px solid #e3e9f8',
+              borderRadius: 14,
+              boxShadow: '0 8px 24px rgba(26, 31, 90, 0.07)',
+              padding: '1.1em 1.2em',
+              minHeight: 0,
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Top border accent for visual consistency, now with blue to match the first card */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: 6,
+                zIndex: 1,
+                borderTopLeftRadius: 14,
+                borderTopRightRadius: 14,
+                background: topResources.length === 0 ? '#e3e9f8' : '#232a5a',
+                transition: 'background 0.3s'
+              }} />
+              <p style={{ color: '#6b7a99', fontWeight: 700, fontSize: '0.92rem', margin: '0 0 8px 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Top Performing Resources</p>
+              <div style={{ display: 'flex', gap: 18, alignItems: 'flex-end', justifyContent: 'space-between', width: '100%' }}>
+                {topResources.length === 0 ? (
+                  <span style={{ color: '#b0b8c9', fontWeight: 600, fontSize: '0.98rem' }}>No data</span>
+                ) : (
+                  topResources.map((res, idx) => {
+                    const colors = ['#22c55e', '#22c55e', '#22c55e'];
+                    return (
+                      <div key={res.name} style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 2px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          minWidth: 22,
+                          height: 22,
+                          borderRadius: 5,
+                          background: '#f7f9ff',
+                          color: '#232a5a',
+                          fontWeight: 800,
+                          fontSize: 12,
+                          textAlign: 'center',
+                          lineHeight: '22px',
+                          marginBottom: 3,
+                          border: '1px solid #e3e9f8'
+                        }}>{String(idx + 1).padStart(2, '0')}</span>
+                        <div style={{
+                          fontWeight: 800,
+                          fontSize: '0.82rem',
+                          color: '#232a5a',
+                          marginBottom: 1,
+                          textAlign: 'center',
+                          whiteSpace: 'normal',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'break-word',
+                          maxWidth: 140,
+                          lineHeight: '1.15',
+                          minHeight: '2.1em',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>{res.name}</div>
+                        <div style={{ height: 5, borderRadius: 2.5, background: '#e3e9f8', position: 'relative', width: '100%', marginBottom: 1, marginTop: 1 }}>
+                          <div style={{
+                            width: `${res.percent}%`,
+                            height: 5,
+                            borderRadius: 2.5,
+                            background: colors[idx],
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            transition: 'width 0.4s'
+                          }} />
+                        </div>
+                        <span style={{ color: colors[idx], fontWeight: 700, fontSize: '0.89rem', marginTop: 1 }}>{res.percent}% <span style={{ color: '#6b7a99', fontWeight: 600, fontSize: '0.85rem' }}>Booked</span></span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </article>
           </section>
 
@@ -593,7 +724,6 @@ function AdminResourcePage() {
                             <span className="resource-icon-badge">
                               {renderResourceGlyph(resource.type)}
                             </span>
-
                             <div className="resource-name-meta">
                               <strong>{resource.name}</strong>
                               <span>ID: FAC-{String(resource.id).padStart(3, "0")}</span>
@@ -607,11 +737,12 @@ function AdminResourcePage() {
                           <strong>{capacityText}</strong>
                           <span>{toTitleCase(resource.category) || resource.location}</span>
                         </td>
-                        <td>
+                        <td style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', minWidth: 120 }}>
                           <span className={`status-pill ${active ? "active" : "inactive"}`}>
                             <span className="status-dot" />
                             {active ? "ACTIVE" : "OUT OF SERVICE"}
                           </span>
+                          {/* BOOKED NOW badge removed from admin side */}
                         </td>
                         <td>
                           <div className="action-buttons">

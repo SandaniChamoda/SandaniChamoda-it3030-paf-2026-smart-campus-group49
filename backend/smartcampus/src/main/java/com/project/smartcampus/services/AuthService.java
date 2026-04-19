@@ -10,6 +10,8 @@ import com.project.smartcampus.dto.ResetPasswordRequest;
 import com.project.smartcampus.dto.SignupRequest;
 import com.project.smartcampus.dto.UserDTO;
 import com.project.smartcampus.entity.User;
+import com.project.smartcampus.enums.Role;
+import com.project.smartcampus.enums.TechnicianSpecialty;
 import com.project.smartcampus.exception.UnauthorizedException;
 import com.project.smartcampus.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -49,11 +51,19 @@ public class AuthService {
             throw new RuntimeException("An account already exists with this email.");
         }
 
+        TechnicianSpecialty normalizedSpecialty = normalizeTechnicianSpecialty(request.getTechnicianSpecialty());
+
         User user = User.builder()
                 .name(request.getName().trim())
                 .email(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
+            .technicianSpecialty(
+                request.getRole() == Role.TECHNICIAN
+                    ? (normalizedSpecialty != null
+                        ? normalizedSpecialty
+                        : TechnicianSpecialty.GENERAL)
+                    : null)
                 .provider("LOCAL")
                 .notificationsEnabled(true)
                 .build();
@@ -135,5 +145,22 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private TechnicianSpecialty normalizeTechnicianSpecialty(TechnicianSpecialty specialty) {
+        if (specialty == null) {
+            return null;
+        }
+
+        return switch (specialty.name()) {
+            case "OTHER" -> TechnicianSpecialty.OTHER;
+            case "GENERAL" -> TechnicianSpecialty.GENERAL;
+            case "ELECTRICAL" -> TechnicianSpecialty.ELECTRICAL;
+            case "NETWORK" -> TechnicianSpecialty.NETWORK;
+            case "EQUIPMENT" -> TechnicianSpecialty.EQUIPMENT;
+            case "CLEANING" -> TechnicianSpecialty.CLEANING;
+            case "FURNITURE" -> TechnicianSpecialty.FURNITURE;
+            default -> TechnicianSpecialty.GENERAL;
+        };
     }
 }
