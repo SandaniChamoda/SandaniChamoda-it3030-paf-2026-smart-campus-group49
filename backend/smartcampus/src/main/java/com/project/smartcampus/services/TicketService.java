@@ -4,9 +4,12 @@ import com.project.smartcampus.dto.AssignTechnicianRequest;
 import com.project.smartcampus.dto.CreateTicketRequest;
 import com.project.smartcampus.dto.TicketResponse;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
+import com.project.smartcampus.dto.UpdateCommentRequest;
 import com.project.smartcampus.dto.UpdateTicketRequest;
 import com.project.smartcampus.entity.Ticket;
+import com.project.smartcampus.entity.User;
 import com.project.smartcampus.enums.TicketStatus;
+import com.project.smartcampus.exception.ResourceNotFoundException;
 import com.project.smartcampus.exception.UnauthorizedException;
 import com.project.smartcampus.repository.TicketRepository;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,7 @@ import com.project.smartcampus.dto.CreateCommentRequest;
 import com.project.smartcampus.dto.TicketCommentResponse;
 import com.project.smartcampus.entity.TicketComment;
 import com.project.smartcampus.repository.TicketCommentRepository;
+import com.project.smartcampus.repository.UserRepository;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 
@@ -36,10 +40,14 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository ticketCommentRepository;
+    private final UserRepository userRepository;
 
-    public TicketService(TicketRepository ticketRepository, TicketCommentRepository ticketCommentRepository) {
+    public TicketService(TicketRepository ticketRepository,
+                         TicketCommentRepository ticketCommentRepository,
+                         UserRepository userRepository) {
         this.ticketRepository = ticketRepository;
         this.ticketCommentRepository = ticketCommentRepository;
+        this.userRepository = userRepository;
     }
 
     public TicketResponse createTicket(CreateTicketRequest request, List<MultipartFile> images) {
@@ -164,38 +172,185 @@ public class TicketService {
         return response;
     }
 
-    public TicketCommentResponse addComment(Long ticketId, CreateCommentRequest request) {
+    public TicketCommentResponse addComment(Long ticketId, CreateCommentRequest request, Authentication authentication) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
 
+        Long userId = extractAuthenticatedUserId(authentication);
+
         TicketComment ticketComment = new TicketComment();
-        ticketComment.setComment(request.getComment());
-        ticketComment.setCommentedBy(request.getCommentedBy());
+        ticketComment.setComment(request.getComment().trim());
+        ticketComment.setCommentedBy(userId);
         ticketComment.setTicket(ticket);
 
         TicketComment savedComment = ticketCommentRepository.save(ticketComment);
+        Map<Long, User> usersById = userRepository.findAllById(List.of(userId))
+                .stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
 
+        return mapCommentToResponse(savedComment, usersById);
+    }
+
+    public TicketCommentResponse addReply(Long ticketId,
+                                          Long parentCommentId,
+                                          CreateCommentRequest request,
+                                          Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            throw new UnauthorizedException("Only admins can reply to comments.");
+        }
+
+        Long userId = extractAuthenticatedUserId(authentication);
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
+
+        TicketComment parentComment = ticketCommentRepository.findById(parentCommentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + parentCommentId));
+
+        if (!Objects.equals(parentComment.getTicket().getId(), ticketId)) {
+            throw new IllegalArgumentException("Parent comment does not belong to this ticket.");
+        }
+
+        TicketComment reply = new TicketComment();
+        reply.setComment(request.getComment().trim());
+        reply.setCommentedBy(userId);
+        reply.setTicket(ticket);
+        reply.setParentComment(parentComment);
+
+        TicketComment savedReply = ticketCommentRepository.save(reply);
+        Map<Long, User> usersById = userRepository.findAllById(List.of(userId))
+                .stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return mapCommentToResponse(savedReply, usersById);
+    }
+
+    public TicketCommentResponse updateComment(Long ticketId,
+                                               Long commentId,
+                                               UpdateCommentRequest request,
+                                               Authentication authentication) {
+        Long userId = extractAuthenticatedUserId(authentication);
+
+        TicketComment comment = ticketCommentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+
+        if (!Objects.equals(comment.getTicket().getId(), ticketId)) {
+            throw new IllegalArgumentException("Comment does not belong to this ticket.");
+        }
+
+        boolean owner = Objects.equals(comment.getCommentedBy(), userId);
+        if (!owner) {
+            throw new UnauthorizedException("You are not allowed to edit this comment.");
+        }
+
+        comment.setComment(request.getComment().trim());
+        TicketComment updatedComment = ticketCommentRepository.save(comment);
+
+        List<Long> ids = new ArrayList<>();
+        ids.add(updatedComment.getCommentedBy());
+        if (updatedComment.getParentComment() != null) {
+            ids.add(updatedComment.getParentComment().getCommentedBy());
+        }
+
+        Map<Long, User> usersById = userRepository.findAllById(ids)
+                .stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return mapCommentToResponse(updatedComment, usersById);
+    }
+
+    public void deleteComment(Long ticketId, Long commentId, Authentication authentication) {
+        Long userId = extractAuthenticatedUserId(authentication);
+
+        TicketComment comment = ticketCommentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+
+        if (!Objects.equals(comment.getTicket().getId(), ticketId)) {
+            throw new IllegalArgumentException("Comment does not belong to this ticket.");
+        }
+
+        boolean owner = Objects.equals(comment.getCommentedBy(), userId);
+        if (!owner) {
+            throw new UnauthorizedException("You are not allowed to delete this comment.");
+        }
+
+        List<TicketComment> allTicketComments = ticketCommentRepository.findByTicketIdOrderByCreatedAtAscIdAsc(ticketId);
+        List<TicketComment> childReplies = allTicketComments.stream()
+                .filter(item -> item.getParentComment() != null)
+                .filter(item -> Objects.equals(item.getParentComment().getId(), commentId))
+                .collect(Collectors.toList());
+
+        if (!childReplies.isEmpty()) {
+            ticketCommentRepository.deleteAll(childReplies);
+        }
+
+        ticketCommentRepository.delete(comment);
+    }
+
+    public List<TicketCommentResponse> getCommentsByTicketId(Long ticketId) {
+        List<TicketComment> comments = ticketCommentRepository.findByTicketIdOrderByCreatedAtAscIdAsc(ticketId);
+        List<Long> userIds = comments.stream()
+                .map(TicketComment::getCommentedBy)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, User> usersById = userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return comments.stream()
+                .map(comment -> mapCommentToResponse(comment, usersById))
+                .collect(Collectors.toList());
+    }
+
+    private TicketCommentResponse mapCommentToResponse(TicketComment comment, Map<Long, User> usersById) {
         TicketCommentResponse response = new TicketCommentResponse();
-        response.setId(savedComment.getId());
-        response.setComment(savedComment.getComment());
-        response.setCommentedBy(savedComment.getCommentedBy());
-        response.setCreatedAt(savedComment.getCreatedAt());
+        response.setId(comment.getId());
+        response.setComment(comment.getComment());
+        response.setCommentedBy(comment.getCommentedBy());
+
+        User commenter = usersById.get(comment.getCommentedBy());
+        if (commenter != null) {
+            response.setCommentedByName(commenter.getName());
+            response.setCommentedByRole(commenter.getRole() != null ? commenter.getRole().name() : "USER");
+        } else {
+            response.setCommentedByName("User #" + comment.getCommentedBy());
+            response.setCommentedByRole("USER");
+        }
+
+        response.setParentCommentId(
+                comment.getParentComment() != null ? comment.getParentComment().getId() : null
+        );
+        response.setCreatedAt(comment.getCreatedAt());
+        response.setUpdatedAt(comment.getUpdatedAt());
+
+        boolean edited = comment.getUpdatedAt() != null
+                && comment.getCreatedAt() != null
+                && comment.getUpdatedAt().isAfter(comment.getCreatedAt());
+        response.setEdited(edited);
 
         return response;
     }
 
-    public List<TicketCommentResponse> getCommentsByTicketId(Long ticketId) {
-        return ticketCommentRepository.findByTicketId(ticketId)
-                .stream()
-                .map(comment -> {
-                    TicketCommentResponse response = new TicketCommentResponse();
-                    response.setId(comment.getId());
-                    response.setComment(comment.getComment());
-                    response.setCommentedBy(comment.getCommentedBy());
-                    response.setCreatedAt(comment.getCreatedAt());
-                    return response;
-                })
-                .collect(Collectors.toList());
+    private Long extractAuthenticatedUserId(Authentication authentication) {
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication is required.");
+        }
+
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException ex) {
+            throw new UnauthorizedException("Invalid authentication context.");
+        }
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
     private List<String> saveImages(List<MultipartFile> images) {
