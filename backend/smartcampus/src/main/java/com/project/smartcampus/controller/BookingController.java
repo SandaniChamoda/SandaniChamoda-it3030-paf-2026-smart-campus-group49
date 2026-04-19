@@ -61,7 +61,7 @@ public class BookingController {
         return service.getUserBookingsFiltered(userEmail, resourceName, status);
     }
 
-    // Get booking by ID - accessible to both users and admins
+    // Get booking by ID - accessible to users
     @GetMapping("/{id}")
     public BookingResponse getBookingById(@PathVariable Long id) {
         return service.getBookingById(id);
