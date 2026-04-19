@@ -63,6 +63,11 @@ const authService = {
     const response = await axiosInstance.put('/api/auth/me/notification-settings', payload);
     return response.data;
   },
+
+  async changePassword(payload) {
+    const response = await axiosInstance.put('/api/auth/me/password', payload);
+    return response.data;
+  },
 };
 
 export default authService;

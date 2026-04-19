@@ -2,9 +2,13 @@ package com.project.smartcampus.controller;
 
 import com.project.smartcampus.dto.AssignTechnicianRequest;
 import com.project.smartcampus.dto.CreateTicketRequest;
+import com.project.smartcampus.dto.TechnicianTicketSummaryResponse;
 import com.project.smartcampus.dto.TicketResponse;
+import com.project.smartcampus.dto.UpdateCommentRequest;
 import com.project.smartcampus.dto.UpdateTicketStatusRequest;
 import com.project.smartcampus.dto.UpdateTicketRequest;
+import com.project.smartcampus.enums.TicketPriority;
+import com.project.smartcampus.enums.TicketStatus;
 import com.project.smartcampus.services.TicketService;
 import jakarta.validation.Valid;
 import com.project.smartcampus.dto.CreateCommentRequest;
@@ -13,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,22 +58,44 @@ public class TicketController {
     }
 
     @GetMapping("/technician/{assignedTo}")
-    public ResponseEntity<List<TicketResponse>> getTicketsByAssignedTechnician(@PathVariable Long assignedTo) {
-        return ResponseEntity.ok(ticketService.getTicketsByAssignedTechnician(assignedTo));
+    public ResponseEntity<List<TicketResponse>> getTicketsByAssignedTechnician(
+            @PathVariable Long assignedTo,
+            @RequestParam(required = false) TicketStatus status,
+            @RequestParam(required = false) TicketPriority priority,
+            @RequestParam(required = false) String search,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.getTicketsByAssignedTechnician(
+                assignedTo,
+                status,
+                priority,
+                search,
+                authentication
+        ));
     }
 
+    @GetMapping("/technician/{assignedTo}/summary")
+    public ResponseEntity<TechnicianTicketSummaryResponse> getTechnicianSummary(
+            @PathVariable Long assignedTo,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.getTechnicianSummary(assignedTo, authentication));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{ticketId}/assign")
     public ResponseEntity<TicketResponse> assignTechnician(
             @PathVariable Long ticketId,
-            @RequestBody AssignTechnicianRequest request) {
-        return ResponseEntity.ok(ticketService.assignTechnician(ticketId, request));
+            @RequestBody AssignTechnicianRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.assignTechnician(ticketId, request, authentication));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TECHNICIAN')")
     @PutMapping("/{ticketId}/status")
     public ResponseEntity<TicketResponse> updateTicketStatus(
             @PathVariable Long ticketId,
-            @RequestBody UpdateTicketStatusRequest request) {
-        return ResponseEntity.ok(ticketService.updateTicketStatus(ticketId, request));
+            @RequestBody UpdateTicketStatusRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.updateTicketStatus(ticketId, request, authentication));
     }
 
     @PutMapping("/{ticketId}")
@@ -82,13 +109,32 @@ public class TicketController {
     @PostMapping("/{ticketId}/comments")
     public ResponseEntity<TicketCommentResponse> addComment(
             @PathVariable Long ticketId,
-            @Valid @RequestBody CreateCommentRequest request) {
-        TicketCommentResponse response = ticketService.addComment(ticketId, request);
+            @Valid @RequestBody CreateCommentRequest request,
+            Authentication authentication) {
+        TicketCommentResponse response = ticketService.addComment(ticketId, request, authentication);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/{ticketId}/comments")
     public ResponseEntity<List<TicketCommentResponse>> getCommentsByTicketId(@PathVariable Long ticketId) {
         return ResponseEntity.ok(ticketService.getCommentsByTicketId(ticketId));
+    }
+
+    @PutMapping("/{ticketId}/comments/{commentId}")
+    public ResponseEntity<TicketCommentResponse> updateComment(
+            @PathVariable Long ticketId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody UpdateCommentRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ticketService.updateComment(ticketId, commentId, request, authentication));
+    }
+
+    @DeleteMapping("/{ticketId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long ticketId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        ticketService.deleteComment(ticketId, commentId, authentication);
+        return ResponseEntity.noContent().build();
     }
 }

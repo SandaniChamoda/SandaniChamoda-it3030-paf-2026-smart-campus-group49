@@ -45,6 +45,11 @@ public class Ticket {
 
     private LocalDateTime resolvedAt;
 
+    @Column(length = 1000)
+    private String resolutionNotes;
+
+    private LocalDateTime closedAt;
+
     public Ticket() {
     }
 
@@ -106,4 +111,20 @@ public class Ticket {
     public LocalDateTime getResolvedAt() { return resolvedAt; }
 
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+
+    public String getResolutionNotes() {
+        return resolutionNotes;
+    }
+
+    public void setResolutionNotes(String resolutionNotes) {
+        this.resolutionNotes = resolutionNotes;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(LocalDateTime closedAt) {
+        this.closedAt = closedAt;
+    }
 }

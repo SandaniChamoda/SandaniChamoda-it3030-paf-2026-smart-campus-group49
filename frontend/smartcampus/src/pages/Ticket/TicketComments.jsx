@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 function TicketComments() {
   const { id } = useParams();
-
-  const DEMO_USER_ID = 1;
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -33,6 +33,11 @@ function TicketComments() {
   const [pageError, setPageError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showForm, setShowForm] = useState(true);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingText, setEditingText] = useState("");
+  const [editingError, setEditingError] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
 
   const fetchComments = async () => {
     try {
@@ -95,7 +100,7 @@ function TicketComments() {
 
       await API.post(`/tickets/${id}/comments`, {
         comment: newComment.trim(),
-        commentedBy: DEMO_USER_ID,
+        commentedBy: user?.id,
       });
 
       setSuccessMessage("Comment added successfully.");
@@ -119,6 +124,63 @@ function TicketComments() {
   const handleAddAnother = () => {
     setSuccessMessage("");
     setShowForm(true);
+  };
+
+  const handleEditStart = (commentItem) => {
+    setEditingCommentId(commentItem.id);
+    setEditingText(commentItem.comment || "");
+    setEditingError("");
+  };
+
+  const handleEditCancel = () => {
+    setEditingCommentId(null);
+    setEditingText("");
+    setEditingError("");
+  };
+
+  const handleSaveEdit = async (commentId) => {
+    const validationMessage = validateComment(editingText);
+    if (validationMessage) {
+      setEditingError(validationMessage);
+      return;
+    }
+
+    try {
+      setSavingEdit(true);
+      setPageError("");
+      setSuccessMessage("");
+      await API.put(`/tickets/${id}/comments/${commentId}`, {
+        comment: editingText.trim(),
+      });
+      setSuccessMessage("Comment updated successfully.");
+      handleEditCancel();
+      fetchComments();
+    } catch (err) {
+      console.error("Failed to update comment:", err);
+      setPageError(err.response?.data?.message || "Failed to update comment.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Delete this comment permanently?")) {
+      return;
+    }
+
+    try {
+      setDeletingCommentId(commentId);
+      setPageError("");
+      setSuccessMessage("");
+      await API.delete(`/tickets/${id}/comments/${commentId}`);
+      setSuccessMessage("Comment deleted successfully.");
+      fetchComments();
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+      setPageError(err.response?.data?.message || "Failed to delete comment.");
+    } finally {
+      setDeletingCommentId(null);
+    }
   };
 
   const formatDate = (dateValue) => {
@@ -423,6 +485,22 @@ function TicketComments() {
       whiteSpace: "pre-wrap",
       wordBreak: "break-word",
     },
+    commentActions: {
+      display: "flex",
+      gap: "8px",
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    miniButton: {
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "8px",
+      backgroundColor: colors.white,
+      color: colors.primaryDark,
+      fontSize: "12px",
+      fontWeight: "700",
+      padding: "6px 10px",
+      cursor: "pointer",
+    },
   };
 
   return (
@@ -515,6 +593,7 @@ function TicketComments() {
           <div style={styles.commentsList}>
             {comments.map((commentItem) => {
               const avatarLabel = `U${commentItem.commentedBy || "?"}`;
+              const isOwner = user?.id === commentItem.commentedBy;
               return (
                 <div key={commentItem.id} style={styles.commentCard}>
                   <div style={styles.commentAvatar}>{avatarLabel}</div>
@@ -522,18 +601,73 @@ function TicketComments() {
                     <div style={styles.commentTop}>
                       <div style={styles.commentMeta}>
                         <div style={styles.commentUser}>
-                          User #{commentItem.commentedBy}
+                          {commentItem.commentedByName || `User #${commentItem.commentedBy}`}
                         </div>
-                        <div style={styles.commentTag}>Ticket update</div>
+                        <div style={styles.commentTag}>
+                          Ticket update {commentItem.edited ? "(edited)" : ""}
+                        </div>
                       </div>
                       <div style={styles.commentTime}>
-                        {formatDate(commentItem.createdAt)}
+                        {formatDate(commentItem.updatedAt || commentItem.createdAt)}
                       </div>
                     </div>
 
-                    <p style={styles.commentText}>
-                      {commentItem.comment || "No comment text."}
-                    </p>
+                    {editingCommentId === commentItem.id ? (
+                      <>
+                        <textarea
+                          value={editingText}
+                          onChange={(e) => {
+                            setEditingText(e.target.value);
+                            setEditingError(validateComment(e.target.value));
+                          }}
+                          style={styles.textarea}
+                        />
+                        {editingError && (
+                          <div style={styles.fieldErrorText}>{editingError}</div>
+                        )}
+                        <div style={styles.commentActions}>
+                          <button
+                            type="button"
+                            style={styles.miniButton}
+                            disabled={savingEdit}
+                            onClick={() => handleSaveEdit(commentItem.id)}
+                          >
+                            {savingEdit ? "Saving..." : "Save"}
+                          </button>
+                          <button
+                            type="button"
+                            style={styles.miniButton}
+                            onClick={handleEditCancel}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p style={styles.commentText}>
+                        {commentItem.comment || "No comment text."}
+                      </p>
+                    )}
+
+                    {isOwner && editingCommentId !== commentItem.id && (
+                      <div style={styles.commentActions}>
+                        <button
+                          type="button"
+                          style={styles.miniButton}
+                          onClick={() => handleEditStart(commentItem)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          style={{ ...styles.miniButton, color: colors.danger }}
+                          disabled={deletingCommentId === commentItem.id}
+                          onClick={() => handleDeleteComment(commentItem.id)}
+                        >
+                          {deletingCommentId === commentItem.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

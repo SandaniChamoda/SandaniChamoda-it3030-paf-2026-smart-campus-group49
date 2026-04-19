@@ -1,5 +1,7 @@
 package com.project.smartcampus.services;
 
+import com.project.smartcampus.dto.ApiMessageResponse;
+import com.project.smartcampus.dto.ChangePasswordRequest;
 import com.project.smartcampus.dto.RoleUpdateRequest;
 import com.project.smartcampus.dto.UpdateNotificationSettingsRequest;
 import com.project.smartcampus.dto.UpdateProfileRequest;
@@ -14,6 +16,7 @@ import com.project.smartcampus.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +32,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, NotificationService notificationService) {
+    public UserService(UserRepository userRepository,
+                       NotificationService notificationService,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -57,8 +64,38 @@ public class UserService {
 
         user.setName(request.getName().trim());
         user.setProfilePicture(request.getProfilePicture());
+        if (user.getRole() == Role.TECHNICIAN && request.getTechnicianSpecialty() != null) {
+            user.setTechnicianSpecialty(request.getTechnicianSpecialty());
+        }
 
         return UserDTO.fromUser(userRepository.save(user));
+    }
+
+    @Transactional
+    public ApiMessageResponse changeCurrentUserPassword(Authentication authentication,
+                                                        ChangePasswordRequest request) {
+        Long userId = extractUserId(authentication);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            throw new UnauthorizedException("This account uses Google sign-in and cannot change password here.");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Current password is incorrect.");
+        }
+
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new RuntimeException("New password must be different from current password.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return ApiMessageResponse.builder()
+                .message("Password updated successfully.")
+                .build();
     }
 
     /**

@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function UpdateTicketStatus() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -28,18 +30,26 @@ function UpdateTicketStatus() {
   const [ticket, setTicket] = useState(null);
   const [status, setStatus] = useState("");
   const [fieldError, setFieldError] = useState("");
+  const [notesError, setNotesError] = useState("");
+  const [resolutionNotes, setResolutionNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const statusOptions = [
-    "OPEN",
-    "IN_PROGRESS",
-    "RESOLVED",
-    "CLOSED",
-    "REJECTED",
-  ];
+  const getAllowedTransitions = (currentStatus, role) => {
+    const isAdmin = role === "ADMIN";
+    switch (currentStatus) {
+      case "OPEN":
+        return isAdmin ? ["IN_PROGRESS", "REJECTED"] : ["IN_PROGRESS"];
+      case "IN_PROGRESS":
+        return isAdmin ? ["RESOLVED", "REJECTED"] : ["RESOLVED"];
+      case "RESOLVED":
+        return ["CLOSED"];
+      default:
+        return [];
+    }
+  };
 
   const fetchTicket = async () => {
     try {
@@ -49,6 +59,7 @@ function UpdateTicketStatus() {
       const response = await API.get(`/tickets/${id}`);
       setTicket(response.data);
       setStatus(response.data?.status || "");
+      setResolutionNotes(response.data?.resolutionNotes || "");
     } catch (err) {
       console.error("Failed to fetch ticket:", err);
       setPageError("Unable to load selected ticket details.");
@@ -66,8 +77,24 @@ function UpdateTicketStatus() {
       return "Status is required.";
     }
 
-    if (!statusOptions.includes(value)) {
+    const allowed = getAllowedTransitions(ticket?.status, user?.role);
+    if (!allowed.includes(value) && value !== ticket?.status) {
       return "Please select a valid status.";
+    }
+
+    return "";
+  };
+
+  const validateResolutionNotes = (value, selectedStatus) => {
+    if (value.length > 1000) {
+      return "Resolution notes must be 1000 characters or less.";
+    }
+
+    if (
+      (selectedStatus === "RESOLVED" || selectedStatus === "CLOSED") &&
+      !value.trim()
+    ) {
+      return "Resolution notes are required when resolving or closing a ticket.";
     }
 
     return "";
@@ -77,6 +104,7 @@ function UpdateTicketStatus() {
     const value = e.target.value;
     setStatus(value);
     setFieldError(validateStatus(value));
+    setNotesError(validateResolutionNotes(resolutionNotes, value));
   };
 
   const scrollToTop = () => {
@@ -90,7 +118,14 @@ function UpdateTicketStatus() {
     const validationMessage = validateStatus(status);
     setFieldError(validationMessage);
 
-    if (validationMessage) return;
+    const noteValidationMessage = validateResolutionNotes(resolutionNotes, status);
+    setNotesError(noteValidationMessage);
+
+    if (validationMessage || noteValidationMessage) return;
+
+    if (!window.confirm(`Confirm status update to ${status.replace("_", " ")}?`)) {
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -99,6 +134,7 @@ function UpdateTicketStatus() {
 
       await API.put(`/tickets/${id}/status`, {
         status,
+        resolutionNotes: resolutionNotes.trim(),
       });
 
       setSuccessMessage("Ticket status updated successfully.");
@@ -106,7 +142,7 @@ function UpdateTicketStatus() {
       fetchTicket();
 
       setTimeout(() => {
-        navigate("/tickets/admin");
+        navigate(user?.role === "ADMIN" ? "/tickets/admin" : "/tickets/technician");
       }, 1200);
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -259,6 +295,21 @@ function UpdateTicketStatus() {
       outline: "none",
       boxSizing: "border-box",
     },
+    textarea: {
+      width: "100%",
+      minHeight: "110px",
+      borderRadius: "14px",
+      border: `1px solid ${notesError ? colors.danger : colors.borderLight}`,
+      backgroundColor: colors.white,
+      padding: "12px 14px",
+      fontSize: "14px",
+      color: colors.textDark,
+      outline: "none",
+      resize: "vertical",
+      boxSizing: "border-box",
+      lineHeight: "1.7",
+      marginTop: "10px",
+    },
     helperText: {
       marginTop: "8px",
       fontSize: "13px",
@@ -336,20 +387,25 @@ function UpdateTicketStatus() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{pageError}</div>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={user?.role === "ADMIN" ? "/tickets/admin" : "/tickets/technician"} style={styles.backLink}>
+            ← Back to Tickets
           </Link>
         </div>
       </div>
     );
   }
 
+  const allowedTransitions = getAllowedTransitions(ticket?.status, user?.role);
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link
+            to={user?.role === "ADMIN" ? "/tickets/admin" : "/tickets/technician"}
+            style={styles.backLink}
+          >
+            ← Back to Tickets
           </Link>
         </div>
 
@@ -427,12 +483,14 @@ function UpdateTicketStatus() {
                   onChange={handleStatusChange}
                   style={styles.select}
                 >
-                  <option value="">Select status</option>
-                  <option value="OPEN">OPEN</option>
-                  <option value="IN_PROGRESS">IN_PROGRESS</option>
-                  <option value="RESOLVED">RESOLVED</option>
-                  <option value="CLOSED">CLOSED</option>
-                  <option value="REJECTED">REJECTED</option>
+                  <option value={ticket?.status || ""}>
+                    {ticket?.status || "Select status"}
+                  </option>
+                  {allowedTransitions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
 
                 {fieldError ? (
@@ -445,12 +503,35 @@ function UpdateTicketStatus() {
                 )}
               </div>
 
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Resolution Notes</label>
+                <textarea
+                  value={resolutionNotes}
+                  onChange={(e) => {
+                    setResolutionNotes(e.target.value);
+                    setNotesError(validateResolutionNotes(e.target.value, status));
+                  }}
+                  placeholder="Explain what was fixed and root cause"
+                  style={styles.textarea}
+                />
+                {notesError && <div style={styles.fieldErrorText}>{notesError}</div>}
+                {!notesError && (
+                  <div style={styles.helperText}>
+                    Add clear fix details for auditability and grading.
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 style={styles.primaryButton}
-                disabled={submitting}
+                disabled={submitting || allowedTransitions.length === 0}
               >
-                {submitting ? "Updating..." : "Update Status"}
+                {submitting
+                  ? "Updating..."
+                  : allowedTransitions.length === 0
+                  ? "No Further Transition"
+                  : "Update Status"}
               </button>
             </form>
 

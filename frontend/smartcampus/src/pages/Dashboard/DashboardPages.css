@@ -237,7 +237,9 @@
   color: var(--dash-text);
 }
 
-.account-field input {
+.account-field input,
+.account-field select,
+.account-field textarea {
   border: 1px solid rgba(205, 217, 253, 0.75);
   border-radius: 12px;
   padding: 0.69rem 0.78rem;
@@ -246,7 +248,9 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.account-field input:focus {
+.account-field input:focus,
+.account-field select:focus,
+.account-field textarea:focus {
   outline: none;
   border-color: rgba(242, 169, 31, 0.72);
   box-shadow: 0 0 0 0.2rem rgba(242, 169, 31, 0.2);

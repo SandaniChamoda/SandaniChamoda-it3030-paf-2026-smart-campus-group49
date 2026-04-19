@@ -1,15 +1,15 @@
 package com.project.smartcampus.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-public class CreateCommentRequest {
+public class UpdateCommentRequest {
 
     @NotBlank(message = "Comment is required")
+    @Size(max = 500, message = "Comment must be 500 characters or less")
     private String comment;
 
-    private Long commentedBy;
-
-    public CreateCommentRequest() {
+    public UpdateCommentRequest() {
     }
 
     public String getComment() {
@@ -18,13 +18,5 @@ public class CreateCommentRequest {
 
     public void setComment(String comment) {
         this.comment = comment;
-    }
-
-    public Long getCommentedBy() {
-        return commentedBy;
-    }
-
-    public void setCommentedBy(Long commentedBy) {
-        this.commentedBy = commentedBy;
     }
 }

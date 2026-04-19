@@ -17,10 +17,16 @@ public class TicketResponse {
     private TicketPriority priority;
     private TicketStatus status;
     private Long createdBy;
+    private String createdByName;
+    private String createdByEmail;
     private Long assignedTo;
+    private String assignedToName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
+    private String resolutionNotes;
+    private LocalDateTime closedAt;
+    private List<TicketActivityResponse> history;
 
     public TicketResponse() {
     }
@@ -65,6 +71,30 @@ public class TicketResponse {
 
     public void setAssignedTo(Long assignedTo) { this.assignedTo = assignedTo; }
 
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public void setCreatedByName(String createdByName) {
+        this.createdByName = createdByName;
+    }
+
+    public String getCreatedByEmail() {
+        return createdByEmail;
+    }
+
+    public void setCreatedByEmail(String createdByEmail) {
+        this.createdByEmail = createdByEmail;
+    }
+
+    public String getAssignedToName() {
+        return assignedToName;
+    }
+
+    public void setAssignedToName(String assignedToName) {
+        this.assignedToName = assignedToName;
+    }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
@@ -76,4 +106,28 @@ public class TicketResponse {
     public LocalDateTime getResolvedAt() { return resolvedAt; }
 
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+
+    public String getResolutionNotes() {
+        return resolutionNotes;
+    }
+
+    public void setResolutionNotes(String resolutionNotes) {
+        this.resolutionNotes = resolutionNotes;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(LocalDateTime closedAt) {
+        this.closedAt = closedAt;
+    }
+
+    public List<TicketActivityResponse> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<TicketActivityResponse> history) {
+        this.history = history;
+    }
 }

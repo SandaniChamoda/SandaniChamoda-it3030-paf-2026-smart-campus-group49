@@ -1,5 +1,6 @@
 package com.project.smartcampus.dto;
 
+import com.project.smartcampus.enums.TechnicianSpecialty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -20,4 +21,6 @@ public class UpdateProfileRequest {
 
     @Size(max = 1024, message = "Profile picture URL is too long")
     private String profilePicture;
+
+    private TechnicianSpecialty technicianSpecialty;
 }

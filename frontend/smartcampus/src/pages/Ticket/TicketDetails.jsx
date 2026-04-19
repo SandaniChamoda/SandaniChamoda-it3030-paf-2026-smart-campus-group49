@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function TicketDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
 
   const colors = {
     primaryDark: "#1A1F5A",
     primaryGradientEnd: "#2A3080",
     accentOrange: "#F5A623",
-    accentOrangeHover: "#E09612",
     textDark: "#1A1F5A",
     textMedium: "#6B7BA4",
     textLight: "#C8D9FF",
@@ -18,25 +19,36 @@ function TicketDetails() {
     bgStats: "#F0F4FF",
     borderLight: "#E3E9F8",
     white: "#FFFFFF",
-    footerText: "#B6C6F0",
     success: "#16A34A",
     warning: "#F59E0B",
     danger: "#DC2626",
     info: "#2563EB",
-    muted: "#94A3B8",
   };
 
   const [ticket, setTicket] = useState(null);
+  const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const backPath =
+    user?.role === "ADMIN"
+      ? "/tickets/admin"
+      : user?.role === "TECHNICIAN"
+      ? "/tickets/technician"
+      : "/tickets/my";
 
   const fetchTicketDetails = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await API.get(`/tickets/${id}`);
-      setTicket(response.data);
+      const [ticketRes, commentsRes] = await Promise.all([
+        API.get(`/tickets/${id}`),
+        API.get(`/tickets/${id}/comments`),
+      ]);
+
+      setTicket(ticketRes.data);
+      setComments(Array.isArray(commentsRes.data) ? commentsRes.data : []);
     } catch (err) {
       console.error("Failed to fetch ticket details:", err);
       setError("Unable to load ticket details right now.");
@@ -84,22 +96,45 @@ function TicketDetails() {
     return new Date(dateValue).toLocaleString();
   };
 
+  const getActivityTitle = (activityType) => {
+    switch (activityType) {
+      case "TICKET_CREATED":
+        return "Ticket Created";
+      case "TECHNICIAN_ASSIGNED":
+        return "Technician Assigned";
+      case "STATUS_CHANGED":
+        return "Status Updated";
+      case "COMMENT_ADDED":
+        return "Comment Added";
+      case "COMMENT_UPDATED":
+        return "Comment Updated";
+      case "COMMENT_DELETED":
+        return "Comment Deleted";
+      default:
+        return "Activity";
+    }
+  };
+
   const apiBaseUrl = API.defaults.baseURL?.replace(/\/api\/?$/, "") || "";
 
   const buildImageUrl = (path) => {
     if (!path) return "";
     if (/^https?:\/\//i.test(path)) return path;
+
     let normalized = String(path)
       .trim()
       .replace(/\\/g, "/")
       .replace(/^\.\//, "")
       .replace(/^\/+/, "");
+
     if (!normalized.includes("/")) {
       normalized = `uploads/tickets/${normalized}`;
     }
+
     if (normalized.startsWith("uploads/")) {
       normalized = normalized.replace(/^uploads\//, "");
     }
+
     return `${apiBaseUrl}/${normalized}`;
   };
 
@@ -145,17 +180,6 @@ function TicketDetails() {
       color: colors.white,
       boxShadow: "0 20px 50px rgba(26, 31, 90, 0.18)",
       marginBottom: "24px",
-    },
-    heroTop: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: "18px",
-      flexWrap: "wrap",
-    },
-    heroLeft: {
-      flex: 1,
-      minWidth: "250px",
     },
     eyebrow: {
       display: "inline-block",
@@ -317,6 +341,36 @@ function TicketDetails() {
       color: colors.textMedium,
       lineHeight: "1.7",
     },
+    commentsPreview: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "12px",
+      marginTop: "8px",
+    },
+    commentRow: {
+      backgroundColor: "#FBFCFF",
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "12px",
+      padding: "12px",
+    },
+    commentMeta: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: "10px",
+      marginBottom: "6px",
+      flexWrap: "wrap",
+      fontSize: "12px",
+      color: colors.textMedium,
+      fontWeight: "700",
+    },
+    commentBody: {
+      margin: 0,
+      fontSize: "13px",
+      color: colors.textDark,
+      lineHeight: "1.7",
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+    },
     quickActions: {
       display: "flex",
       flexDirection: "column",
@@ -367,8 +421,8 @@ function TicketDetails() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{error}</div>
-          <Link to="/tickets/my" style={styles.backLink}>
-            ← Back to My Tickets
+          <Link to={backPath} style={styles.backLink}>
+            ← Back to Tickets
           </Link>
         </div>
       </div>
@@ -392,8 +446,8 @@ function TicketDetails() {
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link to="/tickets/my" style={styles.backLink}>
-            ← Back to My Tickets
+          <Link to={backPath} style={styles.backLink}>
+            ← Back to Tickets
           </Link>
 
           <button style={styles.refreshButton} onClick={fetchTicketDetails}>
@@ -402,37 +456,32 @@ function TicketDetails() {
         </div>
 
         <div style={styles.heroCard}>
-          <div style={styles.heroTop}>
-            <div style={styles.heroLeft}>
-              <div style={styles.eyebrow}>Ticket Details</div>
-              <h1 style={styles.title}>{ticket.title}</h1>
-              <p style={styles.subtitle}>
-                Review the full details of your maintenance request, including
-                status, category, assignment, and progress timestamps.
-              </p>
+          <div style={styles.eyebrow}>Ticket Details</div>
+          <h1 style={styles.title}>{ticket.title}</h1>
+          <p style={styles.subtitle}>
+            Review ticket evidence, user contact details, and full activity history.
+          </p>
 
-              <div style={styles.pillRow}>
-                <span
-                  style={{
-                    ...styles.pill,
-                    backgroundColor: statusStyle.bg,
-                    color: statusStyle.color,
-                  }}
-                >
-                  {ticket.status?.replace("_", " ")}
-                </span>
+          <div style={styles.pillRow}>
+            <span
+              style={{
+                ...styles.pill,
+                backgroundColor: statusStyle.bg,
+                color: statusStyle.color,
+              }}
+            >
+              {ticket.status?.replace("_", " ")}
+            </span>
 
-                <span
-                  style={{
-                    ...styles.pill,
-                    backgroundColor: priorityStyle.bg,
-                    color: priorityStyle.color,
-                  }}
-                >
-                  {ticket.priority || "N/A"} Priority
-                </span>
-              </div>
-            </div>
+            <span
+              style={{
+                ...styles.pill,
+                backgroundColor: priorityStyle.bg,
+                color: priorityStyle.color,
+              }}
+            >
+              {ticket.priority || "N/A"} Priority
+            </span>
           </div>
         </div>
 
@@ -453,26 +502,35 @@ function TicketDetails() {
               </div>
 
               <div style={styles.infoBox}>
+                <div style={styles.infoLabel}>Resource / Location</div>
+                <div style={styles.infoValue}>{ticket.title || "N/A"}</div>
+              </div>
+
+              <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Category</div>
-                <div style={styles.infoValue}>
-                  {ticket.category || "Not specified"}
-                </div>
+                <div style={styles.infoValue}>{ticket.category || "Not specified"}</div>
               </div>
 
               <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Assigned Technician</div>
                 <div style={styles.infoValue}>
-                  {ticket.assignedTo
-                    ? getTechnicianLabel(ticket.assignedTo)
-                    : "Not assigned yet"}
+                  {ticket.assignedToName ||
+                    (ticket.assignedTo
+                      ? getTechnicianLabel(ticket.assignedTo)
+                      : "Not assigned")}
                 </div>
               </div>
 
               <div style={styles.infoBox}>
-                <div style={styles.infoLabel}>Created By</div>
+                <div style={styles.infoLabel}>Reported By</div>
                 <div style={styles.infoValue}>
-                  {ticket.createdBy ? `User #${ticket.createdBy}` : "N/A"}
+                  {ticket.createdByName || `User #${ticket.createdBy}`}
                 </div>
+              </div>
+
+              <div style={styles.infoBox}>
+                <div style={styles.infoLabel}>User Contact</div>
+                <div style={styles.infoValue}>{ticket.createdByEmail || "N/A"}</div>
               </div>
 
               <div style={styles.infoBox}>
@@ -488,14 +546,26 @@ function TicketDetails() {
               <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Resolved At</div>
                 <div style={styles.infoValue}>
-                  {ticket.resolvedAt
-                    ? formatDate(ticket.resolvedAt)
-                    : "Not resolved yet"}
+                  {ticket.resolvedAt ? formatDate(ticket.resolvedAt) : "Not resolved yet"}
+                </div>
+              </div>
+
+              <div style={styles.infoBox}>
+                <div style={styles.infoLabel}>Closed At</div>
+                <div style={styles.infoValue}>
+                  {ticket.closedAt ? formatDate(ticket.closedAt) : "Not closed yet"}
                 </div>
               </div>
 
               <div style={{ ...styles.infoBox, ...styles.imageBox }}>
-                <div style={styles.infoLabel}>Images</div>
+                <div style={styles.infoLabel}>Resolution Notes</div>
+                <div style={styles.infoValue}>
+                  {ticket.resolutionNotes || "No resolution notes yet."}
+                </div>
+              </div>
+
+              <div style={{ ...styles.infoBox, ...styles.imageBox }}>
+                <div style={styles.infoLabel}>Uploaded Images</div>
                 {Array.isArray(ticket.images) && ticket.images.length > 0 ? (
                   <div style={styles.imageGrid}>
                     {ticket.images.map((imagePath, index) => {
@@ -518,7 +588,7 @@ function TicketDetails() {
                     })}
                   </div>
                 ) : (
-                  <div style={styles.infoValue}>No image attached</div>
+                  <div style={styles.infoValue}>No image attached.</div>
                 )}
               </div>
             </div>
@@ -526,71 +596,77 @@ function TicketDetails() {
 
           <div style={styles.sideStack}>
             <div style={styles.card}>
-              <h2 style={styles.sectionTitle}>Progress Overview</h2>
+              <h2 style={styles.sectionTitle}>Activity History</h2>
 
-              <div style={styles.timelineItem}>
-                <div style={styles.timelineDot}></div>
-                <div style={styles.timelineContent}>
-                  <p style={styles.timelineTitle}>Ticket Created</p>
-                  <p style={styles.timelineText}>
-                    Your issue was submitted on {formatDate(ticket.createdAt)}.
-                  </p>
-                </div>
-              </div>
+              {Array.isArray(ticket.history) && ticket.history.length > 0 ? (
+                ticket.history.map((activity, index) => (
+                  <div
+                    key={activity.id || `${activity.actionType}-${index}`}
+                    style={{
+                      ...styles.timelineItem,
+                      borderBottom:
+                        index === ticket.history.length - 1
+                          ? "none"
+                          : styles.timelineItem.borderBottom,
+                      marginBottom: index === ticket.history.length - 1 ? 0 : undefined,
+                      paddingBottom: index === ticket.history.length - 1 ? 0 : undefined,
+                    }}
+                  >
+                    <div style={styles.timelineDot}></div>
+                    <div style={styles.timelineContent}>
+                      <p style={styles.timelineTitle}>{getActivityTitle(activity.actionType)}</p>
+                      <p style={styles.timelineText}>
+                        {activity.description || "Activity recorded."}
+                      </p>
+                      <p style={styles.timelineText}>
+                        {activity.actorName || "System"} • {formatDate(activity.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p style={styles.timelineText}>No activity history available.</p>
+              )}
+            </div>
 
-              <div style={styles.timelineItem}>
-                <div style={styles.timelineDot}></div>
-                <div style={styles.timelineContent}>
-                  <p style={styles.timelineTitle}>Current Status</p>
-                  <p style={styles.timelineText}>
-                    This ticket is currently marked as{" "}
-                    <strong>{ticket.status?.replace("_", " ") || "N/A"}</strong>.
-                  </p>
+            <div style={styles.card}>
+              <h2 style={styles.sectionTitle}>Comments</h2>
+              {comments.length === 0 ? (
+                <p style={styles.timelineText}>No comments yet.</p>
+              ) : (
+                <div style={styles.commentsPreview}>
+                  {comments.slice(0, 4).map((comment) => (
+                    <div key={comment.id} style={styles.commentRow}>
+                      <div style={styles.commentMeta}>
+                        <span>{comment.commentedByName || `User #${comment.commentedBy}`}</span>
+                        <span>{formatDate(comment.updatedAt || comment.createdAt)}</span>
+                      </div>
+                      <p style={styles.commentBody}>{comment.comment}</p>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              <div
-                style={{
-                  ...styles.timelineItem,
-                  borderBottom: "none",
-                  marginBottom: 0,
-                  paddingBottom: 0,
-                }}
-              >
-                <div style={styles.timelineDot}></div>
-                <div style={styles.timelineContent}>
-                  <p style={styles.timelineTitle}>Resolution</p>
-                  <p style={styles.timelineText}>
-                    {ticket.resolvedAt
-                      ? `This issue was resolved on ${formatDate(ticket.resolvedAt)}.`
-                      : "This issue has not been resolved yet."}
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
 
             <div style={styles.card}>
               <h2 style={styles.sectionTitle}>Quick Actions</h2>
-
               <div style={styles.quickActions}>
-                <Link to="/tickets/my" style={styles.actionLink}>
-                  View all my tickets
-                </Link>
-
                 <Link to={`/tickets/comments/${ticket.id}`} style={styles.actionLink}>
-                  Open ticket comments
+                  Open full comments
                 </Link>
-
-                <Link to="/tickets/create" style={styles.actionLink}>
-                  Create another ticket
+                <Link to={`/tickets/update-status/${ticket.id}`} style={styles.actionLink}>
+                  Update ticket status
                 </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default TicketDetails;
+                <Link to={backPath} style={styles.actionLink}>
+                  Back to tickets
+                 </Link>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
+     </div>
+   );
+ }
+ 
+ export default TicketDetails;

@@ -2,6 +2,7 @@ package com.project.smartcampus.controller;
 
 import com.project.smartcampus.dto.ApiMessageResponse;
 import com.project.smartcampus.dto.AuthResponse;
+import com.project.smartcampus.dto.ChangePasswordRequest;
 import com.project.smartcampus.dto.ForgotPasswordRequest;
 import com.project.smartcampus.dto.ForgotPasswordResponse;
 import com.project.smartcampus.dto.LoginRequest;
@@ -96,6 +97,16 @@ public class AuthController {
             Authentication authentication,
             @Valid @RequestBody UpdateNotificationSettingsRequest request) {
         return ResponseEntity.ok(userService.updateCurrentUserNotificationSettings(authentication, request));
+    }
+
+    /**
+     * Updates the current user's password after verifying the current password.
+     */
+    @PutMapping("/me/password")
+    public ResponseEntity<ApiMessageResponse> changeCurrentUserPassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        return ResponseEntity.ok(userService.changeCurrentUserPassword(authentication, request));
     }
 
     /**

@@ -17,12 +17,26 @@ public class TicketComment {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
+    private boolean edited;
+
     @ManyToOne
     @JoinColumn(name = "ticket_id")
     private Ticket ticket;
 
     public TicketComment() {
-        this.createdAt = LocalDateTime.now();
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -55,5 +69,21 @@ public class TicketComment {
 
     public void setTicket(Ticket ticket) {
         this.ticket = ticket;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public boolean isEdited() {
+        return edited;
+    }
+
+    public void setEdited(boolean edited) {
+        this.edited = edited;
     }
 }

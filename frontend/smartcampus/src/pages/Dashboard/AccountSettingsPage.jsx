@@ -5,9 +5,19 @@ import './DashboardPages.css';
 
 function AccountSettingsPage() {
   const { user, setUser } = useAuth();
-  const [form, setForm] = useState({ name: '', phone: '', notificationsEnabled: true });
+  const [form, setForm] = useState({
+    name: '',
+    technicianSpecialty: 'GENERAL',
+    notificationsEnabled: true,
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
   useEffect(() => {
@@ -15,9 +25,23 @@ function AccountSettingsPage() {
     setForm((prev) => ({
       ...prev,
       name: user.name || '',
+      technicianSpecialty: user.technicianSpecialty || 'GENERAL',
       notificationsEnabled: Boolean(user.notificationsEnabled),
     }));
   }, [user]);
+
+  const isGoogleAccount = String(user?.provider || '').toUpperCase() === 'GOOGLE';
+
+  const technicianSpecialtyOptions = [
+    'GENERAL',
+    'PLUMBING',
+    'ELECTRICAL',
+    'IT_SUPPORT',
+    'HVAC',
+    'CARPENTRY',
+    'CLEANING',
+    'OTHER',
+  ];
 
   const setMessage = (type, message) => {
     setFeedback({ type, message });
@@ -45,10 +69,16 @@ function AccountSettingsPage() {
     setMessage('', '');
 
     try {
-      const updatedUser = await authService.updateProfile({
+      const payload = {
         name: form.name,
         profilePicture: user?.profilePicture ?? '',
-      });
+      };
+
+      if (user?.role === 'TECHNICIAN') {
+        payload.technicianSpecialty = form.technicianSpecialty;
+      }
+
+      const updatedUser = await authService.updateProfile(payload);
       setUser(updatedUser);
       setMessage('success', 'Profile updated successfully.');
     } catch (err) {
@@ -74,6 +104,50 @@ function AccountSettingsPage() {
       setMessage('error', err.response?.data?.message || fallback);
     } finally {
       setSavingPrefs(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setMessage('', '');
+
+    if (isGoogleAccount) {
+      setMessage('error', 'Google sign-in accounts cannot change password here.');
+      return;
+    }
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setMessage('error', 'All password fields are required.');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setMessage('error', 'New password must be at least 8 characters.');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setMessage('error', 'New password and confirmation do not match.');
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+      const response = await authService.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setMessage('success', response?.message || 'Password updated successfully.');
+    } catch (err) {
+      setMessage('error', err.response?.data?.message || 'Failed to update password.');
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -103,16 +177,24 @@ function AccountSettingsPage() {
                 />
               </div>
 
-              <div className="account-field">
-                <label htmlFor="phone">Phone Number</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                  placeholder="+94 7X XXX XXXX"
-                />
-              </div>
+              {user?.role === 'TECHNICIAN' && (
+                <div className="account-field">
+                  <label htmlFor="technicianSpecialty">Technician Specialty</label>
+                  <select
+                    id="technicianSpecialty"
+                    value={form.technicianSpecialty}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, technicianSpecialty: e.target.value }))
+                    }
+                  >
+                    {technicianSpecialtyOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option.replace('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="account-actions">
@@ -176,6 +258,68 @@ function AccountSettingsPage() {
               {savingPrefs ? 'Saving...' : 'Save Preferences'}
             </button>
           </div>
+        </article>
+
+        <article className="account-card">
+          <h2>Security</h2>
+          <p className="account-subtext">Change your account password.</p>
+
+          {isGoogleAccount ? (
+            <p className="account-subtext" style={{ marginBottom: 0 }}>
+              You are signed in with Google. Password updates are managed by your Google account.
+            </p>
+          ) : (
+            <form onSubmit={handlePasswordChange}>
+              <div className="account-grid">
+                <div className="account-field">
+                  <label htmlFor="currentPassword">Current Password</label>
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="account-field">
+                  <label htmlFor="newPassword">New Password</label>
+                  <input
+                    id="newPassword"
+                    type="password"
+                    minLength={8}
+                    value={passwordForm.newPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="account-field">
+                  <label htmlFor="confirmPassword">Confirm New Password</label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    minLength={8}
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="account-actions">
+                <button className="account-btn primary" type="submit" disabled={savingPassword}>
+                  {savingPassword ? 'Updating...' : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          )}
         </article>
       </div>
     </section>
