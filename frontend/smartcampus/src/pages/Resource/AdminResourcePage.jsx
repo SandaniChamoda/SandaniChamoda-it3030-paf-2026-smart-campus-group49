@@ -39,6 +39,7 @@ function AdminResourcePage() {
 
   // Validation state
   const [formErrors, setFormErrors] = useState({});
+  const [timeError, setTimeError] = useState("");
 
   const rowsPerPage = 10;
 
@@ -112,7 +113,6 @@ function AdminResourcePage() {
       return;
     }
 
-
     if (name === "capacity") {
       // Only allow digits
       const filtered = value.replace(/[^0-9]/g, "");
@@ -134,13 +134,15 @@ function AdminResourcePage() {
     }
 
     if (name === "availabilityStart" || name === "availabilityEnd") {
-      // Only allow times between 07:00 and 22:00
       if (value && (value < "07:00" || value > "22:00")) {
         setForm({
           ...form,
           [name]: "",
         });
+        setTimeError("Please select a time between 07:00 AM and 10:00 PM.");
         return;
+      } else {
+        setTimeError("");
       }
     }
 
@@ -927,7 +929,7 @@ function AdminResourcePage() {
 
                     {/* Resource Name */}
                     <div className="form-group">
-                      <label htmlFor="resource-name">Resource Name</label>
+                      <label htmlFor="resource-name">Resource Name <span style={{color:'#dc2626'}}>*</span></label>
                       <input
                         id="resource-name"
                         name="name"
@@ -948,7 +950,7 @@ function AdminResourcePage() {
 
                     {/* Resource Type */}
                     <div className="form-group">
-                      <label htmlFor="resource-type">Resource Type</label>
+                      <label htmlFor="resource-type">Resource Type <span style={{color:'#dc2626'}}>*</span></label>
                       <select id="resource-type" name="type" value={form.type} onChange={handleChange}>
                         <option value="">Select Type...</option>
                         <option value="FACILITY">Facility</option>
@@ -958,7 +960,7 @@ function AdminResourcePage() {
 
                     {/* Capacity */}
                     <div className="form-group">
-                      <label htmlFor="resource-capacity">Capacity</label>
+                      <label htmlFor="resource-capacity">Capacity <span style={{color:'#dc2626'}}>*</span></label>
                       <input
                         id="resource-capacity"
                         name="capacity"
@@ -974,7 +976,7 @@ function AdminResourcePage() {
 
                     {/* Location / Building */}
                     <div className="form-group">
-                      <label htmlFor="resource-location">Location / Building</label>
+                      <label htmlFor="resource-location">Location / Building <span style={{color:'#dc2626'}}>*</span></label>
                       <input
                         id="resource-location"
                         name="location"
@@ -995,7 +997,7 @@ function AdminResourcePage() {
 
                     {/* Category */}
                     <div className="form-group">
-                      <label htmlFor="resource-category">Category</label>
+                      <label htmlFor="resource-category">Category <span style={{color:'#dc2626'}}>*</span></label>
                       <select id="resource-category" name="category" value={form.category} onChange={handleChange}>
                         {getCategoryOptionsByType(form.type).map((category) => (
                           <option key={category} value={category}>
@@ -1035,6 +1037,9 @@ function AdminResourcePage() {
                           <span className="availability-label">END TIME</span>
                         </div>
                       </div>
+                      {timeError && (
+                        <span className="form-helper" style={{ color: '#dc2626', fontWeight: 700 }}>{timeError}</span>
+                      )}
                     </div>
 
                     {/* Description */}
@@ -1053,7 +1058,7 @@ function AdminResourcePage() {
 
                     {/* Status */}
                     <div className="form-group">
-                      <label htmlFor="resource-status">Status</label>
+                      <label htmlFor="resource-status">Status <span style={{color:'#dc2626'}}>*</span></label>
                       <select id="resource-status" name="status" value={form.status} onChange={handleChange}>
                         <option value="ACTIVE">ACTIVE</option>
                         <option value="OUT_OF_SERVICE">OUT OF SERVICE</option>
