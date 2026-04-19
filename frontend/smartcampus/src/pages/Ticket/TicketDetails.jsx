@@ -2,9 +2,23 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function TicketDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+  const isTechnician = user?.role === "TECHNICIAN";
+  const ticketsListPath = isAdmin
+    ? "/tickets/admin"
+    : isTechnician
+      ? "/tickets/technician"
+      : "/tickets/my";
+  const ticketsListLabel = isAdmin
+    ? "All Tickets"
+    : isTechnician
+      ? "Assigned Tickets"
+      : "My Tickets";
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -27,6 +41,7 @@ function TicketDetails() {
   };
 
   const [ticket, setTicket] = useState(null);
+  const [assignmentHistory, setAssignmentHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,8 +50,13 @@ function TicketDetails() {
       setLoading(true);
       setError("");
 
-      const response = await API.get(`/tickets/${id}`);
-      setTicket(response.data);
+      const [ticketResponse, historyResponse] = await Promise.all([
+        API.get(`/tickets/${id}`),
+        API.get(`/tickets/${id}/assignment-history`),
+      ]);
+
+      setTicket(ticketResponse.data);
+      setAssignmentHistory(Array.isArray(historyResponse.data) ? historyResponse.data : []);
     } catch (err) {
       console.error("Failed to fetch ticket details:", err);
       setError("Unable to load ticket details right now.");
@@ -189,6 +209,41 @@ function TicketDetails() {
       flexWrap: "wrap",
       marginTop: "18px",
     },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "20px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
     pill: {
       display: "inline-flex",
       alignItems: "center",
@@ -280,10 +335,71 @@ function TicketDetails() {
       objectFit: "cover",
       display: "block",
     },
+    assignmentHistoryWrap: {
+      marginTop: "22px",
+      borderTop: `1px solid ${colors.borderLight}`,
+      paddingTop: "18px",
+    },
+    assignmentList: {
+      display: "grid",
+      gap: "12px",
+      marginTop: "10px",
+    },
+    assignmentItem: {
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "14px",
+      padding: "12px 14px",
+      backgroundColor: "#FBFCFF",
+      boxShadow: "0 8px 16px rgba(26, 31, 90, 0.06)",
+    },
+    assignmentTitle: {
+      margin: 0,
+      fontSize: "14px",
+      fontWeight: "800",
+      color: colors.textDark,
+    },
+    assignmentMeta: {
+      margin: "6px 0 0",
+      fontSize: "13px",
+      color: colors.textMedium,
+      lineHeight: "1.7",
+    },
     sideStack: {
       display: "flex",
       flexDirection: "column",
       gap: "20px",
+    },
+    quickActionCard: {
+      background: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "22px",
+      padding: "16px",
+      boxShadow: "0 16px 28px rgba(26, 31, 90, 0.08)",
+      position: "sticky",
+      top: "92px",
+      zIndex: 2,
+    },
+    actionHead: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "10px",
+      marginBottom: "12px",
+      flexWrap: "wrap",
+    },
+    actionHeadBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: "999px",
+      padding: "5px 10px",
+      fontSize: "11px",
+      fontWeight: "800",
+      color: colors.primaryDark,
+      backgroundColor: colors.bgStats,
+      border: `1px solid ${colors.borderLight}`,
+      letterSpacing: "0.4px",
+      textTransform: "uppercase",
     },
     timelineItem: {
       display: "flex",
@@ -318,20 +434,64 @@ function TicketDetails() {
       lineHeight: "1.7",
     },
     quickActions: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "12px",
+      display: "grid",
+      gap: "8px",
     },
     actionLink: {
       textDecoration: "none",
-      backgroundColor: colors.bgStats,
+      backgroundColor: colors.white,
       color: colors.primaryDark,
       border: `1px solid ${colors.borderLight}`,
-      borderRadius: "14px",
-      padding: "14px 16px",
+      borderRadius: "12px",
+      padding: "10px 12px",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      minHeight: "48px",
+    },
+    actionLinkActive: {
+      backgroundColor: "#EEF2FF",
+      border: "1px solid #C7D2FE",
+      color: colors.primaryDark,
+    },
+    actionIcon: {
+      width: "30px",
+      height: "30px",
+      borderRadius: "8px",
+      backgroundColor: colors.bgStats,
+      color: colors.primaryDark,
+      fontSize: "11px",
+      fontWeight: "800",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+      border: `1px solid ${colors.borderLight}`,
+    },
+    actionTextWrap: {
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      minWidth: 0,
+      flex: 1,
+    },
+    actionTitle: {
       fontSize: "14px",
       fontWeight: "700",
-      display: "block",
+      color: colors.primaryDark,
+      lineHeight: "1.3",
+    },
+    actionBadge: {
+      borderRadius: "999px",
+      border: `1px solid ${colors.borderLight}`,
+      backgroundColor: colors.bgStats,
+      color: colors.primaryDark,
+      padding: "3px 8px",
+      fontSize: "10px",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: "0.4px",
+      flexShrink: 0,
     },
     loadingBox: {
       backgroundColor: colors.white,
@@ -367,8 +527,8 @@ function TicketDetails() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{error}</div>
-          <Link to="/tickets/my" style={styles.backLink}>
-            ← Back to My Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
       </div>
@@ -387,13 +547,19 @@ function TicketDetails() {
 
   const statusStyle = getStatusStyles(ticket.status);
   const priorityStyle = getPriorityStyles(ticket.priority);
+  const navSections = [
+    { to: `/tickets/details/${ticket.id}`, label: "Ticket Details", active: true },
+    { to: `/tickets/comments/${ticket.id}`, label: "Comments", active: false },
+    { to: `/tickets/update-status/${ticket.id}`, label: "Status Update", active: false },
+    { to: ticketsListPath, label: ticketsListLabel, active: false },
+  ];
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link to="/tickets/my" style={styles.backLink}>
-            ← Back to My Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
 
           <button style={styles.refreshButton} onClick={fetchTicketDetails}>
@@ -434,6 +600,18 @@ function TicketDetails() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div style={styles.subNav}>
+          {navSections.map((section) => (
+            <Link
+              key={section.to}
+              to={section.to}
+              style={section.active ? styles.subNavActive : styles.subNavLink}
+            >
+              {section.label}
+            </Link>
+          ))}
         </div>
 
         <div style={styles.contentGrid}>
@@ -522,6 +700,29 @@ function TicketDetails() {
                 )}
               </div>
             </div>
+
+            <div style={styles.assignmentHistoryWrap}>
+              <h2 style={styles.sectionTitle}>Assignment History</h2>
+              {assignmentHistory.length === 0 ? (
+                <p style={styles.timelineText}>No assignment updates recorded yet.</p>
+              ) : (
+                <div style={styles.assignmentList}>
+                  {assignmentHistory.map((item) => (
+                    <div key={item.id} style={styles.assignmentItem}>
+                      <p style={styles.assignmentTitle}>
+                        {item.fromTechnicianName || "Unassigned"} to {item.toTechnicianName || "Unassigned"}
+                      </p>
+                      <p style={styles.assignmentMeta}>
+                        Assigned by {item.assignedByName || "Unknown"} on {formatDate(item.assignedAt)}
+                      </p>
+                      <p style={styles.assignmentMeta}>
+                        Reason: {item.reason || "No reason provided"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={styles.sideStack}>
@@ -566,24 +767,6 @@ function TicketDetails() {
                       : "This issue has not been resolved yet."}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div style={styles.card}>
-              <h2 style={styles.sectionTitle}>Quick Actions</h2>
-
-              <div style={styles.quickActions}>
-                <Link to="/tickets/my" style={styles.actionLink}>
-                  View all my tickets
-                </Link>
-
-                <Link to={`/tickets/comments/${ticket.id}`} style={styles.actionLink}>
-                  Open ticket comments
-                </Link>
-
-                <Link to="/tickets/create" style={styles.actionLink}>
-                  Create another ticket
-                </Link>
               </div>
             </div>
           </div>

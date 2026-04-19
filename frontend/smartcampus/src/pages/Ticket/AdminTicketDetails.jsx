@@ -2,9 +2,24 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function AdminTicketDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "ADMIN";
+  const isTechnician = user?.role === "TECHNICIAN";
+  const ticketsListPath = isAdmin
+    ? "/tickets/admin"
+    : isTechnician
+      ? "/tickets/technician"
+      : "/tickets/my";
+  const ticketsListLabel = isAdmin
+    ? "All Tickets"
+    : isTechnician
+      ? "Assigned Tickets"
+      : "My Tickets";
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -26,6 +41,7 @@ function AdminTicketDetails() {
   };
 
   const [ticket, setTicket] = useState(null);
+  const [assignmentHistory, setAssignmentHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
@@ -34,8 +50,13 @@ function AdminTicketDetails() {
       setLoading(true);
       setPageError("");
 
-      const response = await API.get(`/tickets/${id}`);
-      setTicket(response.data);
+      const [ticketResponse, historyResponse] = await Promise.all([
+        API.get(`/tickets/${id}`),
+        API.get(`/tickets/${id}/assignment-history`),
+      ]);
+
+      setTicket(ticketResponse.data);
+      setAssignmentHistory(Array.isArray(historyResponse.data) ? historyResponse.data : []);
     } catch (err) {
       console.error("Failed to fetch admin ticket details:", err);
       setPageError("Unable to load ticket details.");
@@ -188,6 +209,41 @@ function AdminTicketDetails() {
       flexWrap: "wrap",
       marginTop: "18px",
     },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "20px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
     pill: {
       display: "inline-flex",
       alignItems: "center",
@@ -279,6 +335,35 @@ function AdminTicketDetails() {
       objectFit: "cover",
       display: "block",
     },
+    assignmentHistoryWrap: {
+      marginTop: "22px",
+      borderTop: `1px solid ${colors.borderLight}`,
+      paddingTop: "18px",
+    },
+    assignmentList: {
+      display: "grid",
+      gap: "12px",
+      marginTop: "10px",
+    },
+    assignmentItem: {
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "14px",
+      padding: "12px 14px",
+      backgroundColor: "#FBFCFF",
+      boxShadow: "0 8px 16px rgba(26, 31, 90, 0.06)",
+    },
+    assignmentTitle: {
+      margin: 0,
+      fontSize: "14px",
+      fontWeight: "800",
+      color: colors.textDark,
+    },
+    assignmentMeta: {
+      margin: "6px 0 0",
+      fontSize: "13px",
+      color: colors.textMedium,
+      lineHeight: "1.7",
+    },
     sideStack: {
       display: "flex",
       flexDirection: "column",
@@ -316,34 +401,6 @@ function AdminTicketDetails() {
       color: colors.textMedium,
       lineHeight: "1.7",
     },
-    quickActions: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "12px",
-    },
-    primaryAction: {
-      textDecoration: "none",
-      backgroundColor: colors.accentOrange,
-      color: colors.white,
-      borderRadius: "14px",
-      padding: "14px 16px",
-      fontSize: "14px",
-      fontWeight: "800",
-      display: "block",
-      textAlign: "center",
-      boxShadow: "0 12px 24px rgba(245, 166, 35, 0.20)",
-    },
-    actionLink: {
-      textDecoration: "none",
-      backgroundColor: colors.bgStats,
-      color: colors.primaryDark,
-      border: `1px solid ${colors.borderLight}`,
-      borderRadius: "14px",
-      padding: "14px 16px",
-      fontSize: "14px",
-      fontWeight: "700",
-      display: "block",
-    },
     loadingBox: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
@@ -378,8 +435,8 @@ function AdminTicketDetails() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{pageError}</div>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
       </div>
@@ -398,13 +455,19 @@ function AdminTicketDetails() {
 
   const statusStyle = getStatusStyles(ticket.status);
   const priorityStyle = getPriorityStyles(ticket.priority);
+  const navSections = [
+    { to: `/tickets/details/${ticket.id}`, label: "Ticket Details", active: true },
+    { to: `/tickets/comments/${ticket.id}`, label: "Comments", active: false },
+    { to: `/tickets/update-status/${ticket.id}`, label: "Status Update", active: false },
+    { to: ticketsListPath, label: ticketsListLabel, active: false },
+  ];
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
 
           <button style={styles.refreshButton} onClick={fetchTicket}>
@@ -446,6 +509,18 @@ function AdminTicketDetails() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div style={styles.subNav}>
+          {navSections.map((section) => (
+            <Link
+              key={section.to}
+              to={section.to}
+              style={section.active ? styles.subNavActive : styles.subNavLink}
+            >
+              {section.label}
+            </Link>
+          ))}
         </div>
 
         <div style={styles.contentGrid}>
@@ -534,6 +609,29 @@ function AdminTicketDetails() {
                 )}
               </div>
             </div>
+
+            <div style={styles.assignmentHistoryWrap}>
+              <h2 style={styles.sectionTitle}>Assignment History</h2>
+              {assignmentHistory.length === 0 ? (
+                <p style={styles.timelineText}>No assignment updates recorded yet.</p>
+              ) : (
+                <div style={styles.assignmentList}>
+                  {assignmentHistory.map((item) => (
+                    <div key={item.id} style={styles.assignmentItem}>
+                      <p style={styles.assignmentTitle}>
+                        {item.fromTechnicianName || "Unassigned"} to {item.toTechnicianName || "Unassigned"}
+                      </p>
+                      <p style={styles.assignmentMeta}>
+                        Assigned by {item.assignedByName || "Unknown"} on {formatDate(item.assignedAt)}
+                      </p>
+                      <p style={styles.assignmentMeta}>
+                        Reason: {item.reason || "No reason provided"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={styles.sideStack}>
@@ -578,37 +676,6 @@ function AdminTicketDetails() {
                     <strong>{ticket.status?.replace("_", " ") || "N/A"}</strong>.
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div style={styles.card}>
-              <h2 style={styles.sectionTitle}>Quick Admin Actions</h2>
-
-              <div style={styles.quickActions}>
-                <Link
-                  to={`/tickets/assign/${ticket.id}`}
-                  style={styles.primaryAction}
-                >
-                  Assign Technician
-                </Link>
-
-                <Link
-                  to={`/tickets/update-status/${ticket.id}`}
-                  style={styles.actionLink}
-                >
-                  Update Status
-                </Link>
-
-                <Link
-                  to={`/tickets/comments/${ticket.id}`}
-                  style={styles.actionLink}
-                >
-                  Open Comments
-                </Link>
-
-                <Link to="/tickets/admin" style={styles.actionLink}>
-                  Back to Admin Tickets
-                </Link>
               </div>
             </div>
           </div>

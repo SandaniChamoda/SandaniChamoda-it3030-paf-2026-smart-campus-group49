@@ -47,7 +47,18 @@ function TicketComments() {
   const [deletingId, setDeletingId] = useState(null);
 
   const isAdmin = user?.role === "ADMIN";
+  const isTechnician = user?.role === "TECHNICIAN";
   const canAssign = user?.role === "ADMIN" || user?.role === "TECHNICIAN";
+  const ticketsListPath = isAdmin
+    ? "/tickets/admin"
+    : isTechnician
+      ? "/tickets/technician"
+      : "/tickets/my";
+  const ticketsListLabel = isAdmin
+    ? "All Tickets"
+    : isTechnician
+      ? "Assigned Tickets"
+      : "My Tickets";
 
   const validateComment = (value) => {
     const trimmed = value.trim();
@@ -132,6 +143,12 @@ function TicketComments() {
   const totalComments = comments.length;
   const totalReplies = comments.filter((item) => item.parentCommentId != null).length;
   const topLevelCount = totalComments - totalReplies;
+  const navSections = [
+    { to: `/tickets/details/${id}`, label: "Ticket Details", active: false },
+    { to: `/tickets/comments/${id}`, label: "Comments", active: true },
+    { to: `/tickets/update-status/${id}`, label: "Status Update", active: false },
+    { to: ticketsListPath, label: ticketsListLabel, active: false },
+  ];
 
   const formatDate = (value) => {
     if (!value) return "No date";
@@ -464,12 +481,12 @@ function TicketComments() {
     subNav: {
       backgroundColor: colors.white,
       border: `1px solid ${colors.borderLight}`,
-      borderRadius: "14px",
-      padding: "10px",
-      display: "flex",
-      gap: "10px",
-      flexWrap: "wrap",
-      marginBottom: "16px",
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "18px",
       boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
     },
     subNavLink: {
@@ -477,20 +494,24 @@ function TicketComments() {
       color: colors.primaryDark,
       border: `1px solid ${colors.borderLight}`,
       borderRadius: "10px",
-      padding: "9px 14px",
+      padding: "10px 12px",
       fontSize: "13px",
       fontWeight: "700",
       backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
     },
     subNavActive: {
       textDecoration: "none",
       color: colors.white,
       border: `1px solid ${colors.primaryDark}`,
       borderRadius: "10px",
-      padding: "9px 14px",
+      padding: "10px 12px",
       fontSize: "13px",
       fontWeight: "800",
       backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
     },
     backLink: {
       textDecoration: "none",
@@ -871,20 +892,6 @@ function TicketComments() {
           </Link>
         </div>
 
-        <div style={styles.subNav}>
-          <Link to={`/tickets/details/${id}`} style={styles.subNavLink}>
-            Ticket Details
-          </Link>
-          <Link to={`/tickets/comments/${id}`} style={styles.subNavActive}>
-            Comments
-          </Link>
-          {canAssign ? (
-            <Link to={`/tickets/assign/${id}`} style={styles.subNavLink}>
-              Assign Technician
-            </Link>
-          ) : null}
-        </div>
-
         <div style={styles.heroCard}>
           <div style={styles.eyebrow}>Ticket Discussion</div>
           <h1 style={styles.title}>Comments for Ticket #{id}</h1>
@@ -897,6 +904,18 @@ function TicketComments() {
             <span style={styles.heroMetaPill}>Category: {ticket?.category || "N/A"}</span>
             <span style={styles.heroMetaPill}>Priority: {ticket?.priority || "N/A"}</span>
           </div>
+        </div>
+
+        <div style={styles.subNav}>
+          {navSections.map((section) => (
+            <Link
+              key={section.to}
+              to={section.to}
+              style={section.active ? styles.subNavActive : styles.subNavLink}
+            >
+              {section.label}
+            </Link>
+          ))}
         </div>
 
         <div style={styles.statsRow}>
