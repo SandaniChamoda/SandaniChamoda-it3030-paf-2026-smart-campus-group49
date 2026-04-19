@@ -10,6 +10,12 @@ function AdminResourcePage() {
   const EQUIPMENT_CATEGORIES = ["PROJECTOR", "CAMERA", "LAPTOP", "MICROPHONE", "SPEAKER"];
 
   const [resources, setResources] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [analytics, setAnalytics] = useState({
+    mostUsedRoom: { name: "-", count: 0 },
+    leastUsedResource: { name: "-", count: 0 },
+    peakUsage: { label: "-", count: 0 },
+  });
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
@@ -41,6 +47,7 @@ function AdminResourcePage() {
   const rowsPerPage = 10;
 
 
+
   // Fetch resources from backend
   const loadResources = () => {
     API.get("/resources")
@@ -48,9 +55,93 @@ function AdminResourcePage() {
       .catch(() => setResources([]));
   };
 
+  // Fetch bookings from backend
+  const loadBookings = () => {
+    API.get("/bookings")
+      .then((res) => setBookings(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setBookings([]));
+  };
+
+
   useEffect(() => {
     loadResources();
+    loadBookings();
   }, []);
+
+  // Compute analytics when resources or bookings change
+  useEffect(() => {
+    if (!resources.length || !bookings.length) {
+      setAnalytics({
+        mostUsedRoom: { name: "-", count: 0 },
+        leastUsedResource: { name: "-", count: 0 },
+        peakUsage: { label: "-", count: 0 },
+      });
+      return;
+    }
+
+    // 1. Most used room (FACILITY with max bookings)
+    const roomUsage = {};
+    // 2. Least used resource (any resource with min bookings)
+    const resourceUsage = {};
+    // 3. Usage by hour (for peak/lowest usage time)
+    const hourUsage = Array(24).fill(0);
+
+    bookings.forEach((b) => {
+      const resource = resources.find((r) => r.id === b.resourceId || r.name === b.resourceName);
+      if (!resource) return;
+      // Count for most used room
+      if (String(resource.type).toUpperCase() === "FACILITY") {
+        const key = resource.name;
+        roomUsage[key] = (roomUsage[key] || 0) + 1;
+      }
+      // Count for least used resource
+      const resKey = resource.name;
+      resourceUsage[resKey] = (resourceUsage[resKey] || 0) + 1;
+      // Count for usage by hour
+      const start = new Date(b.startTime);
+      if (!isNaN(start.getTime())) {
+        hourUsage[start.getHours()] += 1;
+      }
+    });
+
+    // Most used room
+    let mostUsedRoom = { name: "-", count: 0 };
+    Object.entries(roomUsage).forEach(([name, count]) => {
+      if (count > mostUsedRoom.count) {
+        mostUsedRoom = { name, count };
+      }
+    });
+
+    // Least used resource (with at least 1 booking)
+    let leastUsedResource = { name: "-", count: 0 };
+    Object.entries(resourceUsage).forEach(([name, count]) => {
+      if ((leastUsedResource.count === 0 || count < leastUsedResource.count) && count > 0) {
+        leastUsedResource = { name, count };
+      }
+    });
+
+    // Peak usage time (hour with max bookings)
+    let peakHour = 0;
+    let peakCount = 0;
+    hourUsage.forEach((count, hour) => {
+      if (count > peakCount) {
+        peakCount = count;
+        peakHour = hour;
+      }
+    });
+
+    // Format hour range for display
+    const formatHourRange = (h) => {
+      const pad = (n) => n.toString().padStart(2, "0");
+      return `${pad(h)}:00 - ${pad((h + 2) % 24)}:00`;
+    };
+
+    setAnalytics({
+      mostUsedRoom,
+      leastUsedResource,
+      peakUsage: { label: formatHourRange(peakHour), count: peakCount },
+    });
+  }, [resources, bookings]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -202,6 +293,12 @@ function AdminResourcePage() {
       errors.location = "Location can only contain letters, numbers, spaces, dashes, underscores, and commas.";
     }
 
+    const normalizedType = normalizeType(form.type || "FACILITY");
+    const capacityValue = Number(form.capacity || 0);
+    if (normalizedType === "FACILITY" && capacityValue < 1) {
+      errors.capacity = "Capacity must be at least 1 for facilities.";
+    }
+
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) {
       return;
@@ -209,13 +306,11 @@ function AdminResourcePage() {
 
     const payload = {
       ...form,
-      type: normalizeType(form.type),
+      type: normalizedType,
       capacity:
-        normalizeType(form.type) === "EQUIPMENT"
-          ? 0
-          : form.capacity === ""
-            ? 0
-            : Number(form.capacity),
+        normalizedType === "EQUIPMENT"
+          ? null
+          : Number(form.capacity),
       availabilityStart: form.availabilityStart || null,
       availabilityEnd: form.availabilityEnd || null,
       description: form.description || null,
@@ -452,6 +547,7 @@ function AdminResourcePage() {
             </button>
           </header>
 
+
           <section className="admin-resource-metrics" aria-label="Resource metrics">
             <article className="metric-card metric-card-primary">
               <p>Current Availability</p>
@@ -469,6 +565,25 @@ function AdminResourcePage() {
               <p>Next Inspection</p>
               <h2>Oct 24, 2026</h2>
               <span>Science District Audit</span>
+            </article>
+          </section>
+
+          {/* Analytics Row - 3 cards horizontally, now with real data */}
+          <section className="resource-analytics-grid" aria-label="Resource usage analytics">
+            <article className="resource-analytics-card">
+              <p>Most Used Room</p>
+              <h3>{analytics.mostUsedRoom.name}</h3>
+              <span>{analytics.mostUsedRoom.count} bookings</span>
+            </article>
+            <article className="resource-analytics-card">
+              <p>Least Used Resource</p>
+              <h3>{analytics.leastUsedResource.name}</h3>
+              <span>{analytics.leastUsedResource.count} bookings</span>
+            </article>
+            <article className="resource-analytics-card">
+              <p>Peak Usage Time</p>
+              <h3>{analytics.peakUsage.label}</h3>
+              <span>Most active</span>
             </article>
           </section>
 

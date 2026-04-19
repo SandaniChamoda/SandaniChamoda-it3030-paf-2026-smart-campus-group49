@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function MyTickets() {
   // TEMP USER ID - replace later with auth user id
@@ -659,7 +660,7 @@ function MyTickets() {
                     <div style={styles.metaLabel}>Assigned Technician</div>
                     <div style={styles.metaValue}>
                       {ticket.assignedTo
-                        ? `Technician #${ticket.assignedTo}`
+                        ? getTechnicianLabel(ticket.assignedTo)
                         : "Not assigned yet"}
                     </div>
                   </div>

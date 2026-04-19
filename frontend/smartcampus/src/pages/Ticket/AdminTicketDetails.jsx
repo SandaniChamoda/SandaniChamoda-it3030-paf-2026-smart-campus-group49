@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import API from "../../services/api";
+import { getTechnicianLabel } from "../../utils/technicianLabels";
 
 function AdminTicketDetails() {
   const { id } = useParams();
@@ -481,7 +482,7 @@ function AdminTicketDetails() {
                 <div style={styles.infoLabel}>Assigned Technician</div>
                 <div style={styles.infoValue}>
                   {ticket.assignedTo
-                    ? `Technician #${ticket.assignedTo}`
+                    ? getTechnicianLabel(ticket.assignedTo)
                     : "Not assigned yet"}
                 </div>
               </div>
@@ -555,7 +556,7 @@ function AdminTicketDetails() {
                   <p style={styles.timelineTitle}>Current Assignment</p>
                   <p style={styles.timelineText}>
                     {ticket.assignedTo
-                      ? `This ticket is assigned to technician #${ticket.assignedTo}.`
+                      ? `This ticket is assigned to ${getTechnicianLabel(ticket.assignedTo)}.`
                       : "This ticket has not been assigned yet."}
                   </p>
                 </div>
