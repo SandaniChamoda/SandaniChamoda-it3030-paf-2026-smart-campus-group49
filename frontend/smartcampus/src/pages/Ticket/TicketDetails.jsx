@@ -9,6 +9,8 @@ function TicketDetails() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const isTechnician = user?.role === "TECHNICIAN";
+  const showStatusUpdateTab = isAdmin || isTechnician;
+  const showAssignTab = isAdmin;
   const ticketsListPath = isAdmin
     ? "/tickets/admin"
     : isTechnician
@@ -550,7 +552,12 @@ function TicketDetails() {
   const navSections = [
     { to: `/tickets/details/${ticket.id}`, label: "Ticket Details", active: true },
     { to: `/tickets/comments/${ticket.id}`, label: "Comments", active: false },
-    { to: `/tickets/update-status/${ticket.id}`, label: "Status Update", active: false },
+    ...(showAssignTab
+      ? [{ to: `/tickets/assign/${ticket.id}`, label: "Assign Technician", active: false }]
+      : []),
+    ...(showStatusUpdateTab
+      ? [{ to: `/tickets/update-status/${ticket.id}`, label: "Status Update", active: false }]
+      : []),
     { to: ticketsListPath, label: ticketsListLabel, active: false },
   ];
 
@@ -602,7 +609,12 @@ function TicketDetails() {
           </div>
         </div>
 
-        <div style={styles.subNav}>
+        <div
+          style={{
+            ...styles.subNav,
+            gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+          }}
+        >
           {navSections.map((section) => (
             <Link
               key={section.to}
@@ -640,16 +652,16 @@ function TicketDetails() {
               <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Assigned Technician</div>
                 <div style={styles.infoValue}>
-                  {ticket.assignedTo
-                    ? getTechnicianLabel(ticket.assignedTo)
-                    : "Not assigned yet"}
+                  {ticket.assignedToName
+                    || (ticket.assignedTo ? getTechnicianLabel(ticket.assignedTo) : "Not assigned yet")}
                 </div>
               </div>
 
               <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Created By</div>
                 <div style={styles.infoValue}>
-                  {ticket.createdBy ? `User #${ticket.createdBy}` : "N/A"}
+                  {ticket.createdByName
+                    || (ticket.createdBy ? `User #${ticket.createdBy}` : "N/A")}
                 </div>
               </div>
 

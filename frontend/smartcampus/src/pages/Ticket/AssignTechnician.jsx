@@ -295,6 +295,9 @@ function AssignTechnician() {
   const navSections = [
     { to: `/tickets/details/${id}`, label: "Ticket Details", active: false },
     { to: `/tickets/comments/${id}`, label: "Comments", active: false },
+    ...(isAdmin
+      ? [{ to: `/tickets/assign/${id}`, label: "Assign Technician", active: true }]
+      : []),
     { to: `/tickets/update-status/${id}`, label: "Status Update", active: false },
     { to: ticketsListPath, label: ticketsListLabel, active: false },
   ];
@@ -717,7 +720,12 @@ function AssignTechnician() {
           </p>
         </div>
 
-        <div style={styles.subNav}>
+        <div
+          style={{
+            ...styles.subNav,
+            gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+          }}
+        >
           {navSections.map((section) => (
             <Link
               key={section.to}

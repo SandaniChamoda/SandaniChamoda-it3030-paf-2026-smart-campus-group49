@@ -124,6 +124,11 @@ function AdminTickets() {
       active: false,
     },
     {
+      to: focusTicketId ? `/tickets/assign/${focusTicketId}` : "/tickets/admin",
+      label: "Assign Technician",
+      active: false,
+    },
+    {
       to: focusTicketId ? `/tickets/update-status/${focusTicketId}` : "/tickets/admin",
       label: "Status Update",
       active: false,
@@ -439,7 +444,12 @@ function AdminTickets() {
             </div>
           </div>
 
-          <div style={styles.subNav}>
+          <div
+            style={{
+              ...styles.subNav,
+              gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+            }}
+          >
             {navSections.map((section) => (
               <Link
                 key={section.label}

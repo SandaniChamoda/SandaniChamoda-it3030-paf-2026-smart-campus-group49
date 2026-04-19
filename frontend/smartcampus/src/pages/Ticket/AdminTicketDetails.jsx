@@ -458,6 +458,7 @@ function AdminTicketDetails() {
   const navSections = [
     { to: `/tickets/details/${ticket.id}`, label: "Ticket Details", active: true },
     { to: `/tickets/comments/${ticket.id}`, label: "Comments", active: false },
+    { to: `/tickets/assign/${ticket.id}`, label: "Assign Technician", active: false },
     { to: `/tickets/update-status/${ticket.id}`, label: "Status Update", active: false },
     { to: ticketsListPath, label: ticketsListLabel, active: false },
   ];
@@ -511,7 +512,12 @@ function AdminTicketDetails() {
           </div>
         </div>
 
-        <div style={styles.subNav}>
+        <div
+          style={{
+            ...styles.subNav,
+            gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+          }}
+        >
           {navSections.map((section) => (
             <Link
               key={section.to}
@@ -549,16 +555,16 @@ function AdminTicketDetails() {
               <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Created By</div>
                 <div style={styles.infoValue}>
-                  {ticket.createdBy ? `User #${ticket.createdBy}` : "N/A"}
+                  {ticket.createdByName
+                    || (ticket.createdBy ? `User #${ticket.createdBy}` : "N/A")}
                 </div>
               </div>
 
               <div style={styles.infoBox}>
                 <div style={styles.infoLabel}>Assigned Technician</div>
                 <div style={styles.infoValue}>
-                  {ticket.assignedTo
-                    ? getTechnicianLabel(ticket.assignedTo)
-                    : "Not assigned yet"}
+                  {ticket.assignedToName
+                    || (ticket.assignedTo ? getTechnicianLabel(ticket.assignedTo) : "Not assigned yet")}
                 </div>
               </div>
 
@@ -654,7 +660,7 @@ function AdminTicketDetails() {
                   <p style={styles.timelineTitle}>Current Assignment</p>
                   <p style={styles.timelineText}>
                     {ticket.assignedTo
-                      ? `This ticket is assigned to ${getTechnicianLabel(ticket.assignedTo)}.`
+                      ? `This ticket is assigned to ${ticket.assignedToName || getTechnicianLabel(ticket.assignedTo)}.`
                       : "This ticket has not been assigned yet."}
                   </p>
                 </div>
