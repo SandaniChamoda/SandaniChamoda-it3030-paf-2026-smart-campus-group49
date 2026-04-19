@@ -13,13 +13,13 @@
 
 /* Hero Section */
 /* Update the background image URL below to use your SLIIT campus photos:
-   - public/hero.jpg (local file)
+   - /hero.jpg (local file)
    - URL to any campus/library image
    For SLIIT library imagery: https://elibrary.sliit.lk/assets/images/
 */
 .hero-section {
   background-image: linear-gradient(135deg, rgba(126, 127, 140, 0.185), rgba(26, 31, 90, 0.1)), 
-                    url('public/hero1.jpg');
+                    url('/hero1.jpg');
   background-attachment: scroll;
   background-size: cover;
   background-position: center;
