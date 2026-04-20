@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -88,16 +89,55 @@ class OAuth2LoginSuccessHandlerTest {
     }
 
     @Test
-    void onAuthenticationSuccess_shouldThrowWhenUserNotFound() {
+        void onAuthenticationSuccess_shouldCreateUserAndRedirectWhenUserNotFound() throws Exception {
         when(userRepository.findByEmail("missing.user@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            saved.setId(17L);
+            return saved;
+        });
+        when(jwtUtil.generateToken(any(User.class))).thenReturn("new-user-jwt");
 
         Authentication authentication = authenticationForEmail("missing.user@example.com");
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThatThrownBy(() -> handler.onAuthenticationSuccess(request, response, authentication))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found after OAuth2 login");
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        verify(userRepository).save(argThat(user ->
+            "missing.user@example.com".equals(user.getEmail())
+                && "missing.user@example.com".equals(user.getName())
+                && Role.USER.equals(user.getRole())
+                && "google".equals(user.getProvider())
+                && "google-sub".equals(user.getProviderId())
+        ));
+        verify(redirectStrategy).sendRedirect(
+            request,
+            response,
+            "http://localhost:5173/oauth2/redirect?token=new-user-jwt"
+        );
+        }
+
+        @Test
+        void onAuthenticationSuccess_shouldThrowWhenEmailMissing() {
+        OAuth2User oauthUser = new DefaultOAuth2User(
+            List.of(new SimpleGrantedAuthority("ROLE_USER")),
+            Map.of("sub", "google-sub"),
+            "sub"
+        );
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            oauthUser,
+            null,
+            oauthUser.getAuthorities()
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                handler.onAuthenticationSuccess(request, response, authentication)
+            )
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("OAuth2 email is missing");
 
         verifyNoInteractions(jwtUtil);
     }

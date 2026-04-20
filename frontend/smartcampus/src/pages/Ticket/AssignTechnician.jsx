@@ -2,10 +2,24 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { getTechnicianLabel, registerTechnicians } from "../../utils/technicianLabels";
+import { useAuth } from "../../context/AuthContext";
 
 function AssignTechnician() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+  const isTechnician = user?.role === "TECHNICIAN";
+  const ticketsListPath = isAdmin
+    ? "/tickets/admin"
+    : isTechnician
+      ? "/tickets/technician"
+      : "/tickets/my";
+  const ticketsListLabel = isAdmin
+    ? "All Tickets"
+    : isTechnician
+      ? "Assigned Tickets"
+      : "My Tickets";
 
   const colors = {
     primaryDark: "#1A1F5A",
@@ -32,6 +46,8 @@ function AssignTechnician() {
   const [pageError, setPageError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [assignmentReason, setAssignmentReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
   const [technicians, setTechnicians] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -224,21 +240,30 @@ function AssignTechnician() {
       return;
     }
 
+    const normalizedReason = assignmentReason.trim();
+    if (normalizedReason.length < 3) {
+      setReasonError("Please provide an assignment reason (at least 3 characters).");
+      return;
+    }
+
     try {
       setSubmitting(true);
       setPageError("");
       setSuccessMessage("");
+      setReasonError("");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       await API.put(`/tickets/${id}/assign`, {
         assignedTo: selectedTech.id,
+        reason: normalizedReason,
       });
 
       setSuccessMessage(`Technician ${selectedTech.fullName} assigned successfully.`);
+      setAssignmentReason("");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       setTimeout(() => {
-        navigate("/tickets/admin");
+        navigate(ticketsListPath);
       }, 1200);
     } catch (err) {
       console.error("Assignment failed:", err);
@@ -266,6 +291,16 @@ function AssignTechnician() {
         return { bg: "#EEF2F7", color: colors.textMedium };
     }
   };
+
+  const navSections = [
+    { to: `/tickets/details/${id}`, label: "Ticket Details", active: false },
+    { to: `/tickets/comments/${id}`, label: "Comments", active: false },
+    ...(isAdmin
+      ? [{ to: `/tickets/assign/${id}`, label: "Assign Technician", active: true }]
+      : []),
+    { to: `/tickets/update-status/${id}`, label: "Status Update", active: false },
+    { to: ticketsListPath, label: ticketsListLabel, active: false },
+  ];
 
   const styles = {
     page: {
@@ -324,6 +359,41 @@ function AssignTechnician() {
       fontSize: "15px",
       lineHeight: "1.8",
       maxWidth: "760px",
+    },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "18px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
     },
     grid: {
       display: "grid",
@@ -527,6 +597,36 @@ function AssignTechnician() {
       color: colors.textMedium,
       lineHeight: "1.8",
     },
+    reasonWrap: {
+      marginTop: "14px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+    },
+    reasonLabel: {
+      fontSize: "13px",
+      fontWeight: "700",
+      color: colors.textDark,
+    },
+    reasonInput: {
+      width: "100%",
+      minHeight: "84px",
+      borderRadius: "12px",
+      border: `1px solid ${reasonError ? colors.danger : colors.borderLight}`,
+      backgroundColor: colors.white,
+      padding: "10px 12px",
+      fontSize: "14px",
+      color: colors.textDark,
+      outline: "none",
+      resize: "vertical",
+      boxSizing: "border-box",
+      lineHeight: "1.6",
+    },
+    reasonErrorText: {
+      fontSize: "12px",
+      color: colors.danger,
+      fontWeight: "600",
+    },
     actionButton: {
       width: "100%",
       marginTop: "16px",
@@ -594,8 +694,8 @@ function AssignTechnician() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{pageError}</div>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
       </div>
@@ -606,8 +706,8 @@ function AssignTechnician() {
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link to="/tickets/admin" style={styles.backLink}>
-            ← Back to Admin Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
 
@@ -618,6 +718,23 @@ function AssignTechnician() {
             Search, filter, and review technicians before assigning the most
             suitable person to handle this maintenance ticket.
           </p>
+        </div>
+
+        <div
+          style={{
+            ...styles.subNav,
+            gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {navSections.map((section) => (
+            <Link
+              key={section.to}
+              to={section.to}
+              style={section.active ? styles.subNavActive : styles.subNavLink}
+            >
+              {section.label}
+            </Link>
+          ))}
         </div>
 
         {pageError && <div style={styles.errorBox}>{pageError}</div>}
@@ -803,6 +920,23 @@ function AssignTechnician() {
                     )} • ${selectedTech.email}`
                   : "No technician selected yet. Choose a technician card before assigning."}
               </p>
+
+              <div style={styles.reasonWrap}>
+                <label style={styles.reasonLabel}>Assignment Reason</label>
+                <textarea
+                  value={assignmentReason}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setAssignmentReason(value);
+                    if (value.trim().length >= 3) {
+                      setReasonError("");
+                    }
+                  }}
+                  placeholder="Explain why this technician is assigned to this ticket"
+                  style={styles.reasonInput}
+                />
+                {reasonError ? <span style={styles.reasonErrorText}>{reasonError}</span> : null}
+              </div>
             </div>
 
             <button style={styles.actionButton} onClick={handleAssign} disabled={submitting}>

@@ -9,6 +9,20 @@ function UpdateTicketStatus() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const isAdmin = user?.role === "ADMIN";
+  const isTechnician = user?.role === "TECHNICIAN";
+  const showAssignTab = isAdmin;
+  const ticketsListPath = isAdmin
+    ? "/tickets/admin"
+    : isTechnician
+      ? "/tickets/technician"
+      : "/tickets/my";
+  const ticketsListLabel = isAdmin
+    ? "All Tickets"
+    : isTechnician
+      ? "Assigned Tickets"
+      : "My Tickets";
+
   const colors = {
     primaryDark: "#1A1F5A",
     primaryGradientEnd: "#2A3080",
@@ -30,26 +44,18 @@ function UpdateTicketStatus() {
   const [ticket, setTicket] = useState(null);
   const [status, setStatus] = useState("");
   const [fieldError, setFieldError] = useState("");
-  const [notesError, setNotesError] = useState("");
-  const [resolutionNotes, setResolutionNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const getAllowedTransitions = (currentStatus, role) => {
-    const isAdmin = role === "ADMIN";
-    switch (currentStatus) {
-      case "OPEN":
-        return isAdmin ? ["IN_PROGRESS", "REJECTED"] : ["IN_PROGRESS"];
-      case "IN_PROGRESS":
-        return isAdmin ? ["RESOLVED", "REJECTED"] : ["RESOLVED"];
-      case "RESOLVED":
-        return ["CLOSED"];
-      default:
-        return [];
-    }
-  };
+  const statusOptions = [
+    "OPEN",
+    "IN_PROGRESS",
+    "RESOLVED",
+    "CLOSED",
+    "REJECTED",
+  ];
 
   const fetchTicket = async () => {
     try {
@@ -59,7 +65,6 @@ function UpdateTicketStatus() {
       const response = await API.get(`/tickets/${id}`);
       setTicket(response.data);
       setStatus(response.data?.status || "");
-      setResolutionNotes(response.data?.resolutionNotes || "");
     } catch (err) {
       console.error("Failed to fetch ticket:", err);
       setPageError("Unable to load selected ticket details.");
@@ -77,24 +82,8 @@ function UpdateTicketStatus() {
       return "Status is required.";
     }
 
-    const allowed = getAllowedTransitions(ticket?.status, user?.role);
-    if (!allowed.includes(value) && value !== ticket?.status) {
+    if (!statusOptions.includes(value)) {
       return "Please select a valid status.";
-    }
-
-    return "";
-  };
-
-  const validateResolutionNotes = (value, selectedStatus) => {
-    if (value.length > 1000) {
-      return "Resolution notes must be 1000 characters or less.";
-    }
-
-    if (
-      (selectedStatus === "RESOLVED" || selectedStatus === "CLOSED") &&
-      !value.trim()
-    ) {
-      return "Resolution notes are required when resolving or closing a ticket.";
     }
 
     return "";
@@ -104,7 +93,6 @@ function UpdateTicketStatus() {
     const value = e.target.value;
     setStatus(value);
     setFieldError(validateStatus(value));
-    setNotesError(validateResolutionNotes(resolutionNotes, value));
   };
 
   const scrollToTop = () => {
@@ -118,14 +106,7 @@ function UpdateTicketStatus() {
     const validationMessage = validateStatus(status);
     setFieldError(validationMessage);
 
-    const noteValidationMessage = validateResolutionNotes(resolutionNotes, status);
-    setNotesError(noteValidationMessage);
-
-    if (validationMessage || noteValidationMessage) return;
-
-    if (!window.confirm(`Confirm status update to ${status.replace("_", " ")}?`)) {
-      return;
-    }
+    if (validationMessage) return;
 
     try {
       setSubmitting(true);
@@ -134,7 +115,6 @@ function UpdateTicketStatus() {
 
       await API.put(`/tickets/${id}/status`, {
         status,
-        resolutionNotes: resolutionNotes.trim(),
       });
 
       setSuccessMessage("Ticket status updated successfully.");
@@ -142,7 +122,7 @@ function UpdateTicketStatus() {
       fetchTicket();
 
       setTimeout(() => {
-        navigate(user?.role === "ADMIN" ? "/tickets/admin" : "/tickets/technician");
+        navigate(ticketsListPath);
       }, 1200);
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -212,6 +192,41 @@ function UpdateTicketStatus() {
       fontSize: "15px",
       lineHeight: "1.8",
       maxWidth: "760px",
+    },
+    subNav: {
+      backgroundColor: colors.white,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "16px",
+      padding: "8px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "8px",
+      marginBottom: "18px",
+      boxShadow: "0 8px 18px rgba(26, 31, 90, 0.04)",
+    },
+    subNavLink: {
+      textDecoration: "none",
+      color: colors.primaryDark,
+      border: `1px solid ${colors.borderLight}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "700",
+      backgroundColor: colors.white,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    },
+    subNavActive: {
+      textDecoration: "none",
+      color: colors.white,
+      border: `1px solid ${colors.primaryDark}`,
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "13px",
+      fontWeight: "800",
+      backgroundColor: colors.primaryDark,
+      textAlign: "center",
+      whiteSpace: "nowrap",
     },
     contentGrid: {
       display: "grid",
@@ -295,21 +310,6 @@ function UpdateTicketStatus() {
       outline: "none",
       boxSizing: "border-box",
     },
-    textarea: {
-      width: "100%",
-      minHeight: "110px",
-      borderRadius: "14px",
-      border: `1px solid ${notesError ? colors.danger : colors.borderLight}`,
-      backgroundColor: colors.white,
-      padding: "12px 14px",
-      fontSize: "14px",
-      color: colors.textDark,
-      outline: "none",
-      resize: "vertical",
-      boxSizing: "border-box",
-      lineHeight: "1.7",
-      marginTop: "10px",
-    },
     helperText: {
       marginTop: "8px",
       fontSize: "13px",
@@ -387,25 +387,30 @@ function UpdateTicketStatus() {
       <div style={styles.page}>
         <div style={styles.container}>
           <div style={styles.errorBox}>{pageError}</div>
-          <Link to={user?.role === "ADMIN" ? "/tickets/admin" : "/tickets/technician"} style={styles.backLink}>
-            ← Back to Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
       </div>
     );
   }
 
-  const allowedTransitions = getAllowedTransitions(ticket?.status, user?.role);
+  const navSections = [
+    { to: `/tickets/details/${id}`, label: "Ticket Details", active: false },
+    { to: `/tickets/comments/${id}`, label: "Comments", active: false },
+    ...(showAssignTab
+      ? [{ to: `/tickets/assign/${id}`, label: "Assign Technician", active: false }]
+      : []),
+    { to: `/tickets/update-status/${id}`, label: "Status Update", active: true },
+    { to: ticketsListPath, label: ticketsListLabel, active: false },
+  ];
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link
-            to={user?.role === "ADMIN" ? "/tickets/admin" : "/tickets/technician"}
-            style={styles.backLink}
-          >
-            ← Back to Tickets
+          <Link to={ticketsListPath} style={styles.backLink}>
+            ← Back to {ticketsListLabel}
           </Link>
         </div>
 
@@ -416,6 +421,23 @@ function UpdateTicketStatus() {
             Change the current state of this ticket so the workflow accurately
             reflects progress, resolution, or closure.
           </p>
+        </div>
+
+        <div
+          style={{
+            ...styles.subNav,
+            gridTemplateColumns: `repeat(${navSections.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {navSections.map((section) => (
+            <Link
+              key={section.to}
+              to={section.to}
+              style={section.active ? styles.subNavActive : styles.subNavLink}
+            >
+              {section.label}
+            </Link>
+          ))}
         </div>
 
         {pageError && <div style={styles.errorBox}>{pageError}</div>}
@@ -483,14 +505,12 @@ function UpdateTicketStatus() {
                   onChange={handleStatusChange}
                   style={styles.select}
                 >
-                  <option value={ticket?.status || ""}>
-                    {ticket?.status || "Select status"}
-                  </option>
-                  {allowedTransitions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
+                  <option value="">Select status</option>
+                  <option value="OPEN">OPEN</option>
+                  <option value="IN_PROGRESS">IN_PROGRESS</option>
+                  <option value="RESOLVED">RESOLVED</option>
+                  <option value="CLOSED">CLOSED</option>
+                  <option value="REJECTED">REJECTED</option>
                 </select>
 
                 {fieldError ? (
@@ -503,35 +523,12 @@ function UpdateTicketStatus() {
                 )}
               </div>
 
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Resolution Notes</label>
-                <textarea
-                  value={resolutionNotes}
-                  onChange={(e) => {
-                    setResolutionNotes(e.target.value);
-                    setNotesError(validateResolutionNotes(e.target.value, status));
-                  }}
-                  placeholder="Explain what was fixed and root cause"
-                  style={styles.textarea}
-                />
-                {notesError && <div style={styles.fieldErrorText}>{notesError}</div>}
-                {!notesError && (
-                  <div style={styles.helperText}>
-                    Add clear fix details for auditability and grading.
-                  </div>
-                )}
-              </div>
-
               <button
                 type="submit"
                 style={styles.primaryButton}
-                disabled={submitting || allowedTransitions.length === 0}
+                disabled={submitting}
               >
-                {submitting
-                  ? "Updating..."
-                  : allowedTransitions.length === 0
-                  ? "No Further Transition"
-                  : "Update Status"}
+                {submitting ? "Updating..." : "Update Status"}
               </button>
             </form>
 
