@@ -60,7 +60,7 @@ public class AuthController {
         return ResponseEntity.ok(authService.forgotPassword(request));
     }
 
-    /**
+    /**cd
      * Completes a password reset using a valid reset token.
      */
     @PostMapping("/reset-password")
@@ -77,7 +77,7 @@ public class AuthController {
     public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
         UserDTO user = userService.getCurrentUser(authentication);
         return ResponseEntity.ok(user);
-    }
+    }           
 
     /**
      * Updates profile details of the currently authenticated user.
@@ -136,3 +136,4 @@ public class AuthController {
         return ResponseEntity.ok("Logged out successfully. Please discard your token.");
     }
 }
+

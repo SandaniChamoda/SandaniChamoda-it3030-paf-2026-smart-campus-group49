@@ -6,12 +6,12 @@ import NotificationBell from "../notifications/NotificationBell";
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isAuthenticated, user, logout, getRoleDashboardPath } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const closeMenu = () => setMenuOpen(false);
 
   const roleLabel = user?.role === "USER" ? "Student" : user?.role;
-  const showDashboard = isAuthenticated && user?.role && user.role !== "USER";
+  const isStudent = user?.role === "USER";
   const isAdmin = user?.role === "ADMIN";
   const isTechnician = user?.role === "TECHNICIAN";
 
@@ -199,6 +199,16 @@ function Header() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {isStudent && (
+                <NavLink
+                  to="/dashboard/student"
+                  className={navLinkClass}
+                  onClick={closeMenu}
+                >
+                  Student
+                </NavLink>
               )}
 
               <NavLink

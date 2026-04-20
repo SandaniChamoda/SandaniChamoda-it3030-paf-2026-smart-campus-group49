@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * Controller for notification operations (authenticated users).
  */
-@Slf4j
+@Slf4j                
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -55,7 +55,7 @@ public class NotificationController {
         long count = notificationService.getUnreadCount(userId);
         return ResponseEntity.ok(Map.of("count", count));
     }
-
+            
     /**
      * Marks a single notification as read.
      */
@@ -65,7 +65,7 @@ public class NotificationController {
             Authentication authentication) {
         Long userId = userService.extractUserId(authentication);
         return ResponseEntity.ok(notificationService.markAsRead(id, userId));
-    }
+    }            
 
     /**
      * Marks all notifications for the current user as read.

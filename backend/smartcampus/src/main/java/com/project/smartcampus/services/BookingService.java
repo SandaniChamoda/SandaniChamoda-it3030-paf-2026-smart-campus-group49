@@ -6,11 +6,15 @@ import com.project.smartcampus.dto.BookingResponse;
 import com.project.smartcampus.entity.Booking;
 import com.project.smartcampus.entity.Resource;
 import com.project.smartcampus.enums.BookingStatus;
+import com.project.smartcampus.enums.NotificationType;
 import com.project.smartcampus.enums.ResourceStatus;
 import com.project.smartcampus.exception.BookingConflictException;
 import com.project.smartcampus.repository.BookingRepository;
 import com.project.smartcampus.repository.ResourceRepository;
+import com.project.smartcampus.repository.UserRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 //import com.project.smartcampus.exception.BookingConflictException;
@@ -24,17 +28,26 @@ import java.time.LocalDateTime;
 @Service
 public class BookingService {
 
+        private static final Logger log = LoggerFactory.getLogger(BookingService.class);
+
         @Autowired
         private QRCodeService qrCodeService;
 
         private final BookingRepository repository;
         private final ResourceRepository resourceRepository;
+        private final NotificationService notificationService;
+        private final UserRepository userRepository;
         private static final EnumSet<BookingStatus> ACTIVE_CONFLICT_STATUSES = EnumSet.of(BookingStatus.PENDING,
                         BookingStatus.APPROVED);
 
-        public BookingService(BookingRepository repository, ResourceRepository resourceRepository) {
+        public BookingService(BookingRepository repository,
+                        ResourceRepository resourceRepository,
+                        NotificationService notificationService,
+                        UserRepository userRepository) {
                 this.repository = repository;
                 this.resourceRepository = resourceRepository;
+                this.notificationService = notificationService;
+                this.userRepository = userRepository;
         }
 
         public BookingResponse createBooking(BookingRequest request) {
@@ -66,7 +79,30 @@ public class BookingService {
 
                 booking.setStatus(BookingStatus.PENDING);
 
-                return mapToResponse(repository.save(booking));
+                Booking savedBooking = repository.save(booking);
+
+                userRepository.findByEmail(savedBooking.getBookedBy())
+                                .ifPresentOrElse(user -> {
+                                        try {
+                                                notificationService.createNotification(
+                                                                user.getId(),
+                                                                NotificationType.BOOKING_APPROVED,
+                                                                "Booking Submitted",
+                                                                "Your booking for \"" + savedBooking.getResourceName()
+                                                                                + "\" has been submitted and is pending admin approval.",
+                                                                savedBooking.getId(),
+                                                                "BOOKING");
+                                        } catch (Exception ex) {
+                                                log.warn(
+                                                                "Failed to create booking notification for booking id {}",
+                                                                savedBooking.getId(),
+                                                                ex);
+                                        }
+                                }, () -> log.warn(
+                                                "Skipping booking notification. Could not find user by email: {}",
+                                                savedBooking.getBookedBy()));
+
+                return mapToResponse(savedBooking);
         }
 
         public List<BookingResponse> getAllBookings() {
